@@ -4,7 +4,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import SignUp from "./Components/screens/SignUp"
+import SignUp from "./Screens/SignUp"
 
 const Stack = createNativeStackNavigator();
 
