@@ -16,20 +16,20 @@ const Login = () => {
         password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
     });
 
-    const handleLogin = (values) => {
+    const handleLogin = async (values) => {
 
         const loginData = {
             username: values.username,
             password_hash: values.password 
         };
 
-        axios.post(`${API}/users/login`, loginData)
+        await axios.post(`${API}/users/login`, loginData)
         .then(res => {
-            localStorage.removeItem('user_id')
-            localStorage.removeItem('token')
-            localStorage.setItem('user_id', res.data.user.id)
-            localStorage.setItem('token', res.data.token)
-            navigation.navigate('Profile', { userId: res.data.user.id })
+            // localStorage.removeItem('user_id')
+            // localStorage.removeItem('token')
+            // localStorage.setItem('user_id', res.data.user.id)
+            // localStorage.setItem('token', res.data.token)
+            navigation.navigate('Profile', { userId: res.data.user.id, token: res.data.token })
         })
         .catch(err => {
             console.error(err);

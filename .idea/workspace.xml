@@ -9,7 +9,10 @@
       <change afterPath="$PROJECT_DIR$/.idea/YUMStepper-FE.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Components/Map.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Components/Map.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Components/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Components/Login.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Components/Map.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Screens/Map.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Screens/Map.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Screens/Profile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Screens/Profile.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
@@ -33,7 +36,6 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "test",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -58,7 +60,7 @@
       <option name="presentableId" value="Default" />
       <updated>1727223756578</updated>
       <workItem from="1727223758197" duration="48000" />
-      <workItem from="1727223812984" duration="918000" />
+      <workItem from="1727223812984" duration="1730000" />
     </task>
     <servers />
   </component>
