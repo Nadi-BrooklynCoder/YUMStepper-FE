@@ -1,29 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { StyleSheet, View, Text } from 'react-native';
-import { GOOGLE_API_KEY } from '@env'
+import { GOOGLE_API_KEY, API_BASE_URL } from '@env'
+import axios from 'axios';
 
-const MapComponent = () => {
+const MapComponent = ({ route }) => {
 
+  const { userId, token } = route.params;
+  const [user, setUser] = useState({})
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/users/${userId}`);
+        setUser(res.data)
+      } catch (err) {
+        console.error("failed to fetch user location", err)
+      }
+    }
 
-  return ( 
+    fetchUser()
+  }, [])
+
+  return (
     <MapView
       // provider={PROVIDER_GOOGLE} // Use Google Maps
       style={styles.map}
       initialRegion={{
-          latitude: 37.78825,
-          longitude: -122.4324,
+          latitude: user.latitude,
+          longitude: user.longitude,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
       }}
       // Add your Google Maps API key
-      googleMapsApiKey={GOOGLE_API_KEY}
+      // googleMapsApiKey={GOOGLE_API_KEY}
     >
       <Marker
         coordinate={{
-          latitude: 37.78825,
-          longitude: -122.4324,
+          latitude: user.latitude,
+          longitude: user.longitude,
         }}
         title="My Marker"
         description="Here is a description"

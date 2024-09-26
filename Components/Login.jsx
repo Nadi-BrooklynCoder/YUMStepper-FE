@@ -1,15 +1,17 @@
 import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
-import React from 'react';
+import React, { useContext } from 'react';
 import { Formik } from 'formik';
 import { useNavigation } from '@react-navigation/native';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
+import { AuthContext } from '../Context/AuthContext';
 
 const Login = () => {
-    const API = API_BASE_URL
-    const { localStorage } = window
+    const { login } = useContext(AuthContext);
     const navigation = useNavigation();
+
+    const API = API_BASE_URL;
 
     const validationSchema = Yup.object({
         username: Yup.string().required('Username is required'),
@@ -17,23 +19,23 @@ const Login = () => {
     });
 
     const handleLogin = async (values) => {
-
         const loginData = {
             username: values.username,
             password_hash: values.password 
         };
 
-        await axios.post(`${API}/users/login`, loginData)
-        .then(res => {
-            // localStorage.removeItem('user_id')
-            // localStorage.removeItem('token')
-            // localStorage.setItem('user_id', res.data.user.id)
-            // localStorage.setItem('token', res.data.token)
-            navigation.navigate('Profile', { userId: res.data.user.id, token: res.data.token })
-        })
-        .catch(err => {
+        try {
+            const res = await axios.post(`${API}/users/login`, loginData);
+            const { token, user } = res.data;
+
+            // Call login function to store token in AsyncStorage and update state
+            await login(token, user.id);
+
+            // Navigate to the Profile screen
+            navigation.navigate('Profile', { userId: user.id, token: token });
+        } catch (err) {
             console.error(err);
-        });
+        }
     };
 
     return (
@@ -66,7 +68,7 @@ const Login = () => {
                     {touched.password && errors.password && <Text style={styles.error}>{errors.password}</Text>}
 
                     <Pressable onPress={handleSubmit} role="button" style={styles.button}>
-                    <Text style={styles.buttonText}>Login</Text>
+                        <Text style={styles.buttonText}>Login</Text>
                     </Pressable>
 
                     <Pressable onPress={() => navigation.navigate('SignUp')} style={styles.link}>
@@ -76,8 +78,8 @@ const Login = () => {
                 )}
             </Formik>
         </View>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -121,5 +123,4 @@ const styles = StyleSheet.create({
     },
 });
 
-
-export default Login
+export default Login;
