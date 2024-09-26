@@ -4,7 +4,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthContext } from '../Context/AuthContext';
 import { View, ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // SCREENS
 import Login from '../Screens/Login';
@@ -15,7 +14,7 @@ import Map from '../Screens/Map';
 
 const AppNav = () => {
     const Stack = createStackNavigator();
-    const { isLoading, userToken } = useContext(AuthContext);
+    const { isLoading } = useContext(AuthContext);
 
     // Show loading spinner while authentication is being verified
     if (isLoading) {
