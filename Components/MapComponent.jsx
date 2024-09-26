@@ -100,8 +100,9 @@ const MapComponent = ({ route }) => {
   return (
     <MapView
       ref={mapViewRef}
-      provider={PROVIDER_GOOGLE} // Use Google Maps
+      // provider={PROVIDER_GOOGLE} // Use Google Maps
       style={styles.map}
+      // mapId={"1c126259f1cbbaae"}
       initialRegion={{
         latitude: currentLocation ? currentLocation.latitude : 37.78825,
         longitude: currentLocation ? currentLocation.longitude : -122.4324,

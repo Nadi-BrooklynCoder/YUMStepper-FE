@@ -19,7 +19,14 @@ const Profile = () => {
                 const response = await axios.get(`${API_BASE_URL}/users/${userId}`);
                 setUser(response.data);
             } catch (err) {
-                console.error('Failed to fetch user data:', err);
+                 if (err.response) {
+                    console.error('Error response:', err.response.data);
+                    console.error('Status:', err.response.status);
+                } else if (err.request) {
+                    console.error('No response received:', err.request);
+                } else {
+                    console.error('Error', err.message);
+                }
             }
         };
 

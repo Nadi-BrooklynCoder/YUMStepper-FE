@@ -34,7 +34,15 @@ const Login = () => {
             // Navigate to the Profile screen
             navigation.navigate('Profile', { userId: user.id, token: token });
         } catch (err) {
-            console.error(err);
+
+             if (err.response) {
+                    console.error('Error response:', err.response.data);
+                    console.error('Status:', err.response.status);
+                } else if (err.request) {
+                    console.error('No response received:', err.request);
+                } else {
+                    console.error('Error', err.message);
+                }
         }
     };
 
