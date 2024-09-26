@@ -82,15 +82,19 @@ const Login = () => {
 const styles = StyleSheet.create({
     container: {
         padding: 20,
+        backgroundColor:'#F2632F',
+        height: 600,
     },
     title: {
-        fontSize: 24,
+        fontSize: 35,
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
+        color:'	#faebd7',
+        
     },
     input: {
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#ccc',
         padding: 10,
         marginBottom: 10,
@@ -119,6 +123,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textDecorationLine: 'underline',
     },
+    
 });
 
 
