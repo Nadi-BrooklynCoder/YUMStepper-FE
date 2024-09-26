@@ -49,16 +49,16 @@ const MapComponent = ({ route }) => {
           const { latitude, longitude, heading } = await location.coords;
 
           // Update the animated region (for smooth movement)
-          animatedRegion.timing({
-            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
-            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+          animatedRegion.timing({ // , 
+            latitude: 40.743012643273225, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            longitude: -73.94190034502903, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
             duration: 500, // smooth animation for 500ms
           }).start();
 
           // Update the current location and heading
           setCurrentLocation({
-            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
-            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            latitude: 40.743012643273225, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            longitude: -73.94190034502903, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
           });
           
           setHeading(heading || 0);
@@ -169,7 +169,7 @@ const MapComponent = ({ route }) => {
 const styles = StyleSheet.create({
   map: {
     width: '100%',
-    height: '100%',
+    height: '99%',
   },
   triangle: {
     width: 0,
