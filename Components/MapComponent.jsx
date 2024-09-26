@@ -7,11 +7,12 @@ import axios from 'axios';
 
 const MapComponent = ({ route }) => {
   const { userId, token } = route.params;
-  const [user, setUser] = useState({});
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [heading, setHeading] = useState(0);
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const mapViewRef = useRef(null);
+  const [user, setUser] = useState({});
+  const [currentLocation, setCurrentLocation] = useState({});
+  const [heading, setHeading] = useState(0);
+  const [nearbyPlaces, setNearbyPlaces] = useState([])
 
   // AnimatedRegion for smooth location movement
   const animatedRegion = useRef(
@@ -44,32 +45,26 @@ const MapComponent = ({ route }) => {
       // Watch user's position and heading
       await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 1 },
-        (location) => {
-          const { latitude, longitude, heading } = location.coords;
+        async (location) => {
+          const { latitude, longitude, heading } = await location.coords;
 
           // Update the animated region (for smooth movement)
           animatedRegion.timing({
-            latitude,
-            longitude,
+            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
+            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
             duration: 500, // smooth animation for 500ms
           }).start();
 
           // Update the current location and heading
           setCurrentLocation({
-            latitude,
-            longitude,
+            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
+            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
           });
+          
           setHeading(heading || 0);
 
           // Move map camera to follow user's movement
-          if (mapViewRef.current) {
-            mapViewRef.current.animateToRegion({
-              latitude,
-              longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }, 500); // smooth transition over 500ms
-          }
+          
         }
       );
     };
@@ -96,6 +91,40 @@ const MapComponent = ({ route }) => {
     watchUserLocation();
     startPulseAnimation();
   }, [userId]);
+
+
+  useEffect(() => {
+
+    const fetchNearByPlaces = async () => {
+      try {
+        if(currentLocation.latitude) {
+          const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby?lat=${currentLocation?.latitude}&lng=${currentLocation?.longitude}`)
+          setNearbyPlaces(res.data)
+        }
+      }catch (err) {
+        if (err.response) {
+            console.error('Error response:', err.response.data);
+            console.error('Status:', err.response.status);
+        } else if (err.request) {
+            console.error('No response received:', err.request);
+        } else {
+            console.log(err)
+            console.error('Error', err.message);
+        }
+      }
+    } 
+
+    if (mapViewRef.current) { 
+      mapViewRef.current.animateToRegion({
+        latitude: currentLocation?.latitude || 40.775818,
+        longitude: currentLocation?.longitude || -73.972761,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }, 500); // smooth transition over 500ms
+    }
+
+    fetchNearByPlaces()
+  }, [currentLocation])
 
   return (
     <MapView
