@@ -12,7 +12,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +30,8 @@
       "expo-font",
       {
         "fonts": ["./assets/fonts/Montserrat-Italic.ttf"]
-      }
+      },
+      "expo-secure-store"
     ]
   }
 }
