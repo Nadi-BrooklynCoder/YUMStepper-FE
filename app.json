@@ -27,11 +27,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font",
-      {
-        "fonts": ["./assets/fonts/Montserrat-Italic.ttf"]
-      },
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font"
     ]
   }
 }
