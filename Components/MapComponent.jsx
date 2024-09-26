@@ -50,21 +50,18 @@ const MapComponent = ({ route }) => {
 
           // Update the animated region (for smooth movement)
           animatedRegion.timing({
-            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
-            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
+            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
             duration: 500, // smooth animation for 500ms
           }).start();
 
           // Update the current location and heading
           setCurrentLocation({
-            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
-            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN GET A PHONE PROPERLY WORKING 
+            latitude: 40.63340052954902, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            longitude: -73.88912016591033, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
           });
           
           setHeading(heading || 0);
-
-          // Move map camera to follow user's movement
-          
         }
       );
     };
@@ -120,7 +117,7 @@ const MapComponent = ({ route }) => {
         longitude: currentLocation?.longitude || -73.972761,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-      }, 500); // smooth transition over 500ms
+      }, 500); 
     }
 
     fetchNearByPlaces()
@@ -129,7 +126,7 @@ const MapComponent = ({ route }) => {
   return (
     <MapView
       ref={mapViewRef}
-      // provider={PROVIDER_GOOGLE} // Use Google Maps
+      // provider={PROVIDER_GOOGLE} 
       style={styles.map}
       // mapId={"1c126259f1cbbaae"}
       initialRegion={{
@@ -155,7 +152,7 @@ const MapComponent = ({ route }) => {
       )}
 
       {/* Marker for the user fetched from the API */}
-      {user.latitude && user.longitude && (
+      {/* {user.latitude && user.longitude && (
         <Marker
           coordinate={{
             latitude: user.latitude,
@@ -164,7 +161,7 @@ const MapComponent = ({ route }) => {
           title="User Location"
           description="This is the user's location"
         />
-      )}
+      )} */}
     </MapView>
   );
 };
@@ -184,7 +181,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 30,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: 'blue', // Customize the triangle color
+    borderBottomColor: 'blue',
   },
 });
 
