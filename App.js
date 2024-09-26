@@ -1,4 +1,3 @@
-
 import { AuthProvider } from './Context/AuthContext';
 import AppNav from './Navigation/AppNav';
 
