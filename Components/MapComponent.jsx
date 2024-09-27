@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import { GOOGLE_API_KEY, API_BASE_URL } from '@env';
 import axios from 'axios';
 
-const MapComponent = ({ route }) => {
+const MapComponent = ({ route, searchQuery }) => {
   const { userId, token } = route.params;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const mapViewRef = useRef(null);
@@ -169,7 +169,7 @@ const MapComponent = ({ route }) => {
 const styles = StyleSheet.create({
   map: {
     width: '100%',
-    height: '99%',
+    height: '95%',
   },
   triangle: {
     width: 0,
