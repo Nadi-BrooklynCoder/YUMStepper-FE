@@ -50,15 +50,15 @@ const MapComponent = ({ route, searchQuery }) => {
 
           // Update the animated region (for smooth movement)
           animatedRegion.timing({ // , 
-            latitude: 40.743012643273225, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
-            longitude: -73.94190034502903, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            latitude, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            longitude, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
             duration: 500, // smooth animation for 500ms
           }).start();
 
           // Update the current location and heading
           setCurrentLocation({
-            latitude: 40.743012643273225, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
-            longitude: -73.94190034502903, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            latitude, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
+            longitude, // HARD CODED SWITCH WHEN WE HAVE A PHONE PROPERLY WORKING 
           });
           
           setHeading(heading || 0);
