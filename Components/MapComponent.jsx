@@ -5,6 +5,9 @@ import * as Location from 'expo-location';
 import { GOOGLE_API_KEY, API_BASE_URL } from '@env';
 import axios from 'axios';
 
+// COMPONENTS 
+import RestaurantMarker from './RestaurantMarker';
+
 const MapComponent = ({ route, searchQuery }) => {
   const { userId, token } = route.params;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
@@ -13,6 +16,7 @@ const MapComponent = ({ route, searchQuery }) => {
   const [currentLocation, setCurrentLocation] = useState({});
   const [heading, setHeading] = useState(0);
   const [nearbyPlaces, setNearbyPlaces] = useState([])
+  const [ restaurants, setRestaurants ] = useState([])
 
   // AnimatedRegion for smooth location movement
   const animatedRegion = useRef(
@@ -66,6 +70,16 @@ const MapComponent = ({ route, searchQuery }) => {
       );
     };
 
+    // Fetch Restaurants
+    const fetchRestaurants = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/restaurants`);
+        setRestaurants(res.data)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
     // Start the pulse animation for the triangle marker
     const startPulseAnimation = () => {
       Animated.loop(
@@ -84,6 +98,7 @@ const MapComponent = ({ route, searchQuery }) => {
       ).start();
     };
 
+    fetchRestaurants()
     fetchUser();
     watchUserLocation();
     startPulseAnimation();
@@ -151,17 +166,11 @@ const MapComponent = ({ route, searchQuery }) => {
         </Marker.Animated>
       )}
 
-      {/* Marker for the user fetched from the API */}
-      {/* {user.latitude && user.longitude && (
-        <Marker
-          coordinate={{
-            latitude: user.latitude,
-            longitude: user.longitude,
-          }}
-          title="User Location"
-          description="This is the user's location"
-        />
-      )} */}
+      {/* Marker for each restaurant */}
+      {restaurants.map((restaurant, index) => (
+        <RestaurantMarker restaurant={restaurant} key={index}/>
+      ))}
+
     </MapView>
   );
 };
