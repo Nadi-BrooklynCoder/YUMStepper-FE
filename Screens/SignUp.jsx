@@ -1,57 +1,87 @@
-import React, { useState, useNavigate } from 'react';
-import { View, TextInput, Button, StyleSheet} from 'react-native';
+import React, { useContext } from 'react';
+import { View, TextInput, Button, StyleSheet, Alert, Text } from 'react-native';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
 import axios from 'axios';
+import { API_BASE_URL } from '@env';
+import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../Context/AuthContext';
 
 const SignUpForm = () => {
-    
+    const { login } = useContext(AuthContext); 
+    const navigation = useNavigation(); 
 
-    const [newUser, setNewUser] = useState({
-        username: "",
-        email: "",
-        password_hash: ""
+    // Form validation schema using Yup
+    const validationSchema = Yup.object({
+        username: Yup.string().required('Username is required'),
+        email: Yup.string().email('Invalid email').required('Email is required'),
+        password_hash: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
     });
 
-    const handleInputChange = (field, value) => {
-        setNewUser((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
-    };
+    const handleSignUp = async (values) => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/users`, values);
+            
+            const { token, newUser } = response.data;
+            await login(token, newUser.id); 
+            
+            navigation.navigate('Profile', { userId: newUser.id, token: token }); 
 
-    const handleClick = () => {
-        // console.log(newUser)
-        axios.post(`http://localhost:5001/users`, newUser)
-        .then(res => console.log(res.data))
-        .then(newUser => navigate())
-        .catch(error => console.error(error));
-
+            Alert.alert('Success', 'User registered successfully!');
+        } catch (error) {
+            console.error('Error signing up:', error);
+            Alert.alert('Error', 'There was an error during sign up. Please try again.');
+        }
     };
 
     return (
         <View style={styles.container}>
-            <TextInput
-                style={styles.input}
-                placeholder="Username"
-                value={newUser.username}
-                onChangeText={(text) => handleInputChange("username", text)}
-            />
+            <Formik
+                initialValues={{ username: '', email: '', password_hash: '' }}
+                validationSchema={validationSchema}
+                onSubmit={(values) => handleSignUp(values)}
+            >
+                {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+                    <View>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Username"
+                            value={values.username}
+                            onChangeText={handleChange('username')}
+                            onBlur={handleBlur('username')}
+                        />
+                        {touched.username && errors.username && (
+                            <Text style={styles.error}>{errors.username}</Text>
+                        )}
 
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                value={newUser.email}
-                onChangeText={(text) => handleInputChange("email", text)}
-            />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Email"
+                            value={values.email}
+                            onChangeText={handleChange('email')}
+                            onBlur={handleBlur('email')}
+                            keyboardType="email-address"
+                        />
+                        {touched.email && errors.email && (
+                            <Text style={styles.error}>{errors.email}</Text>
+                        )}
 
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={newUser.password_hash}
-                onChangeText={(text) => handleInputChange("password_hash", text)}
-                secureTextEntry
-            />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Password"
+                            value={values.password_hash}
+                            onChangeText={handleChange('password_hash')}
+                            onBlur={handleBlur('password_hash')}
+                            secureTextEntry
+                        />
+                        {touched.password_hash && errors.password_hash && (
+                            <Text style={styles.error}>{errors.password_hash}</Text>
+                        )}
 
-            <Button title="Sign Up" onPress={handleClick} />
+                        <Button title="Sign Up" onPress={handleSubmit} />
+                    </View>
+                )}
+            </Formik>
         </View>
     );
 };
@@ -66,9 +96,13 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         padding: 10,
-        marginBottom: 20,
+        marginBottom: 10,
         borderRadius: 5,
-    }
+    },
+    error: {
+        color: 'red',
+        marginBottom: 10,
+    },
 });
 
 export default SignUpForm;
