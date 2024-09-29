@@ -133,7 +133,7 @@ const MapComponent = ({ route, searchQuery }) => {
       }, 500);
     }
 
-    fetchNearByPlaces();
+    // fetchNearByPlaces();
   }, [currentLocation]);
 
   return (
@@ -170,7 +170,7 @@ const MapComponent = ({ route, searchQuery }) => {
 
       {/* Marker for each restaurant */}
       {restaurants.map((restaurant, index) => (
-        <RestaurantMarker restaurant={restaurant} key={index} />
+        <RestaurantMarker restaurant={restaurant} key={index} userLocation={currentLocation} />
       ))}
 
     </MapView>

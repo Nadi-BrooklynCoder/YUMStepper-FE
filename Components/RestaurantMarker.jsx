@@ -1,24 +1,25 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
-import { Marker } from 'react-native-maps';
+import { Marker, Polyline } from 'react-native-maps';
 import React from 'react';
 import axios from 'axios';
-import { GOOGLE_API_KEY } from '@env';
+import { GOOGLE_API_KEY, API_BASE_URL } from '@env';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 // Import the custom marker icon
 const foodIcon = require('../assets/food-icon.png');
 
-const RestaurantMarker = ({ restaurant }) => {
-    const [visibleRestaurant, setVisibleRestaurant] = useState(null); // Track the currently open restaurant
+const RestaurantMarker = ({ restaurant, userLocation }) => {
+    const [visibleRestaurant, setVisibleRestaurant] = useState(null);
     const [restaurantAddress, setRestaurantAddress] = useState('');
-    const slideAnim = useRef(new Animated.Value(screenWidth)).current; // Start outside of screen (right)
-    const isAnimating = useRef(false); // Ref to track animation state and prevent multiple triggers
+    const [directions, setDirections] = useState([]);
+    const slideAnim = useRef(new Animated.Value(screenWidth)).current;
+    const isAnimating = useRef(false);
 
     const onMarkerPress = () => {
-        if (isAnimating.current || visibleRestaurant?.id === restaurant.id) return; // Prevent multiple animations or repeated clicks for the same restaurant
-        
+        if (isAnimating.current || visibleRestaurant?.id === restaurant.id) return;
+
         isAnimating.current = true;
         setVisibleRestaurant(restaurant);
 
@@ -42,8 +43,65 @@ const RestaurantMarker = ({ restaurant }) => {
             useNativeDriver: false,
         }).start(() => {
             setVisibleRestaurant(null);
+            setDirections([]); // Clear directions when closing modal
             isAnimating.current = false;
         });
+    };
+
+    const handleGetDirections = async () => {
+        try {
+            const response = await axios.get(
+                `${API_BASE_URL}/googlePlaces/direction?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destination=${restaurant.latitude},${restaurant.longitude}`
+            );
+
+            if (response.data && response.data.routes && response.data.routes.length > 0) {
+                const points = response.data.routes[0].overview_polyline.points;
+
+                // Decode polyline points to coordinates
+                const decodedPoints = decodePolyline(points);
+                setDirections(decodedPoints);
+                setVisibleRestaurant(false)
+            } else {
+                console.error('No routes found');
+            }
+        } catch (error) {
+
+            console.error('Error fetching directions', error);
+        }
+    };
+
+    const decodePolyline = (encoded) => {
+        let points = [];
+        let index = 0, len = encoded.length;
+        let lat = 0, lng = 0;
+
+        while (index < len) {
+            let b, shift = 0, result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            let dlat = (result & 1) !== 0 ? ~(result >> 1) : (result >> 1);
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            let dlng = (result & 1) !== 0 ? ~(result >> 1) : (result >> 1);
+            lng += dlng;
+
+            points.push({
+                latitude: lat / 1E5,
+                longitude: lng / 1E5,
+            });
+        }
+
+        return points;
     };
 
     useEffect(() => {
@@ -92,7 +150,7 @@ const RestaurantMarker = ({ restaurant }) => {
                             <Text style={styles.label}>Address:</Text>
                             <Text style={styles.restaurantAddress}>{restaurantAddress}</Text>
                         </View>
-                        
+
                         <View style={styles.infoContainer}>
                             <Text style={styles.label}>Cuisine Type:</Text>
                             <Text style={styles.value}>{restaurant.cuisine_type || 'N/A'}</Text>
@@ -102,12 +160,23 @@ const RestaurantMarker = ({ restaurant }) => {
                             <Text style={styles.label}>Description:</Text>
                             <Text style={styles.value}>{restaurant.description || 'N/A'}</Text>
                         </View>
-                        
+
+                        <TouchableOpacity onPress={handleGetDirections} style={styles.getDirectionsButton}>
+                            <Text style={styles.getDirectionsButtonText}>Go to this Restaurant</Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
                             <Text style={styles.closeButtonText}>Close</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
+            )}
+            {directions.length > 0 && (
+                <Polyline
+                    coordinates={directions}
+                    strokeColor="#007AFF"
+                    strokeWidth={4}
+                />
             )}
         </>
     );
@@ -163,6 +232,19 @@ const styles = StyleSheet.create({
     value: {
         fontSize: 16,
         color: '#555',
+    },
+    getDirectionsButton: {
+        alignSelf: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 30,
+        backgroundColor: '#34C759', // Green button for directions
+        borderRadius: 8,
+    },
+    getDirectionsButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        fontSize: 16,
+        textAlign: 'center',
     },
     closeButton: {
         alignSelf: 'center',
