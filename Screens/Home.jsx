@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useFonts, Montserrat_300Light_Italic } from '@expo-google-fonts/montserrat';
 
 const Home = () => {
-  // Call all hooks at the top level
+  
   const navigation = useNavigation();
 
   let [fontsLoaded] = useFonts({
@@ -12,7 +12,7 @@ const Home = () => {
   });
 
   if (!fontsLoaded) {
-    return null; // Return early, but after hooks have been called
+    return null; 
   }
 
   return (
