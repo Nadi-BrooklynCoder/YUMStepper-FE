@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [userToken, setUserToken] = useState(null);
     const [userId, setUserId] = useState(null);
-    const [userLocation, setUserLocation] = useState(null);
+    const [userLocation, setUserLocation] = useState({});
     const [directions, setDirections] = useState([]);
 
 
