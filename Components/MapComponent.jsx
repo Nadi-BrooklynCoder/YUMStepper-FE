@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE, AnimatedRegion } from 'react-native-maps';
+import { Polyline } from 'react-native-maps';
 import { StyleSheet, Animated } from 'react-native';
 import * as Location from 'expo-location';
+import { AuthContext } from '../Context/AuthContext';
 import { GOOGLE_API_KEY, API_BASE_URL } from '@env';
 import axios from 'axios';
 import yumLogo from '../assets/yummm.png';
@@ -9,8 +11,10 @@ import yumLogo from '../assets/yummm.png';
 // COMPONENTS 
 import RestaurantMarker from './RestaurantMarker';
 
-const MapComponent = ({ route, searchQuery }) => {
+const MapComponent = ({ route, searchQuery, selectedRestaurant, setSelectedRestaurant }) => {
   const { userId, token } = route.params;
+  const { setUserLocation, userLocation, directions } = useContext(AuthContext); 
+
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const mapViewRef = useRef(null);
   const [user, setUser] = useState({});
@@ -61,7 +65,7 @@ const MapComponent = ({ route, searchQuery }) => {
           }).start();
 
           // Update the current location and heading
-          setCurrentLocation({
+          setUserLocation({
             latitude,
             longitude,
           });
@@ -108,8 +112,8 @@ const MapComponent = ({ route, searchQuery }) => {
   useEffect(() => {
     const fetchNearByPlaces = async () => {
       try {
-        if (currentLocation.latitude) {
-          const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby?lat=${currentLocation.latitude}&lng=${currentLocation.longitude}`);
+        if (userLocation.latitude) {
+          const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby?lat=${userLocation.latitude}&lng=${userLocation.longitude}`);
           setNearbyPlaces(res.data);
         }
       } catch (err) {
@@ -126,15 +130,15 @@ const MapComponent = ({ route, searchQuery }) => {
 
     if (mapViewRef.current) {
       mapViewRef.current.animateToRegion({
-        latitude: currentLocation?.latitude || 40.775818,
-        longitude: currentLocation?.longitude || -73.972761,
+        latitude: userLocation?.latitude || 40.775818,
+        longitude: userLocation?.longitude || -73.972761,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       }, 500);
     }
 
     // fetchNearByPlaces();
-  }, [currentLocation]);
+  }, [userLocation]);
 
   return (
     <MapView
@@ -143,15 +147,15 @@ const MapComponent = ({ route, searchQuery }) => {
       style={styles.map}
       mapId={"1c126259f1cbbaae"}
       initialRegion={{
-        latitude: currentLocation ? currentLocation.latitude : 37.78825,
-        longitude: currentLocation ? currentLocation.longitude : -122.4324,
+        latitude: userLocation ? userLocation.latitude : 37.78825,
+        longitude: userLocation ? userLocation.longitude : -122.4324,
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
       }}
       followsUserLocation={true}
     >
       {/* Marker for the user's current location */}
-      {currentLocation && (
+      {userLocation && (
         <Marker.Animated
           coordinate={animatedRegion}
         >
@@ -170,8 +174,16 @@ const MapComponent = ({ route, searchQuery }) => {
 
       {/* Marker for each restaurant */}
       {restaurants.map((restaurant, index) => (
-        <RestaurantMarker restaurant={restaurant} key={index} userLocation={currentLocation} />
+        <RestaurantMarker restaurant={restaurant} key={index}  setSelectedRestaurant={setSelectedRestaurant} />
       ))}
+
+      {directions.length > 0 && (
+        <Polyline
+          coordinates={directions}
+          strokeColor="#007AFF"
+          strokeWidth={4}
+        />
+      )}
 
     </MapView>
   );
