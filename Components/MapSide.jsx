@@ -7,11 +7,13 @@ import { AuthContext } from '../Context/AuthContext';
 
 const { width: screenWidth } = Dimensions.get('window');
  
-const MapSide = ({ restaurant, setSelectedRestaurant }) => {
-    const { userLocation, setDirections } = useContext(AuthContext);
+const MapSide = () => {
+    const { userLocation, setDirections, selectedRestaurant, setSelectedRestaurant,calculateSteps } = useContext(AuthContext);
     const [restaurantAddress, setRestaurantAddress] = useState('');
+    const [steps, setSteps] = useState('');
     const slideAnim = useRef(new Animated.Value(screenWidth)).current;
     const isAnimating = useRef(false);
+    const restaurant =  selectedRestaurant
 
     const closeModal = () => {
         if (isAnimating.current) return;
@@ -88,47 +90,52 @@ const MapSide = ({ restaurant, setSelectedRestaurant }) => {
             });
 
             getAddressFromLatLng();
-        } else {
-            // If no restaurant is selected, close the modal
+        } else{
             Animated.timing(slideAnim, {
                 toValue: screenWidth,
                 duration: 300,
                 useNativeDriver: false,
             }).start();
         }
+
+        setSteps(calculateSteps())
+        
     }, [restaurant]);
 
     return (
-        <>
-            <Animated.View style={[styles.sideModal, { transform: [{ translateX: slideAnim }] }]}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.restaurantName}>{restaurant.name}</Text>
+        <Animated.View style={[styles.sideModal, { transform: [{ translateX: slideAnim }] }]}>
+            <View style={styles.modalContent}>
+                <Text style={styles.restaurantName}>{restaurant.name}</Text>
 
-                    <View style={styles.infoContainer}>
-                        <Text style={styles.label}>Address:</Text>
-                        <Text style={styles.restaurantAddress}>{restaurantAddress}</Text>
-                    </View>
-
-                    <View style={styles.infoContainer}>
-                        <Text style={styles.label}>Cuisine Type:</Text>
-                        <Text style={styles.value}>{restaurant.cuisine_type || 'N/A'}</Text>
-                    </View>
-
-                    <View style={styles.infoContainer}>
-                        <Text style={styles.label}>Description:</Text>
-                        <Text style={styles.value}>{restaurant.description || 'N/A'}</Text>
-                    </View>
-
-                    <TouchableOpacity onPress={handleGetDirections} style={styles.getDirectionsButton}>
-                        <Text style={styles.getDirectionsButtonText}>Go to this Restaurant</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                        <Text style={styles.closeButtonText}>Close</Text>
-                    </TouchableOpacity>
+                <View style={styles.infoContainer}>
+                    <Text style={styles.label}>Address:</Text>
+                    <Text style={styles.restaurantAddress}>{restaurantAddress}</Text>
                 </View>
-            </Animated.View>
-        </>
+
+                <View style={styles.infoContainer}>
+                    <Text style={styles.label}>Cuisine Type:</Text>
+                    <Text style={styles.value}>{restaurant.cuisine_type || 'N/A'}</Text>
+                </View>
+
+                <View style={styles.infoContainer}>
+                    <Text style={styles.label}>Approx Steps:</Text>
+                    <Text style={styles.value}>{steps || 'N/A'}</Text>
+                </View>
+
+                <View style={styles.infoContainer}>
+                    <Text style={styles.label}>Description:</Text>
+                    <Text style={styles.value}>{restaurant.description || 'N/A'}</Text>
+                </View>
+
+                <TouchableOpacity onPress={handleGetDirections} style={styles.getDirectionsButton}>
+                    <Text style={styles.getDirectionsButtonText}>Go to this Restaurant</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                    <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+            </View>
+        </Animated.View>
     );
 };
 

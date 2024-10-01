@@ -1,11 +1,14 @@
 import { StyleSheet, Image } from 'react-native';
 import { Marker} from 'react-native-maps';
-import React from 'react';
+import React, { useContext } from 'react';
+import { AuthContext } from '../Context/AuthContext';
 
 // Import the custom marker icon
 const foodIcon = require('../assets/food-icon.png');
 
-const RestaurantMarker = ({ restaurant, setSelectedRestaurant }) => {
+const RestaurantMarker = ({ restaurant }) => {
+
+    const { setSelectedRestaurant } = useContext(AuthContext)
     
     const onMarkerPress = () => {
         setSelectedRestaurant(restaurant);

@@ -13,15 +13,16 @@ import RestaurantMarker from './RestaurantMarker';
 
 const MapComponent = ({ route, searchQuery, selectedRestaurant, setSelectedRestaurant }) => {
   const { userId, token } = route.params;
-  const { setUserLocation, userLocation, directions } = useContext(AuthContext); 
+  const { setUserLocation, userLocation, directions, setUserSteps, usetSteps, calculateSteps } = useContext(AuthContext); 
 
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const mapViewRef = useRef(null);
   const [user, setUser] = useState({});
-  const [currentLocation, setCurrentLocation] = useState({});
   const [heading, setHeading] = useState(0);
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
+
+
 
   // AnimatedRegion for smooth location movement
   const animatedRegion = useRef(
