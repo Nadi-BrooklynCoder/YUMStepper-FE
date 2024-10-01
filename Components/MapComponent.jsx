@@ -22,9 +22,6 @@ const MapComponent = ({ route, searchQuery, selectedRestaurant, setSelectedResta
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
 
-
-
-  // AnimatedRegion for smooth location movement
   const animatedRegion = useRef(
     new AnimatedRegion({
       latitude: 40.743175215962026, //Initial latitude
@@ -62,7 +59,7 @@ const MapComponent = ({ route, searchQuery, selectedRestaurant, setSelectedResta
           animatedRegion.timing({
             latitude,
             longitude,
-            duration: 500, // smooth animation for 500ms
+            duration: 500, 
           }).start();
 
           // Update the current location and heading
