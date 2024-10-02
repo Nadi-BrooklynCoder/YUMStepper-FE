@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
-import MapComponent from '../Components/MapComponent';
-import SearchMap from '../Components/SearchMap';
+import MapComponent from '../Components/Map/MapComponent';
+import SearchMap from '../Components/Map/SearchMap';
 
-import MapSide from '../Components/MapSide';
+import MapSide from '../Components/Map/MapSide';
 import { AuthContext } from '../Context/AuthContext';
 
 const Map = ({ route }) => {

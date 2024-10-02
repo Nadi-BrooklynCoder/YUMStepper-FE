@@ -1,6 +1,10 @@
 import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDistance } from 'geolib';
+import polyline from '@mapbox/polyline';
+import { GOOGLE_API_KEY, API_BASE_URL } from '@env';
+import axios from "axios";
+
 
 export const AuthContext = createContext();
 
@@ -11,7 +15,38 @@ export const AuthProvider = ({ children }) => {
     const [userLocation, setUserLocation] = useState({});
     const [directions, setDirections] = useState([]);
     const [userSteps, setUserSteps] = useState(0)
+    const [directionSteps, setDirectionSteps] = useState(0)
     const [selectedRestaurant, setSelectedRestaurant] = useState({})
+
+    const handleGetDirections = async () => {
+        if (!userLocation.latitude || !userLocation.longitude) {
+            console.error("User location is not available");
+            return;
+        } 
+
+        try {
+            const response = await axios.get(
+                `${API_BASE_URL}/googlePlaces/direction?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destLat=${selectedRestaurant.latitude}&destLng=${selectedRestaurant.longitude}`
+            );
+            console.log(response.data)
+
+            if (response?.data?.routes.length > 0) {
+                const points = response.data.routes[0].overview_polyline.points;
+
+                // Decode the polyline using @mapbox/polyline
+                const decodedPoints = polyline.decode(points).map(([latitude, longitude]) => ({
+                    latitude,
+                    longitude,
+                }));
+
+                setDirections(decodedPoints);
+            } else {
+                console.error('No routes found');
+            }
+        } catch (error) {
+            console.error('Error fetching directions', error);
+        }
+    };
 
     const login = async (token, userId) => {
         setUserToken(token);
@@ -51,6 +86,7 @@ export const AuthProvider = ({ children }) => {
         if (!userLocation.latitude || !selectedRestaurant?.latitude) {
           return; 
         }
+        console.log()
       
         // Calculate the distance between current location and destination in meters
         const totalDistance = getDistance(
@@ -63,12 +99,13 @@ export const AuthProvider = ({ children }) => {
       
         // Calculate the number of steps
         const numberOfSteps = Math.round(totalDistance / averageStepLength);
-      
-        return numberOfSteps
+        
+        setDirectionSteps(numberOfSteps)
+        
     };
 
     return (
-        <AuthContext.Provider value={{ login, logout, isLoading, userToken, userId, userLocation, setUserLocation, directions, setDirections, setUserSteps, userSteps, calculateSteps, setSelectedRestaurant, selectedRestaurant }}>
+        <AuthContext.Provider value={{ login, logout, isLoading, userToken, userId, userLocation, setUserLocation, directions, setDirections, setUserSteps, userSteps, calculateSteps, setSelectedRestaurant, selectedRestaurant, handleGetDirections, directionSteps }}>
             {children}
         </AuthContext.Provider>
     );
