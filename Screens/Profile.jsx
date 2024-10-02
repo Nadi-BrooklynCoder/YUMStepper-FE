@@ -8,8 +8,8 @@ import { AuthContext } from '../Context/AuthContext';
 
 const Profile = () => {
     const { userToken, userId, logout } = useContext(AuthContext); // Get token, userId, and logout from AuthContext
-    const [user, setUser] = useState(null);
-    const [steps, setSteps] = useState(null);
+    const [user, setUser] = useState({});
+    const [steps, setSteps] = useState([]);
     const navigation = useNavigation();
 
     // Fetch user profile data
@@ -37,14 +37,14 @@ const Profile = () => {
                 });
                 setSteps(response.data);
             } catch (err) {
-                // if (err.response) {
-                //     console.error('Error response:', err.response.data);
-                //     console.error('Status:', err.response.status);
-                // } else if (err.request) {
-                //     console.error('No response received:', err.request);
-                // } else {
-                //     console.error('Error', err.message);
-                // }
+                if (err.response) {
+                    console.error('Error response:', err.response.data);
+                    console.error('Status:', err.response.status);
+                } else if (err.request) {
+                    console.error('No response received:', err.request);
+                } else {
+                    console.error('Error', err.message);
+                }
             }
         };
 
@@ -65,8 +65,10 @@ const Profile = () => {
         <View>
             <Text>Profile of: {user.username}</Text>
             <Text>Email: {user.email}</Text>
+
+            <Text>Steps: </Text>
             {steps.map((step, index) => (
-                <Text key={index}>Steps: {step.step_count}</Text>
+                <Text key={index}>{step.step_count}</Text>
             ))}
 
             <Pressable onPress={() => navigation.navigate('Map', { userId: userId, token: userToken })}>
