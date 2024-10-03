@@ -18,8 +18,6 @@ export const AuthProvider = ({ children }) => {
     const [selectedRestaurant, setSelectedRestaurant] = useState({});
     const [restaurants, setRestaurants] = useState([]);
     const [nearbyPlaces, setNearbyPlaces] = useState([]);
-
-    // New state to track if the user is near the selected restaurant
     const [isNearRestaurant, setIsNearRestaurant] = useState(false);
 
     const fetchNearByPlaces = async () => {
@@ -184,7 +182,7 @@ export const AuthProvider = ({ children }) => {
             directionSteps,
             restaurants,
             fetchNearByPlaces,
-            isNearRestaurant, // Expose the new state
+            isNearRestaurant, 
         }}>
             {children}
         </AuthContext.Provider>

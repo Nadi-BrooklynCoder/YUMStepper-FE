@@ -11,6 +11,7 @@ import Home from '../Screens/Home';
 import Profile from '../Screens/Profile';
 import SignUp from '../Screens/SignUp';
 import Map from '../Screens/Map';
+import Rewards from '../Screens/Rewards';
 
 const AppNav = () => {
     const Stack = createStackNavigator();
@@ -33,6 +34,7 @@ const AppNav = () => {
                 <Stack.Screen name="Map" component={Map} />
                 <Stack.Screen name="Login" component={Login} />
                 <Stack.Screen name="SignUp" component={SignUp} />
+                <Stack.Screen name="Rewards" component={Rewards} />
             </Stack.Navigator>
         </NavigationContainer>
     );
