@@ -1,70 +1,37 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import polyline from '@mapbox/polyline';
 import axios from 'axios';
-import { GOOGLE_API_KEY, API_BASE_URL } from '@env';
-import { AuthContext } from '../Context/AuthContext';
+import { GOOGLE_API_KEY } from '@env';
+import { AuthContext } from '../../Context/AuthContext';
 
 const { width: screenWidth } = Dimensions.get('window');
  
-const MapSide = () => {
-    const { userLocation, setDirections, selectedRestaurant, setSelectedRestaurant,calculateSteps } = useContext(AuthContext);
+const MapSide = ({ setSideModalVisible }) => {
+    
+    const { selectedRestaurant, setSelectedRestaurant, calculateSteps, handleGetDirections, directionSteps } = useContext(AuthContext);
     const [restaurantAddress, setRestaurantAddress] = useState('');
-    const [steps, setSteps] = useState('');
     const slideAnim = useRef(new Animated.Value(screenWidth)).current;
     const isAnimating = useRef(false);
-    const restaurant =  selectedRestaurant
 
     const closeModal = () => {
-        if (isAnimating.current) return;
-
-        isAnimating.current = true;
-
         Animated.timing(slideAnim, {
             toValue: screenWidth,
             duration: 300,
             useNativeDriver: false,
-        }).start(() => {
-            isAnimating.current = false;
-        });
-        setSelectedRestaurant({});
+        }).start();
+        setSideModalVisible(false);
     };
 
-    const handleGetDirections = async () => {
-        if (!userLocation.latitude || !userLocation.longitude) {
-            console.error("User location is not available");
-            return;
-        }
-
-        try {
-            const response = await axios.get(
-                `${API_BASE_URL}/googlePlaces/direction?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destLat=${restaurant.latitude}&destLng=${restaurant.longitude}`
-            );
-
-            if (response.data && response.data.routes && response.data.routes.length > 0) {
-                const points = response.data.routes[0].overview_polyline.points;
-
-                // Decode the polyline using @mapbox/polyline
-                const decodedPoints = polyline.decode(points).map(([latitude, longitude]) => ({
-                    latitude,
-                    longitude,
-                }));
-
-                setDirections(decodedPoints);
-                closeModal(); // Close the modal after getting directions
-            } else {
-                console.error('No routes found');
-            }
-        } catch (error) {
-            console.error('Error fetching directions', error);
-        }
+    const getNewDirections = async () => {
+        await handleGetDirections()
+        closeModal()
     };
 
     useEffect(() => {
         const getAddressFromLatLng = async () => {
             try {
                 const response = await axios.get(
-                    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${restaurant.latitude},${restaurant.longitude}&key=${GOOGLE_API_KEY}`
+                    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${selectedRestaurant.latitude},${selectedRestaurant.longitude}&key=${GOOGLE_API_KEY}`
                 );
 
                 if (response.data.results && response.data.results.length > 0) {
@@ -78,7 +45,7 @@ const MapSide = () => {
             }
         };
 
-        if (restaurant?.id) {
+        if (selectedRestaurant?.id) {
             // If a restaurant is selected, open the modal
             isAnimating.current = true;
             Animated.timing(slideAnim, {
@@ -89,6 +56,7 @@ const MapSide = () => {
                 isAnimating.current = false;
             });
 
+            calculateSteps()
             getAddressFromLatLng();
         } else{
             Animated.timing(slideAnim, {
@@ -97,15 +65,13 @@ const MapSide = () => {
                 useNativeDriver: false,
             }).start();
         }
-
-        setSteps(calculateSteps())
         
-    }, [restaurant]);
+    }, [selectedRestaurant]);
 
     return (
         <Animated.View style={[styles.sideModal, { transform: [{ translateX: slideAnim }] }]}>
             <View style={styles.modalContent}>
-                <Text style={styles.restaurantName}>{restaurant.name}</Text>
+                <Text style={styles.restaurantName}>{selectedRestaurant.name}</Text>
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Address:</Text>
@@ -114,24 +80,24 @@ const MapSide = () => {
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Cuisine Type:</Text>
-                    <Text style={styles.value}>{restaurant.cuisine_type || 'N/A'}</Text>
+                    <Text style={styles.value}>{selectedRestaurant.cuisine_type || 'N/A'}</Text>
                 </View>
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Approx Steps:</Text>
-                    <Text style={styles.value}>{steps || 'N/A'}</Text>
+                    <Text style={styles.value}>{directionSteps || 'N/A'}</Text>
                 </View>
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Description:</Text>
-                    <Text style={styles.value}>{restaurant.description || 'N/A'}</Text>
+                    <Text style={styles.value}>{selectedRestaurant.description || 'N/A'}</Text>
                 </View>
 
-                <TouchableOpacity onPress={handleGetDirections} style={styles.getDirectionsButton}>
+                <TouchableOpacity onPress={getNewDirections} style={styles.getDirectionsButton}>
                     <Text style={styles.getDirectionsButtonText}>Go to this Restaurant</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                <TouchableOpacity onPress={() => {closeModal(), setSelectedRestaurant({})}} style={styles.closeButton}>
                     <Text style={styles.closeButtonText}>Close</Text>
                 </TouchableOpacity>
             </View>

@@ -1,4 +1,4 @@
-import { View, Text, TextInput, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, ActivityIndicator, Keyboard } from 'react-native';
 import React, { useContext, useState } from 'react';
 import { Formik } from 'formik';
 import { useNavigation } from '@react-navigation/native';
@@ -21,11 +21,12 @@ const LoginComponent = () => {
 
     const handleLogin = async (values) => {
         const loginData = {
-            username: values.username,
+            username: values.username.trim(),
             password_hash: values.password,
         };
 
         setIsLoading(true); // Start loading
+        Keyboard.dismiss()
 
         try {
             const res = await axios.post(`${API}/users/login`, loginData);

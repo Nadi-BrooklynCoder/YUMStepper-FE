@@ -1,29 +1,19 @@
-import { View, TextInput, StyleSheet } from 'react-native'
-import React from 'react'
+import { TextInput, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
 
 const SearchMap = ({ setSearchQuery, searchQuery }) => {
-
-    const handleSearch = (query) => {
-        setSearchQuery(query);
-        // You can add logic here to handle the search query
-    };
 
     return (
         <TextInput
             style={styles.searchBar}
-            placeholder="Search location"
+            placeholder="Search for a restaurant"
             value={searchQuery}
-            onChangeText={handleSearch}
+            onChangeText={setSearchQuery}
         />
-    )
-
-    
-}
+    );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
     searchBar: {
         height: 40,
         borderColor: '#ccc',
@@ -34,4 +24,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SearchMap
+export default SearchMap;
