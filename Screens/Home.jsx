@@ -1,9 +1,12 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import React from 'react';
+import React, { useContext } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useFonts, Montserrat_300Light_Italic } from '@expo-google-fonts/montserrat';
+import { AuthContext } from '../Context/AuthContext';
 
 const Home = () => {
+
+  const { userToken } = useContext(AuthContext)
   
   const navigation = useNavigation();
 
@@ -21,12 +24,12 @@ const Home = () => {
 
       <Text style={styles.title}>YUM Stepper</Text>
 
-      <Pressable
-        style={styles.button}
-        onPress={() => navigation.navigate('Login')}
-      >
-        <Text style={styles.buttonText}>Login</Text>
-      </Pressable>
+      {!userToken && (
+        <Pressable style={styles.button} onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.buttonText}>Login</Text>
+        </Pressable>
+      )}
+      
     </View>
   );
 };

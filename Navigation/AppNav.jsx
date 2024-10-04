@@ -19,15 +19,15 @@ const Tab = createBottomTabNavigator();
 const BottomTabNav = () => {
     return (
         <Tab.Navigator>
-            <Tab.Screen name="Home" component={Home} />
             <Tab.Screen name="Profile" component={Profile} />
+            <Tab.Screen name="Home" component={Home} />
             <Tab.Screen name="Rewards" component={Rewards} />
         </Tab.Navigator>
     );
 };
 
 const AppNav = () => {
-    const { isLoading, isAuthenticated } = useContext(AuthContext);
+    const { isLoading, userToken } = useContext(AuthContext);
 
     // Show loading spinner while authentication is being verified
     if (isLoading) {
@@ -41,7 +41,7 @@ const AppNav = () => {
     return (
         <NavigationContainer>
             <Stack.Navigator>
-                {isAuthenticated ? (
+                {userToken ? (
                     // User is authenticated, show bottom tab navigator
                     <Stack.Screen
                         name="MainApp"
