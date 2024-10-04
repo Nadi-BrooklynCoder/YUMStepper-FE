@@ -17,6 +17,8 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
+      
+
       <Text style={styles.title}>YUM Stepper</Text>
 
       <Pressable

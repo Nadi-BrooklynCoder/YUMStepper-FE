@@ -16,7 +16,7 @@ const Profile = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await axios.get(`${API_BASE_URL}/users/${userId}`);
+                const response = await axios.get(`https://demo-day-be.onrender.com/users/${userId}`);
                 setUser(response.data);
             } catch (err) {
                  if (err.response) {
@@ -32,10 +32,10 @@ const Profile = () => {
 
         const fetchSteps = async () => {
             try {
-                const response = await axios.get(`${API_BASE_URL}/users/${userId}/steps`, {
+                const response = await axios.get(`https://demo-day-be.onrender.com/users/${userId}/steps`, {
                     headers: { 'Authorization': `${userToken}` } 
                 });
-                setSteps(response.data);
+                Array.isArray(response.data) && setSteps(response.data);
             } catch (err) {
                 if (err.response) {
                     console.error('Error response:', err.response.data);

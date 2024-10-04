@@ -9,8 +9,8 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
-    const [userToken, setUserToken] = useState(null);
-    const [userId, setUserId] = useState(null);
+    const [userToken, setUserToken] = useState(0);
+    const [userId, setUserId] = useState(0);
     const [userLocation, setUserLocation] = useState({});
     const [directions, setDirections] = useState([]);
     const [userSteps, setUserSteps] = useState(0);

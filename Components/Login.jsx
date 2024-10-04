@@ -31,12 +31,12 @@ const LoginComponent = () => {
         try {
             const res = await axios.post(`${API}/users/login`, loginData);
             const { token, user } = res.data;
-
+            console.log(res)
             // Call login function to store token in AsyncStorage and update state
             await login(token, user.id);
 
             // Navigate to the Profile screen
-            navigation.navigate('Profile', { userId: user.id, token: token });
+            navigation.navigate('Profile');
         } catch (err) {
             if (err.response) {
                 console.error('Error response:', err.response.data);
