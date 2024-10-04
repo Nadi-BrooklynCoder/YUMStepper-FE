@@ -15,7 +15,7 @@ const MapComponent = ({ setSideModalVisible }) => {
   const mapViewRef = useRef(null);
   const [heading, setHeading] = useState(0);
 
-  const animatedRegion = useRef(
+  const animatedRegion = useRef( // USER LOCATION
     new AnimatedRegion({
       latitude: 40.743175215962026, //Initial latitude
       longitude: -73.94192180308748, // Initial longitude

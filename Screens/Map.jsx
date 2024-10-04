@@ -68,7 +68,7 @@ const Map = ({ route }) => {
             disabled={!isNearRestaurant}
             onPress={() => {
               if (isNearRestaurant) {
-                navigation.navigate("CheckIn");
+                navigation.navigate("Rewards");
               }
             }}
           >
