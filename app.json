@@ -15,13 +15,23 @@
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.llamouth.YumStepperFE",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to track your movements.",
+        "NSLocationAlwaysUsageDescription": "We use your location to track your movements even when the app is in the background."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ],
+      "package": "com.llamouth.YumStepperFE"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,6 +39,11 @@
     "plugins": [
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2c51e589-b778-4f1d-bb3c-92962add2555"
+      }
+    }
   }
 }

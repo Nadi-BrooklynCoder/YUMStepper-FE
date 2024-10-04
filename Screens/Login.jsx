@@ -12,7 +12,8 @@ const Login = () => {
 };
 const styles = StyleSheet.create({
     header:{
-        backgroundColor:'#007BFF',
+        backgroundColor:'#F2632F',
+        height:'100%',
     },
 })
 
