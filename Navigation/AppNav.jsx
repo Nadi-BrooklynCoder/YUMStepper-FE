@@ -40,7 +40,16 @@ const AppNav = () => {
 
     return (
         <NavigationContainer>
-            <Stack.Navigator>
+            <Stack.Navigator 
+             screenOptions={{
+                headerStyle: {
+                  backgroundColor: '#9b1422',  // Set your custom color here
+                },
+                headerTintColor: 'antiquewhite',  // Optional: Set the color for the text and icons (white in this case)
+                headerTitleStyle: {
+                  fontWeight: 'bold',  // Optional: Style the header title text
+                },
+              }}>
                 {userToken ? (
                     // User is authenticated, show bottom tab navigator
                     <Stack.Screen

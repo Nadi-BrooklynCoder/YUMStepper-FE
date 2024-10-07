@@ -102,7 +102,7 @@ const LoginComponent = () => {
 const styles = StyleSheet.create({
     container: {
         padding: 20,
-        backgroundColor: '#F2632F',
+        backgroundColor: 'antiquewhite',
         height: 600,
     },
     title: {
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     button: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#F2632F',
         padding: 10,
         borderRadius: 5,
         alignItems: 'center',

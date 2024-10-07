@@ -51,6 +51,7 @@ const CheckinContainer = () => {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#F2632F',
     padding: 10,
   },
 });
