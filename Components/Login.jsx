@@ -145,4 +145,3 @@ const styles = StyleSheet.create({
 });
 
 export default LoginComponent;
-rnfe
