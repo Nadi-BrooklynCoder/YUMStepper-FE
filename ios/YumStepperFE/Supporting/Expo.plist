@@ -5,6 +5,7 @@
     <key>EXUpdatesCheckOnLaunch</key>
     <string>ALWAYS</string>
     <key>EXUpdatesEnabled</key>
+<<<<<<< HEAD
     <true/>
     <key>EXUpdatesLaunchWaitMs</key>
     <integer>0</integer>
@@ -12,5 +13,10 @@
     <string>51.0.0</string>
     <key>EXUpdatesURL</key>
     <string>https://exp.host/@llamouth/YumStepper-FE</string>
+=======
+    <false/>
+    <key>EXUpdatesLaunchWaitMs</key>
+    <integer>0</integer>
+>>>>>>> KhyBranch
   </dict>
 </plist>

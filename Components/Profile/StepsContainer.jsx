@@ -45,4 +45,8 @@ const StepsContainer = ({ displayType }) => {
   );
 };
 
+<<<<<<< HEAD
 export default StepsContainer;
+=======
+export default StepsContainer;
+>>>>>>> KhyBranch

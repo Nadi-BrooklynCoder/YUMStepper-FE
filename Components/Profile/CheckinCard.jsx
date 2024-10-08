@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
@@ -27,6 +28,16 @@ const CheckinCard = ({ checkin }) => {
     <View style={styles.card}>
       <Text style={styles.placeName}>Place: {restaurant.name}</Text>
       <Text style={styles.date}>Date: {checkin.date}</Text>
+=======
+import React from 'react';
+
+const CheckinCard = ({ checkin }) => {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.placeName}>Place: {checkin.place_name}</Text>
+      <Text style={styles.date}>Date: {checkin.date}</Text>
+      {checkin.notes ? <Text style={styles.notes}>Notes: {checkin.notes}</Text> : null}
+>>>>>>> KhyBranch
     </View>
   );
 };
@@ -52,4 +63,8 @@ const styles = StyleSheet.create({
   },
 });
 
+<<<<<<< HEAD
 export default CheckinCard;
+=======
+export default CheckinCard;
+>>>>>>> KhyBranch

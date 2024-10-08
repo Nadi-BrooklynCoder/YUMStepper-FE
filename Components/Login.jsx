@@ -31,12 +31,12 @@ const LoginComponent = () => {
         try {
             const res = await axios.post(`${API}/users/login`, loginData);
             const { token, user } = res.data;
-
+            console.log(res)
             // Call login function to store token in AsyncStorage and update state
             await login(token, user.id);
 
             // Navigate to the Profile screen
-            navigation.navigate('Profile', { userId: user.id, token: token });
+            navigation.navigate('Profile');
         } catch (err) {
             if (err.response) {
                 console.error('Error response:', err.response.data);
@@ -102,7 +102,7 @@ const LoginComponent = () => {
 const styles = StyleSheet.create({
     container: {
         padding: 20,
-        backgroundColor: '#F2632F',
+        backgroundColor: 'antiquewhite',
         height: 600,
     },
     title: {
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     button: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#F2632F',
         padding: 10,
         borderRadius: 5,
         alignItems: 'center',

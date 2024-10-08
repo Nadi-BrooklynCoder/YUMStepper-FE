@@ -31,4 +31,8 @@ const styles = StyleSheet.create({
   },
 });
 
+<<<<<<< HEAD
 export default StepsCard;
+=======
+export default StepsCard;
+>>>>>>> KhyBranch
