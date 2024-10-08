@@ -33,16 +33,12 @@
     ],
     "glog": [
 
-    ],
-    "hermes-engine": [
-
     ]
   },
   "source_files": "**/*.{cpp,h}",
   "exclude_files": [
     "jsi/jsilib-posix.cpp",
     "jsi/jsilib-windows.cpp",
-    "**/test/*",
-    "jsi/jsi.cpp"
+    "**/test/*"
   ]
 }

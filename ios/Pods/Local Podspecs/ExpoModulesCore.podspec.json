@@ -22,7 +22,7 @@
     "DEFINES_MODULE": "YES",
     "CLANG_CXX_LANGUAGE_STANDARD": "c++20",
     "SWIFT_COMPILATION_MODE": "wholemodule",
-    "HEADER_SEARCH_PATHS": "\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspector/jsinspector_modern.framework/Headers\" \"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/Yoga\"",
+    "HEADER_SEARCH_PATHS": "\"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/Yoga\"",
     "OTHER_SWIFT_FLAGS": "$(inherited) ",
     "OTHER_CPLUSPLUSFLAGS": "$(inherited) -DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -DFOLLY_HAVE_CLOCK_GETTIME=1 -Wno-comma -Wno-shorten-64-to-32"
   },
@@ -33,10 +33,7 @@
     ]
   },
   "dependencies": {
-    "hermes-engine": [
-
-    ],
-    "React-jsinspector": [
+    "React-jsc": [
 
     ],
     "React-Core": [
@@ -98,9 +95,12 @@
     ],
     "DoubleConversion": [
 
+    ],
+    "React-jsi": [
+
     ]
   },
-  "compiler_flags": "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -Wno-comma -Wno-shorten-64-to-32 -DREACT_NATIVE_TARGET_VERSION=74 -DUSE_HERMES",
+  "compiler_flags": "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -Wno-comma -Wno-shorten-64-to-32 -DREACT_NATIVE_TARGET_VERSION=74",
   "source_files": [
     "ios/**/*.{h,m,mm,swift,cpp}",
     "common/cpp/**/*.{h,cpp}"

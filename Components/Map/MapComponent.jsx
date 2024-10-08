@@ -93,31 +93,39 @@ const MapComponent = ({ setSideModalVisible }) => {
     // Cleanup function to remove the location watcher
     return () => {
       if (locationSubscription) {
-        locationSubscription.remove();
+        if (typeof locationSubscription.remove === "function") {
+          locationSubscription.remove(); // Remove for expo-location
+        } else if (typeof locationSubscription.destroy === "function") {
+          locationSubscription.destroy(); // Fallback if remove doesn't exist
+        }
       }
     };
   }, []);
 
-  useEffect(async () => {
-    if (mapViewRef.current) {
-      mapViewRef.current.animateToRegion(
-        {
-          latitude: userLocation?.latitude || 40.775818,
-          longitude: userLocation?.longitude || -73.972761,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        },
-        500
-      );
-    }
+  useEffect(() => {
+    const updateMapAndDirections = async () => {
+      if (mapViewRef.current) {
+        mapViewRef.current.animateToRegion(
+          {
+            latitude: userLocation?.latitude || 40.775818,
+            longitude: userLocation?.longitude || -73.972761,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          },
+          500
+        );
+      }
 
-    // Update Polyline as the user moves. Selected Restaurant will be an object with the current restaurant selected for travel. 
-    if(selectedRestaurant.id){
-      await handleGetDirections()
-    }
+      // Update Polyline as the user moves. Selected Restaurant will be an object with the current restaurant selected for travel. 
+      if (selectedRestaurant.id) {
+        await handleGetDirections();
+      }
 
-    // Optionally fetch nearby places
-    // fetchNearByPlaces();
+      // Optionally fetch nearby places
+      // fetchNearByPlaces();
+    };
+
+    updateMapAndDirections();
   }, [userLocation]);
 
   return (
