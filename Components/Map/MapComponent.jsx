@@ -98,7 +98,7 @@ const MapComponent = ({ setSideModalVisible }) => {
     };
   }, []);
 
-  useEffect(() => {
+  useEffect(async () => {
     if (mapViewRef.current) {
       mapViewRef.current.animateToRegion(
         {
@@ -111,9 +111,9 @@ const MapComponent = ({ setSideModalVisible }) => {
       );
     }
 
-    // Update Polyline as the user moves 
+    // Update Polyline as the user moves. Selected Restaurant will be an object with the current restaurant selected for travel. 
     if(selectedRestaurant.id){
-      handleGetDirections()
+      await handleGetDirections()
     }
 
     // Optionally fetch nearby places

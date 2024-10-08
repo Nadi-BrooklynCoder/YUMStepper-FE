@@ -45,7 +45,11 @@ const Map = ({ route }) => {
 
   return (
     <View style={{ flex: 1 }}>
+
+      {/* Map Search Bar */}
       <SearchMap setSearchQuery={handleSearch} searchQuery={searchQuery} />
+
+      {/* The actual map component */}
       <MapComponent
         route={route}
         searchQuery={searchQuery}
@@ -77,6 +81,7 @@ const Map = ({ route }) => {
         </View>
       )}
 
+      {/* Side Pop-up */}
       {sideModalVisible && (
         <MapSide setSideModalVisible={setSideModalVisible} />
       )}
@@ -105,6 +110,7 @@ const Map = ({ route }) => {
         </View>
       )}
 
+      {/* Stop Directions button */}
       {directions.length > 0 && (
         <View style={styles.stopButtonContainer}>
           <TouchableOpacity
