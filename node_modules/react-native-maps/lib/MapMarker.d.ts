@@ -4,6 +4,7 @@ import { MapManagerCommand, NativeComponent, ProviderContext, UIManagerCommand }
 import { MapMarkerNativeComponentType } from './MapMarkerNativeComponent';
 import { CalloutPressEvent, LatLng, MarkerDeselectEvent, MarkerDragEvent, MarkerDragStartEndEvent, MarkerPressEvent, MarkerSelectEvent, Point } from './sharedTypes';
 import { Modify } from './sharedTypesInternal';
+type AppleMarkerVisibility = 'hidden' | 'adaptive' | 'visible';
 export type MapMarkerProps = ViewProps & {
     /**
      * Sets the anchor point for the marker.
@@ -260,6 +261,25 @@ export type MapMarkerProps = ViewProps & {
      * @platform Android: Supported
      */
     zIndex?: number;
+    /**
+     * Visibility of the title text rendered beneath Marker balloon
+     * @platform iOS: Apple Maps only
+     * @platform Android: Not supported
+     */
+    titleVisibility?: AppleMarkerVisibility;
+    /**
+     * Visibility of the subtitle text rendered beneath Marker balloon
+     * @platform iOS: Apple Maps only
+     * @platform Android: Not supported
+     */
+    subtitleVisibility?: AppleMarkerVisibility;
+    /**
+     * Indicate type of default markers if it's true MKPinAnnotationView will be used and MKMarkerAnnotationView if it's false
+     * It doesn't change anything if you are using custom Markers
+     * @platform iOS: Apple Maps only
+     * @platform Android: Not supported
+     */
+    useLegacyPinView?: boolean;
 };
 type OmittedProps = Omit<MapMarkerProps, 'stopPropagation'>;
 export type NativeProps = Modify<OmittedProps, {

@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/AnimatedSensor/AnimatedSensorModule.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/reanimated/AnimatedSensor/AnimatedSensorModule.h

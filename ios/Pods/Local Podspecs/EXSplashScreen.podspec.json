@@ -30,7 +30,7 @@
     "React-RCTFabric": [
 
     ],
-    "React-Codegen": [
+    "ReactCodegen": [
 
     ],
     "RCTRequired": [
@@ -75,7 +75,7 @@
     "DoubleConversion": [
 
     ],
-    "React-jsi": [
+    "hermes-engine": [
 
     ]
   },

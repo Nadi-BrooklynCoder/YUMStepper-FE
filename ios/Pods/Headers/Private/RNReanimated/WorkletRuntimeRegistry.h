@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/ReanimatedRuntime/WorkletRuntimeRegistry.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.h

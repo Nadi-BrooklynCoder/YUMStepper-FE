@@ -228,8 +228,8 @@ void RNSScreenStackEventEmitter::onFinishTransitioning(OnFinishTransitioning $ev
 }
 
 
-void RNSSearchBarEventEmitter::onFocus(OnFocus $event) const {
-  dispatchEvent("focus", [](jsi::Runtime &runtime) {
+void RNSSearchBarEventEmitter::onSearchFocus(OnSearchFocus $event) const {
+  dispatchEvent("searchFocus", [](jsi::Runtime &runtime) {
     auto $payload = jsi::Object(runtime);
     
     return $payload;
@@ -237,8 +237,8 @@ void RNSSearchBarEventEmitter::onFocus(OnFocus $event) const {
 }
 
 
-void RNSSearchBarEventEmitter::onBlur(OnBlur $event) const {
-  dispatchEvent("blur", [](jsi::Runtime &runtime) {
+void RNSSearchBarEventEmitter::onSearchBlur(OnSearchBlur $event) const {
+  dispatchEvent("searchBlur", [](jsi::Runtime &runtime) {
     auto $payload = jsi::Object(runtime);
     
     return $payload;

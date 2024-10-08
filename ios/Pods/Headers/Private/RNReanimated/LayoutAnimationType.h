@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/LayoutAnimations/LayoutAnimationType.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/reanimated/LayoutAnimations/LayoutAnimationType.h

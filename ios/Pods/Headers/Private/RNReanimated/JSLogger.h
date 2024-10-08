@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/Tools/JSLogger.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/worklets/Tools/JSLogger.h

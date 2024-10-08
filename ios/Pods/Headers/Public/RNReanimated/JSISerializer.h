@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/Tools/JSISerializer.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/worklets/Tools/JSISerializer.h

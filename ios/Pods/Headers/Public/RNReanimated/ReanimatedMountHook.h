@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/Fabric/ReanimatedMountHook.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/reanimated/Fabric/ReanimatedMountHook.h

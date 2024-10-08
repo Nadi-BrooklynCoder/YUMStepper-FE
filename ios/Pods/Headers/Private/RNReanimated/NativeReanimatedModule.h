@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/NativeModules/NativeReanimatedModule.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/reanimated/NativeModules/NativeReanimatedModule.h

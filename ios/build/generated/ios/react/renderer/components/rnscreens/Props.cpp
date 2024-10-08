@@ -33,6 +33,7 @@ RNSModalScreenProps::RNSModalScreenProps(
     sheetExpandsWhenScrolledToEdge(convertRawProp(context, rawProps, "sheetExpandsWhenScrolledToEdge", sourceProps.sheetExpandsWhenScrolledToEdge, {false})),
     customAnimationOnSwipe(convertRawProp(context, rawProps, "customAnimationOnSwipe", sourceProps.customAnimationOnSwipe, {false})),
     fullScreenSwipeEnabled(convertRawProp(context, rawProps, "fullScreenSwipeEnabled", sourceProps.fullScreenSwipeEnabled, {false})),
+    fullScreenSwipeShadowEnabled(convertRawProp(context, rawProps, "fullScreenSwipeShadowEnabled", sourceProps.fullScreenSwipeShadowEnabled, {false})),
     homeIndicatorHidden(convertRawProp(context, rawProps, "homeIndicatorHidden", sourceProps.homeIndicatorHidden, {false})),
     preventNativeDismiss(convertRawProp(context, rawProps, "preventNativeDismiss", sourceProps.preventNativeDismiss, {false})),
     gestureEnabled(convertRawProp(context, rawProps, "gestureEnabled", sourceProps.gestureEnabled, {true})),
@@ -51,6 +52,7 @@ RNSModalScreenProps::RNSModalScreenProps(
     hideKeyboardOnSwipe(convertRawProp(context, rawProps, "hideKeyboardOnSwipe", sourceProps.hideKeyboardOnSwipe, {false})),
     activityState(convertRawProp(context, rawProps, "activityState", sourceProps.activityState, {-1.0})),
     navigationBarColor(convertRawProp(context, rawProps, "navigationBarColor", sourceProps.navigationBarColor, {})),
+    navigationBarTranslucent(convertRawProp(context, rawProps, "navigationBarTranslucent", sourceProps.navigationBarTranslucent, {false})),
     navigationBarHidden(convertRawProp(context, rawProps, "navigationBarHidden", sourceProps.navigationBarHidden, {false})),
     nativeBackButtonDismissalEnabled(convertRawProp(context, rawProps, "nativeBackButtonDismissalEnabled", sourceProps.nativeBackButtonDismissalEnabled, {false}))
       {}
@@ -73,6 +75,7 @@ RNSScreenProps::RNSScreenProps(
     sheetExpandsWhenScrolledToEdge(convertRawProp(context, rawProps, "sheetExpandsWhenScrolledToEdge", sourceProps.sheetExpandsWhenScrolledToEdge, {false})),
     customAnimationOnSwipe(convertRawProp(context, rawProps, "customAnimationOnSwipe", sourceProps.customAnimationOnSwipe, {false})),
     fullScreenSwipeEnabled(convertRawProp(context, rawProps, "fullScreenSwipeEnabled", sourceProps.fullScreenSwipeEnabled, {false})),
+    fullScreenSwipeShadowEnabled(convertRawProp(context, rawProps, "fullScreenSwipeShadowEnabled", sourceProps.fullScreenSwipeShadowEnabled, {false})),
     homeIndicatorHidden(convertRawProp(context, rawProps, "homeIndicatorHidden", sourceProps.homeIndicatorHidden, {false})),
     preventNativeDismiss(convertRawProp(context, rawProps, "preventNativeDismiss", sourceProps.preventNativeDismiss, {false})),
     gestureEnabled(convertRawProp(context, rawProps, "gestureEnabled", sourceProps.gestureEnabled, {true})),
@@ -91,6 +94,7 @@ RNSScreenProps::RNSScreenProps(
     hideKeyboardOnSwipe(convertRawProp(context, rawProps, "hideKeyboardOnSwipe", sourceProps.hideKeyboardOnSwipe, {false})),
     activityState(convertRawProp(context, rawProps, "activityState", sourceProps.activityState, {-1.0})),
     navigationBarColor(convertRawProp(context, rawProps, "navigationBarColor", sourceProps.navigationBarColor, {})),
+    navigationBarTranslucent(convertRawProp(context, rawProps, "navigationBarTranslucent", sourceProps.navigationBarTranslucent, {false})),
     navigationBarHidden(convertRawProp(context, rawProps, "navigationBarHidden", sourceProps.navigationBarHidden, {false})),
     nativeBackButtonDismissalEnabled(convertRawProp(context, rawProps, "nativeBackButtonDismissalEnabled", sourceProps.nativeBackButtonDismissalEnabled, {false}))
       {}
@@ -129,6 +133,7 @@ RNSScreenStackHeaderConfigProps::RNSScreenStackHeaderConfigProps(
     titleFontWeight(convertRawProp(context, rawProps, "titleFontWeight", sourceProps.titleFontWeight, {})),
     titleColor(convertRawProp(context, rawProps, "titleColor", sourceProps.titleColor, {})),
     disableBackButtonMenu(convertRawProp(context, rawProps, "disableBackButtonMenu", sourceProps.disableBackButtonMenu, {false})),
+    backButtonDisplayMode(convertRawProp(context, rawProps, "backButtonDisplayMode", sourceProps.backButtonDisplayMode, {RNSScreenStackHeaderConfigBackButtonDisplayMode::Default})),
     hideBackButton(convertRawProp(context, rawProps, "hideBackButton", sourceProps.hideBackButton, {false})),
     backButtonInCustomView(convertRawProp(context, rawProps, "backButtonInCustomView", sourceProps.backButtonInCustomView, {false})),
     topInsetEnabled(convertRawProp(context, rawProps, "topInsetEnabled", sourceProps.topInsetEnabled, {false}))

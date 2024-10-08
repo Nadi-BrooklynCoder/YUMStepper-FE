@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/Tools/ReanimatedJSIUtils.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/worklets/Tools/ReanimatedJSIUtils.h

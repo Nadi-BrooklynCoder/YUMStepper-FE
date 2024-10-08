@@ -14,7 +14,7 @@ namespace facebook::react {
 static jsi::Value __hostFunction_NativeReanimatedModuleCxxSpecJSI_installTurboModule(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   return static_cast<NativeReanimatedModuleCxxSpecJSI *>(&turboModule)->installTurboModule(
     rt,
-    args[0].asString(rt)
+    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt)
   );
 }
 

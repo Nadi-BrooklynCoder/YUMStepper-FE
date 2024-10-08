@@ -43,11 +43,14 @@ protected:
     : TurboModule(std::string{NativeAsyncStorageModuleCxxSpec::kModuleName}, jsInvoker),
       delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
 
+
 private:
   class Delegate : public NativeAsyncStorageModuleCxxSpecJSI {
   public:
     Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
-      NativeAsyncStorageModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {}
+      NativeAsyncStorageModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
+
+    }
 
     void multiGet(jsi::Runtime &rt, jsi::Array keys, jsi::Function callback) override {
       static_assert(
@@ -99,6 +102,7 @@ private:
     }
 
   private:
+    friend class NativeAsyncStorageModuleCxxSpec;
     T *instance_;
   };
 

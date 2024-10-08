@@ -20,6 +20,7 @@
 #import "react/bridging/Convert.h"
 #import "react/bridging/Dynamic.h"
 #import "react/bridging/Error.h"
+#import "react/bridging/EventEmitter.h"
 #import "react/bridging/Function.h"
 #import "react/bridging/LongLivedObject.h"
 #import "react/bridging/Number.h"

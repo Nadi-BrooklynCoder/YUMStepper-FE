@@ -14,6 +14,11 @@
 #ifndef __cplusplus
 #error This file must be compiled as Obj-C++. If you are importing it, you must change your file extension to .mm.
 #endif
+
+// Avoid multiple includes of FBReactNativeSpec symbols
+#ifndef FBReactNativeSpec_H
+#define FBReactNativeSpec_H
+
 #import <Foundation/Foundation.h>
 #import <RCTRequired/RCTRequired.h>
 #import <RCTTypeSafety/RCTConvertHelpers.h>
@@ -361,22 +366,6 @@ namespace facebook::react {
     NativeAnimatedTurboModuleSpecJSI(const ObjCTurboModule::InitParams &params);
   };
 } // namespace facebook::react
-
-@protocol NativeAnimationsDebugModuleSpec <RCTBridgeModule, RCTTurboModule>
-
-- (void)startRecordingFps;
-- (void)stopRecordingFps:(double)animationStopTimeMs;
-
-@end
-namespace facebook::react {
-  /**
-   * ObjC++ class for module 'NativeAnimationsDebugModule'
-   */
-  class JSI_EXPORT NativeAnimationsDebugModuleSpecJSI : public ObjCTurboModule {
-  public:
-    NativeAnimationsDebugModuleSpecJSI(const ObjCTurboModule::InitParams &params);
-  };
-} // namespace facebook::react
 namespace JS {
   namespace NativeAppState {
     struct Constants {
@@ -574,6 +563,7 @@ namespace facebook::react {
 - (void)setProfilingEnabled:(BOOL)isProfilingEnabled;
 - (void)toggleElementInspector;
 - (void)addMenuItem:(NSString *)title;
+- (void)openDebugger;
 - (void)addListener:(NSString *)eventName;
 - (void)removeListeners:(double)count;
 - (void)setIsShakeToShowDevMenuEnabled:(BOOL)enabled;
@@ -1234,7 +1224,7 @@ namespace JS {
           RCTRequired<double> major;
           RCTRequired<double> minor;
           RCTRequired<double> patch;
-          RCTRequired<std::optional<double>> prerelease;
+          RCTRequired<NSString *> prerelease;
         };
 
         /** Initialize with a set of values */
@@ -1333,8 +1323,6 @@ namespace JS {
       std::optional<double> applicationIconBadgeNumber() const;
       std::optional<bool> isSilent() const;
       NSString *soundName() const;
-      NSString *alertAction() const;
-      NSString *repeatInterval() const;
 
       Notification(NSDictionary *const v) : _v(v) {}
     private:
@@ -1909,7 +1897,6 @@ inline std::optional<double> JS::NativeAnimatedTurboModule::EventMapping::animat
   id const p = _v[@"animatedValueTag"];
   return RCTBridgingToOptionalDouble(p);
 }
-
 inline JS::NativeAppState::Constants::Builder::Builder(const Input i) : _factory(^{
   NSMutableDictionary *d = [NSMutableDictionary new];
   auto initialAppState = i.initialAppState.get();
@@ -2193,7 +2180,7 @@ inline JS::NativePlatformConstantsIOS::ConstantsReactNativeVersion::Builder::Bui
   auto patch = i.patch.get();
   d[@"patch"] = @(patch);
   auto prerelease = i.prerelease.get();
-  d[@"prerelease"] = prerelease.has_value() ? @((double)prerelease.value()) : nil;
+  d[@"prerelease"] = prerelease;
   return d;
 }) {}
 inline JS::NativePlatformConstantsIOS::ConstantsReactNativeVersion::Builder::Builder(ConstantsReactNativeVersion i) : _factory(^{
@@ -2282,16 +2269,6 @@ inline NSString *JS::NativePushNotificationManagerIOS::Notification::soundName()
   id const p = _v[@"soundName"];
   return RCTBridgingToOptionalString(p);
 }
-inline NSString *JS::NativePushNotificationManagerIOS::Notification::alertAction() const
-{
-  id const p = _v[@"alertAction"];
-  return RCTBridgingToOptionalString(p);
-}
-inline NSString *JS::NativePushNotificationManagerIOS::Notification::repeatInterval() const
-{
-  id const p = _v[@"repeatInterval"];
-  return RCTBridgingToOptionalString(p);
-}
 
 
 inline JS::NativeSettingsManager::Constants::Builder::Builder(const Input i) : _factory(^{
@@ -2341,3 +2318,4 @@ inline id<NSObject> _Nullable JS::NativeWebSocketModule::SpecConnectOptions::hea
   id const p = _v[@"headers"];
   return p;
 }
+#endif // FBReactNativeSpec_H

@@ -1,1 +1,1 @@
-../../../../../node_modules/react-native-reanimated/Common/cpp/Tools/JSScheduler.h
+../../../../../node_modules/react-native-reanimated/Common/cpp/worklets/Tools/JSScheduler.h

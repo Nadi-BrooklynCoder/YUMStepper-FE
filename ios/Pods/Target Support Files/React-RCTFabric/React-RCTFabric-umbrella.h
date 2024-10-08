@@ -61,6 +61,7 @@
 #import "RCTTouchableComponentViewProtocol.h"
 #import "RCTFabricSurface.h"
 #import "PlatformRunLoopObserver.h"
+#import "RCTColorSpaceUtils.h"
 #import "RCTGenericDelegateSplitter.h"
 #import "RCTIdentifierPool.h"
 #import "RCTReactTaggedView.h"

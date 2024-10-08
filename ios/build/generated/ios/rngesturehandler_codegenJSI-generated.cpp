@@ -14,8 +14,8 @@ namespace facebook::react {
 static jsi::Value __hostFunction_NativeRNGestureHandlerModuleCxxSpecJSI_handleSetJSResponder(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeRNGestureHandlerModuleCxxSpecJSI *>(&turboModule)->handleSetJSResponder(
     rt,
-    args[0].asNumber(),
-    args[1].asBool()
+    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber(),
+    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asBool()
   );
   return jsi::Value::undefined();
 }
@@ -28,33 +28,33 @@ static jsi::Value __hostFunction_NativeRNGestureHandlerModuleCxxSpecJSI_handleCl
 static jsi::Value __hostFunction_NativeRNGestureHandlerModuleCxxSpecJSI_createGestureHandler(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeRNGestureHandlerModuleCxxSpecJSI *>(&turboModule)->createGestureHandler(
     rt,
-    args[0].asString(rt),
-    args[1].asNumber(),
-    args[2].asObject(rt)
+    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
+    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asNumber(),
+    count <= 2 ? throw jsi::JSError(rt, "Expected argument in position 2 to be passed") : args[2].asObject(rt)
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeRNGestureHandlerModuleCxxSpecJSI_attachGestureHandler(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeRNGestureHandlerModuleCxxSpecJSI *>(&turboModule)->attachGestureHandler(
     rt,
-    args[0].asNumber(),
-    args[1].asNumber(),
-    args[2].asNumber()
+    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber(),
+    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asNumber(),
+    count <= 2 ? throw jsi::JSError(rt, "Expected argument in position 2 to be passed") : args[2].asNumber()
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeRNGestureHandlerModuleCxxSpecJSI_updateGestureHandler(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeRNGestureHandlerModuleCxxSpecJSI *>(&turboModule)->updateGestureHandler(
     rt,
-    args[0].asNumber(),
-    args[1].asObject(rt)
+    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber(),
+    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt)
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeRNGestureHandlerModuleCxxSpecJSI_dropGestureHandler(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeRNGestureHandlerModuleCxxSpecJSI *>(&turboModule)->dropGestureHandler(
     rt,
-    args[0].asNumber()
+    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber()
   );
   return jsi::Value::undefined();
 }

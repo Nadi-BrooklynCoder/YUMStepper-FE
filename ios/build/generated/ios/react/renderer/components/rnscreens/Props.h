@@ -191,6 +191,7 @@ class RNSModalScreenProps final : public ViewProps {
   bool sheetExpandsWhenScrolledToEdge{false};
   bool customAnimationOnSwipe{false};
   bool fullScreenSwipeEnabled{false};
+  bool fullScreenSwipeShadowEnabled{false};
   bool homeIndicatorHidden{false};
   bool preventNativeDismiss{false};
   bool gestureEnabled{true};
@@ -209,6 +210,7 @@ class RNSModalScreenProps final : public ViewProps {
   bool hideKeyboardOnSwipe{false};
   Float activityState{-1.0};
   SharedColor navigationBarColor{};
+  bool navigationBarTranslucent{false};
   bool navigationBarHidden{false};
   bool nativeBackButtonDismissalEnabled{false};
 };
@@ -388,6 +390,7 @@ class RNSScreenProps final : public ViewProps {
   bool sheetExpandsWhenScrolledToEdge{false};
   bool customAnimationOnSwipe{false};
   bool fullScreenSwipeEnabled{false};
+  bool fullScreenSwipeShadowEnabled{false};
   bool homeIndicatorHidden{false};
   bool preventNativeDismiss{false};
   bool gestureEnabled{true};
@@ -406,6 +409,7 @@ class RNSScreenProps final : public ViewProps {
   bool hideKeyboardOnSwipe{false};
   Float activityState{-1.0};
   SharedColor navigationBarColor{};
+  bool navigationBarTranslucent{false};
   bool navigationBarHidden{false};
   bool nativeBackButtonDismissalEnabled{false};
 };
@@ -433,6 +437,23 @@ static inline std::string toString(const RNSScreenStackHeaderConfigDirection &va
   switch (value) {
     case RNSScreenStackHeaderConfigDirection::Rtl: return "rtl";
     case RNSScreenStackHeaderConfigDirection::Ltr: return "ltr";
+  }
+}
+enum class RNSScreenStackHeaderConfigBackButtonDisplayMode { Minimal, Default, Generic };
+
+static inline void fromRawValue(const PropsParserContext& context, const RawValue &value, RNSScreenStackHeaderConfigBackButtonDisplayMode &result) {
+  auto string = (std::string)value;
+  if (string == "minimal") { result = RNSScreenStackHeaderConfigBackButtonDisplayMode::Minimal; return; }
+  if (string == "default") { result = RNSScreenStackHeaderConfigBackButtonDisplayMode::Default; return; }
+  if (string == "generic") { result = RNSScreenStackHeaderConfigBackButtonDisplayMode::Generic; return; }
+  abort();
+}
+
+static inline std::string toString(const RNSScreenStackHeaderConfigBackButtonDisplayMode &value) {
+  switch (value) {
+    case RNSScreenStackHeaderConfigBackButtonDisplayMode::Minimal: return "minimal";
+    case RNSScreenStackHeaderConfigBackButtonDisplayMode::Default: return "default";
+    case RNSScreenStackHeaderConfigBackButtonDisplayMode::Generic: return "generic";
   }
 }
 
@@ -466,6 +487,7 @@ class RNSScreenStackHeaderConfigProps final : public ViewProps {
   std::string titleFontWeight{};
   SharedColor titleColor{};
   bool disableBackButtonMenu{false};
+  RNSScreenStackHeaderConfigBackButtonDisplayMode backButtonDisplayMode{RNSScreenStackHeaderConfigBackButtonDisplayMode::Default};
   bool hideBackButton{false};
   bool backButtonInCustomView{false};
   bool topInsetEnabled{false};

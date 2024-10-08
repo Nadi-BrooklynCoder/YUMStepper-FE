@@ -45,11 +45,14 @@ protected:
     : TurboModule(std::string{NativeRNGestureHandlerModuleCxxSpec::kModuleName}, jsInvoker),
       delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
 
+
 private:
   class Delegate : public NativeRNGestureHandlerModuleCxxSpecJSI {
   public:
     Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
-      NativeRNGestureHandlerModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {}
+      NativeRNGestureHandlerModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
+
+    }
 
     void handleSetJSResponder(jsi::Runtime &rt, double tag, bool blockNativeResponder) override {
       static_assert(
@@ -117,6 +120,7 @@ private:
     }
 
   private:
+    friend class NativeRNGestureHandlerModuleCxxSpec;
     T *instance_;
   };
 

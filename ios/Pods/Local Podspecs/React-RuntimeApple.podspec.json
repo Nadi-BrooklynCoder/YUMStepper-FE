@@ -1,6 +1,6 @@
 {
   "name": "React-RuntimeApple",
-  "version": "0.74.5",
+  "version": "0.75.4",
   "summary": "The React Native Runtime.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.74.5"
+    "tag": "v0.75.4"
   },
   "source_files": "ReactCommon/*.{mm,h}",
   "header_dir": "ReactCommon",
@@ -40,6 +40,9 @@
 
     ],
     "React-runtimeexecutor": [
+
+    ],
+    "React-runtimescheduler": [
 
     ],
     "React-utils": [
@@ -72,9 +75,12 @@
     "React-jsinspector": [
 
     ],
-    "React-jsc": [
+    "hermes-engine": [
+
+    ],
+    "React-RuntimeHermes": [
 
     ]
   },
-  "exclude_files": "ReactCommon/RCTHermesInstance.{mm,h}"
+  "exclude_files": "ReactCommon/RCTJscInstance.{mm,h}"
 }
