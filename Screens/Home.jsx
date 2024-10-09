@@ -1,23 +1,12 @@
-<<<<<<< HEAD
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-=======
 import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
->>>>>>> KhyBranch
 import React, { useContext } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useFonts, Montserrat_300Light_Italic } from '@expo-google-fonts/montserrat';
 import { AuthContext } from '../Context/AuthContext';
-<<<<<<< HEAD
-
-const Home = () => {
-  
-  const { userToken } = useContext(AuthContext)
-=======
 import AnimatedGif from '../Components/AnimatedGif'; // Importing AnimatedGif component
 
 const Home = () => {
   const { userToken } = useContext(AuthContext);
->>>>>>> KhyBranch
   const navigation = useNavigation();
 
   let [fontsLoaded] = useFonts({
@@ -36,14 +25,6 @@ const Home = () => {
         style={styles.imageOne} // Add style for dimensions and appearance
       />
 
-<<<<<<< HEAD
-      {!userToken && ( 
-        <Pressable style={styles.button} onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.buttonText}>Login</Text>
-        </Pressable>
-      )}
-     
-=======
       <Image 
         source={require('../assets/animatedLogo/slogan.png')}
         style={styles.imageTwo} 
@@ -61,7 +42,6 @@ const Home = () => {
           <Text style={styles.buttonText}>Start Stepping Here!</Text>
         </Pressable>
       )}
->>>>>>> KhyBranch
     </View>
   );
 };
