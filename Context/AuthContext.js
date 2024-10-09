@@ -133,6 +133,16 @@ export const AuthProvider = ({ children }) => {
         setDirectionSteps(numberOfSteps);
     };
 
+    const stepsToPoints = (steps)  =>{
+        if (steps <= 1000) {
+            return Math.floor(steps / 100);
+        } else if (steps <= 5000) {
+            return Math.floor(steps / 80);
+        } else {
+            return Math.floor(steps / 50);
+        }
+    }
+
     // useEffect to update isNearRestaurant when locations change
     useEffect(() => {
         const checkProximity = () => {
@@ -183,6 +193,7 @@ export const AuthProvider = ({ children }) => {
             restaurants,
             fetchNearByPlaces,
             isNearRestaurant, 
+            stepsToPoints
         }}>
             {children}
         </AuthContext.Provider>

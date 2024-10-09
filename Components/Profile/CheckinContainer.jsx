@@ -56,4 +56,8 @@ const styles = StyleSheet.create({
   },
 });
 
+<<<<<<< HEAD
 export default CheckinContainer;
+=======
+export default CheckinContainer;
+>>>>>>> KhyBranch

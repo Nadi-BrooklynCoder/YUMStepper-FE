@@ -38,8 +38,21 @@ target 'YumStepperFE' do
   use_expo_modules!
   config = use_native_modules!
 
+<<<<<<< HEAD
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+=======
+  # Add the following lines for Google Maps integration
+  rn_maps_path = '../node_modules/react-native-maps'
+
+  pod 'react-native-maps', :path => rn_maps_path, :subspecs => [
+    'GoogleMaps'
+  ]
+  pod 'GoogleMaps'
+  pod 'Google-Maps-iOS-Utils' # Uncomment this line if you use Google Maps utilities
+
+  use_frameworks! :linkage => :static
+>>>>>>> KhyBranch
 
   use_react_native!(
     :path => config[:reactNativePath],
