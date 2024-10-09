@@ -1,11 +1,12 @@
 {
   "expo": {
     "name": "YumStepper-FE",
-    "slug": "YumStepper-FE",
+    "slug": "YumStepper-FE-New",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "owner": "nad1191",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -16,7 +17,7 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.llamouth.YumStepperFE",
+      "bundleIdentifier": "com.nad1191.YumStepperFENew",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We use your location to track your movements.",
         "NSLocationAlwaysUsageDescription": "We use your location to track your movements even when the app is in the background."
@@ -31,7 +32,7 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION"
       ],
-      "package": "com.llamouth.YumStepperFE"
+      "package": "com.nad1191.YumStepperFENew"
     },
     "web": {
       "favicon": "./assets/favicon.png"

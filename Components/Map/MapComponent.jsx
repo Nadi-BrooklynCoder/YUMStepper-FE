@@ -15,7 +15,7 @@ const MapComponent = ({ setSideModalVisible }) => {
   const mapViewRef = useRef(null);
   const [heading, setHeading] = useState(0);
 
-  const animatedRegion = useRef(
+  const animatedRegion = useRef( // USER LOCATION
     new AnimatedRegion({
       latitude: 40.743175215962026, //Initial latitude
       longitude: -73.94192180308748, // Initial longitude
@@ -93,31 +93,39 @@ const MapComponent = ({ setSideModalVisible }) => {
     // Cleanup function to remove the location watcher
     return () => {
       if (locationSubscription) {
-        locationSubscription.remove();
+        if (typeof locationSubscription.remove === "function") {
+          locationSubscription.remove(); // Remove for expo-location
+        } else if (typeof locationSubscription.destroy === "function") {
+          locationSubscription.destroy(); // Fallback if remove doesn't exist
+        }
       }
     };
   }, []);
 
   useEffect(() => {
-    if (mapViewRef.current) {
-      mapViewRef.current.animateToRegion(
-        {
-          latitude: userLocation?.latitude || 40.775818,
-          longitude: userLocation?.longitude || -73.972761,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        },
-        500
-      );
-    }
+    const updateMapAndDirections = async () => {
+      if (mapViewRef.current) {
+        mapViewRef.current.animateToRegion(
+          {
+            latitude: userLocation?.latitude || 40.775818,
+            longitude: userLocation?.longitude || -73.972761,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          },
+          500
+        );
+      }
 
-    // Update Polyline as the user moves 
-    if(selectedRestaurant.id){
-      handleGetDirections()
-    }
+      // Update Polyline as the user moves. Selected Restaurant will be an object with the current restaurant selected for travel. 
+      if (selectedRestaurant.id) {
+        await handleGetDirections();
+      }
 
-    // Optionally fetch nearby places
-    // fetchNearByPlaces();
+      // Optionally fetch nearby places
+      // fetchNearByPlaces();
+    };
+
+    updateMapAndDirections();
   }, [userLocation]);
 
   return (
