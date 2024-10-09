@@ -1,8 +1,0 @@
-{
-<<<<<<< HEAD
-  "expo.jsEngine": "jsc",
-=======
-  "expo.jsEngine": "hermes",
->>>>>>> KhyBranch
-  "EX_DEV_CLIENT_NETWORK_INSPECTOR": "true"
-}

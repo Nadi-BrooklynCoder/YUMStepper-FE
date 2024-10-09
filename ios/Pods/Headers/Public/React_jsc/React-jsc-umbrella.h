@@ -1,1 +1,0 @@
-../../../Target Support Files/React-jsc/React-jsc-umbrella.h
