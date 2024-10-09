@@ -5,10 +5,7 @@
     <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="android:statusBarColor">#ffffff</item>
-<<<<<<< HEAD
     <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-=======
->>>>>>> KhyBranch
   </style>
   <style name="ResetEditText" parent="@android:style/Widget.EditText">
     <item name="android:padding">0dp</item>

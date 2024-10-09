@@ -1,12 +1,4 @@
 {
-<<<<<<< HEAD
   "expo.jsEngine": "hermes",
-=======
-<<<<<<< HEAD
-  "expo.jsEngine": "jsc",
-=======
-  "expo.jsEngine": "hermes",
->>>>>>> KhyBranch
->>>>>>> origin/test
   "EX_DEV_CLIENT_NETWORK_INSPECTOR": "true"
 }

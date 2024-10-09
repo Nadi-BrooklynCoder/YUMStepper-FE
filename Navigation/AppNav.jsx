@@ -14,6 +14,7 @@ import SignUp from '../Screens/SignUp';
 import Rewards from '../Screens/Rewards';
 import Map from '../Screens/Map';
 
+// Only declare Stack and Tab once
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -31,22 +32,8 @@ const BottomTabNav = () => {
             }}
         >
             <Tab.Screen name="Profile" component={Profile} />
-            {/* <Tab.Screen name="Home" component={Home} /> */}
             <Tab.Screen name="Rewards" component={Rewards} />
             <Tab.Screen name="Map" component={Map} />
-        </Tab.Navigator>
-    );
-};
-
-const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
-
-const BottomTabNav = () => {
-    return (
-        <Tab.Navigator>
-            <Tab.Screen name="Profile" component={Profile} />
-            <Tab.Screen name="Home" component={Home} />
-            <Tab.Screen name="Rewards" component={Rewards} />
         </Tab.Navigator>
     );
 };
@@ -65,29 +52,17 @@ const AppNav = () => {
 
     return (
         <NavigationContainer>
-            <Stack.Navigator 
-<<<<<<< HEAD
+            <Stack.Navigator
                 screenOptions={{
                     headerStyle: {
                         backgroundColor: '#9b1422',  // Set your custom color here
                     },
                     headerTintColor: 'antiquewhite',  // Set the color for the text and icons
                     headerTitleStyle: {
-                        fontWeight: 'bold',  // Optional: Style the header title text
+                        fontWeight: 'bold',  // Style the header title text
                     },
                 }}
             >
-=======
-             screenOptions={{
-                headerStyle: {
-                  backgroundColor: '#9b1422',  // Set your custom color here
-                },
-                headerTintColor: 'antiquewhite',  // Optional: Set the color for the text and icons (white in this case)
-                headerTitleStyle: {
-                  fontWeight: 'bold',  // Optional: Style the header title text
-                },
-              }}>
->>>>>>> KhyBranch
                 {userToken ? (
                     // User is authenticated, show bottom tab navigator
                     <Stack.Screen
@@ -102,10 +77,6 @@ const AppNav = () => {
                         <Stack.Screen name="Login" component={Login} />
                         <Stack.Screen name="SignUp" component={SignUp} />
                         <Stack.Screen name="Profile" component={Profile} />
-<<<<<<< HEAD
-=======
-
->>>>>>> KhyBranch
                     </>
                 )}
             </Stack.Navigator>

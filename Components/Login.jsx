@@ -6,6 +6,7 @@ import * as Yup from 'yup';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { AuthContext } from '../Context/AuthContext';
+import { useFonts } from 'expo-font';
 
 const LoginComponent = () => {
     const { login } = useContext(AuthContext);
@@ -13,6 +14,15 @@ const LoginComponent = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const API = API_BASE_URL;
+
+    const [fontsLoaded] = useFonts({
+        Itim: require('../assets/fonts/Itim-Regular.ttf'),
+        'Open-Sans': require('../assets/fonts/OpenSans-Regular.ttf'),
+    });
+
+    if (!fontsLoaded) {
+        return <AppLoading />;
+    }
 
     const validationSchema = Yup.object({
         username: Yup.string().required('Username is required'),
@@ -110,7 +120,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
-        color: '#faebd7',
+        color: '#A41623',
     },
     input: {
         borderWidth: 2,

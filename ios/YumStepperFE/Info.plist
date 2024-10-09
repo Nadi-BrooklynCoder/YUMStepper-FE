@@ -52,10 +52,6 @@
     <string>We use your location to track your movements even when the app is in the background.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>We use your location to track your movements.</string>
-    <key>UIBackgroundModes</key>
-    <array>
-      <string>fetch</string>
-    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
