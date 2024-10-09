@@ -1,11 +1,12 @@
 {
   "expo": {
     "name": "YumStepper-FE",
-    "slug": "YumStepper-FE",
+    "slug": "YumStepper-FE-New",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "owner": "nad1191",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
