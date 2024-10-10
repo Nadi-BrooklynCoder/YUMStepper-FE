@@ -252,7 +252,7 @@ const inspect = (function () {
                 return '  ' + line;
               })
               .join('\n')
-              .slice(2);
+              .substr(2);
           } else {
             str =
               '\n' +
@@ -274,7 +274,7 @@ const inspect = (function () {
       }
       name = JSON.stringify('' + key);
       if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
-        name = name.slice(1, name.length - 1);
+        name = name.substr(1, name.length - 2);
         name = ctx.stylize(name, 'name');
       } else {
         name = name
@@ -554,7 +554,6 @@ if (global.nativeLoggingHook) {
   }
 
   global.console = {
-    ...(originalConsole ?? {}),
     error: getNativeLogFunction(LOG_LEVELS.error),
     info: getNativeLogFunction(LOG_LEVELS.info),
     log: getNativeLogFunction(LOG_LEVELS.info),
@@ -579,10 +578,7 @@ if (global.nativeLoggingHook) {
   if (__DEV__ && originalConsole) {
     Object.keys(console).forEach(methodName => {
       const reactNativeMethod = console[methodName];
-      if (
-        originalConsole[methodName] &&
-        reactNativeMethod !== originalConsole[methodName]
-      ) {
+      if (originalConsole[methodName]) {
         console[methodName] = function () {
           originalConsole[methodName](...arguments);
           reactNativeMethod.apply(console, arguments);

@@ -12,8 +12,8 @@
 
 import type {SchemaType} from '../../../CodegenSchema';
 
-const {capitalize} = require('../../Utils');
 const PojoCollector = require('./PojoCollector');
+const {capitalize} = require('../../Utils');
 const {serializePojo} = require('./serializePojo');
 
 type FilesOutput = Map<string, string>;

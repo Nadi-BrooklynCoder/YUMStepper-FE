@@ -26,7 +26,6 @@ let hmrUnavailableReason: string | null = null;
 let currentCompileErrorMessage: string | null = null;
 let didConnect: boolean = false;
 let pendingLogs: Array<[LogLevel, $ReadOnlyArray<mixed>]> = [];
-let pendingFuseboxConsoleNotification = false;
 
 type LogLevel =
   | 'trace'
@@ -52,7 +51,6 @@ export type HMRClientNativeInterface = {|
     isEnabled: boolean,
     scheme?: string,
   ): void,
-  unstable_notifyFuseboxConsoleEnabled(): void,
 |};
 
 /**
@@ -70,7 +68,7 @@ const HMRClient: HMRClientNativeInterface = {
     }
 
     invariant(hmrClient, 'Expected HMRClient.setup() call at startup.');
-    const DevLoadingView = require('./DevLoadingView');
+    const LoadingView = require('./LoadingView');
 
     // We use this for internal logging only.
     // It doesn't affect the logic.
@@ -81,13 +79,13 @@ const HMRClient: HMRClientNativeInterface = {
     const hasUpdates = hmrClient.hasPendingUpdates();
 
     if (hasUpdates) {
-      DevLoadingView.showMessage('Refreshing...', 'refresh');
+      LoadingView.showMessage('Refreshing...', 'refresh');
     }
     try {
       hmrClient.enable();
     } finally {
       if (hasUpdates) {
-        DevLoadingView.hide();
+        LoadingView.hide();
       }
     }
 
@@ -142,29 +140,6 @@ const HMRClient: HMRClientNativeInterface = {
     }
   },
 
-  unstable_notifyFuseboxConsoleEnabled() {
-    if (!hmrClient) {
-      pendingFuseboxConsoleNotification = true;
-      return;
-    }
-    hmrClient.send(
-      JSON.stringify({
-        type: 'log',
-        level: 'info',
-        data: [
-          '\n' +
-            '\x1b[7m' +
-            ' \x1b[1mJavaScript logs have moved!\x1b[22m They will now appear in the debugger console. ' +
-            'Tip: Type \x1b[1mj\x1b[22m in the terminal to open the debugger (requires Google Chrome ' +
-            'or Microsoft Edge).' +
-            '\x1b[27m' +
-            '\n',
-        ],
-      }),
-    );
-    pendingFuseboxConsoleNotification = false;
-  },
-
   // Called once by the bridge on startup, even if Fast Refresh is off.
   // It creates the HMR client but doesn't actually set up the socket yet.
   setup(
@@ -181,7 +156,7 @@ const HMRClient: HMRClientNativeInterface = {
     invariant(!hmrClient, 'Cannot initialize hmrClient twice');
 
     // Moving to top gives errors due to NativeModules not being initialized
-    const DevLoadingView = require('./DevLoadingView');
+    const LoadingView = require('./LoadingView');
 
     const serverHost = port !== null && port !== '' ? `${host}:${port}` : host;
 
@@ -230,7 +205,7 @@ Error: ${e.message}`;
       didConnect = true;
 
       if (client.isEnabled() && !isInitialUpdate) {
-        DevLoadingView.showMessage('Refreshing...', 'refresh');
+        LoadingView.showMessage('Refreshing...', 'refresh');
       }
     });
 
@@ -242,11 +217,11 @@ Error: ${e.message}`;
     });
 
     client.on('update-done', () => {
-      DevLoadingView.hide();
+      LoadingView.hide();
     });
 
     client.on('error', data => {
-      DevLoadingView.hide();
+      LoadingView.hide();
 
       if (data.type === 'GraphNotFoundError') {
         client.close();
@@ -267,7 +242,7 @@ Error: ${e.message}`;
     });
 
     client.on('close', closeEvent => {
-      DevLoadingView.hide();
+      LoadingView.hide();
 
       // https://www.rfc-editor.org/rfc/rfc6455.html#section-7.4.1
       // https://www.rfc-editor.org/rfc/rfc6455.html#section-7.1.5
@@ -341,9 +316,6 @@ function flushEarlyLogs(client: MetroHMRClient) {
     pendingLogs.forEach(([level, data]) => {
       HMRClient.log(level, data);
     });
-    if (pendingFuseboxConsoleNotification) {
-      HMRClient.unstable_notifyFuseboxConsoleEnabled();
-    }
   } finally {
     pendingLogs.length = 0;
   }

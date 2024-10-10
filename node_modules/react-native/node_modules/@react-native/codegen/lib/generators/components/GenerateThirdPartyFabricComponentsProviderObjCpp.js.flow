@@ -12,10 +12,6 @@
 
 import type {SchemaType} from '../../CodegenSchema';
 
-const {
-  generateSupportedApplePlatformsMacro,
-} = require('./ComponentsProviderUtils');
-
 // File path -> contents
 type FilesOutput = Map<string, string>;
 
@@ -38,11 +34,7 @@ const FileTemplate = ({lookupMap}: {lookupMap: string}) => `
 
 Class<RCTComponentViewProtocol> RCTThirdPartyFabricComponentsProvider(const char *name) {
   static std::unordered_map<std::string, Class (*)(void)> sFabricComponentsClassMap = {
-    #if RCT_NEW_ARCH_ENABLED
-    #ifndef RCT_DYNAMIC_FRAMEWORKS
 ${lookupMap}
-    #endif
-    #endif
   };
 
   auto p = sFabricComponentsClassMap.find(name);
@@ -64,19 +56,13 @@ const LookupMapTemplate = ({
     {"${className}", ${className}Cls}, // ${libraryName}`;
 
 module.exports = {
-  generate(
-    schemas: {[string]: SchemaType},
-    supportedApplePlatforms?: {[string]: {[string]: boolean}},
-  ): FilesOutput {
+  generate(schemas: {[string]: SchemaType}): FilesOutput {
     const fileName = 'RCTThirdPartyFabricComponentsProvider.mm';
 
     const lookupMap = Object.keys(schemas)
       .map(libraryName => {
         const schema = schemas[libraryName];
-        const librarySupportedApplePlatforms =
-          supportedApplePlatforms?.[libraryName];
-
-        const generatedLookup = Object.keys(schema.modules)
+        return Object.keys(schema.modules)
           .map(moduleName => {
             const module = schema.modules[moduleName];
             if (module.type !== 'Component') {
@@ -108,13 +94,7 @@ module.exports = {
 
             return componentTemplates.length > 0 ? componentTemplates : null;
           })
-          .filter(Boolean)
-          .join('\n');
-
-        return generateSupportedApplePlatformsMacro(
-          generatedLookup,
-          librarySupportedApplePlatforms,
-        );
+          .filter(Boolean);
       })
       .join('\n');
 

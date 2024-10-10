@@ -443,10 +443,6 @@ public class MapTileProvider implements TileProvider {
 	}
 	
 	public void setUrlTemplate(String urlTemplate) {
-		if (this.urlTemplate != urlTemplate) {
-			this.tileProvider = new AIRMapUrlTileProvider(tileSize, tileSize, urlTemplate);
-		}
-		
 		this.urlTemplate = urlTemplate;
 	}
 

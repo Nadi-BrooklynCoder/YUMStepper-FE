@@ -130,8 +130,8 @@ const MapComponent = ({ setSideModalVisible }) => {
 
   return (
     <MapView
-      ref={mapViewRef}
-      // provider={PROVIDER_GOOGLE}
+      //ref={mapViewRef}
+       provider={PROVIDER_GOOGLE}
       style={styles.map}
       initialRegion={{
         latitude: userLocation?.latitude || 37.78825,
