@@ -6,7 +6,7 @@ import { AuthContext } from '../Context/AuthContext';
 import AnimatedGif from '../Components/AnimatedGif'; // Importing AnimatedGif component
 
 const Home = () => {
-  const { userToken } = useContext(AuthContext);
+  const { userToken, logout } = useContext(AuthContext);
   const navigation = useNavigation();
 
   let [fontsLoaded] = useFonts({

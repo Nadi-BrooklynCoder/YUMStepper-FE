@@ -20,6 +20,7 @@ const LoginComponent = () => {
     });
 
     const handleLogin = async (values) => {
+
         const loginData = {
             username: values.username.trim(),
             password_hash: values.password,
@@ -29,9 +30,9 @@ const LoginComponent = () => {
         Keyboard.dismiss()
 
         try {
-            const res = await axios.post(`${API}/users/login`, loginData);
+            console.log(loginData)
+            const res = await axios.post(`${API_BASE_URL}/users/login`, loginData);
             const { token, user } = res.data;
-            console.log(res)
             // Call login function to store token in AsyncStorage and update state
             await login(token, user.id);
 

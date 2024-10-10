@@ -30,8 +30,8 @@ const BottomTabNav = () => {
                 },
             }}
         >
+            <Tab.Screen name="Home" component={Home} />
             <Tab.Screen name="Profile" component={Profile} />
-            {/* <Tab.Screen name="Home" component={Home} /> */}
             <Tab.Screen name="Rewards" component={Rewards} />
             <Tab.Screen name="Map" component={Map} />
         </Tab.Navigator>
