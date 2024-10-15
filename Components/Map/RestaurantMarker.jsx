@@ -1,30 +1,78 @@
 import { StyleSheet, Image } from "react-native";
 import { Marker } from "react-native-maps";
 import React, { useContext } from "react";
+import axios from 'axios';
+import { API_BASE_URL } from '@env';
 import { AuthContext } from "../../Context/AuthContext";
 
 // Import the custom marker icon
 const foodIcon = require("../../assets/food-icon.png");
 
+// Helper function to get values safely
+const getValue = (value, fallback = 'N/A') => (value !== undefined && value !== null) ? value : fallback;
+
 const RestaurantMarker = ({ restaurant, setSideModalVisible }) => {
   const { setSelectedRestaurant, selectedRestaurant } = useContext(AuthContext);
 
-  const onMarkerPress = () => {
-    if(selectedRestaurant.id){return} // if you have selected a restaurant to travel to you are unable to open anymore 
-    setSelectedRestaurant(restaurant);
-    setSideModalVisible(true)
+  const onMarkerPress = async () => {
+    console.log(`[RestaurantMarker:onMarkerPress] Marker pressed:`, restaurant);
+  
+    // Prevent selecting the same restaurant again while navigating
+    if (selectedRestaurant?.id && selectedRestaurant.id === restaurant.id) {
+      console.log(`[RestaurantMarker:onMarkerPress] Same restaurant pressed, skipping update.`);
+      return;
+    }
+  
+    try {
+      // Fetch restaurant details from the unified details endpoint
+      console.log(`[RestaurantMarker:onMarkerPress] Fetching details for restaurant id: ${restaurant.id}`);
+      const response = await axios.get(`${API_BASE_URL}/restaurants/details/${restaurant.id}`);
+      console.log(`[RestaurantMarker:onMarkerPress] Restaurant Details:`, response.data);
+  
+      // Check the structure of response data
+      const details = response.data.data || response.data;
+  
+      // Update selected restaurant with the correct fields
+      setSelectedRestaurant({
+        id: getValue(details?.id),
+        name: getValue(details?.name),
+        latitude: details?.latitude || restaurant.latitude, // Retain original value if latitude is missing
+        longitude: details?.longitude || restaurant.longitude, // Retain original value if longitude is missing
+        address: getValue(details?.formatted_address, getValue(details?.address)),
+        cuisine_type: details?.categories && details.categories.length > 0
+          ? details.categories.map(category => category.title).join(', ')
+          : getValue(details?.cuisine_type?.trim(), 'Not specified'),
+        rating: getValue(details?.rating, 'N/A'),
+        menu_url: getValue(details?.website, getValue(details?.menu_url, 'Not available')),
+        opening_hours: details?.opening_hours?.length > 0 ? details.opening_hours : [{ open: 'Unknown', close: 'Unknown' }],
+        open_now: details?.open_now ? 'Yes' : 'No',
+      });
+  
+      setSideModalVisible(true);
+    } catch (error) {
+      console.error(`[RestaurantMarker:onMarkerPress] Error fetching restaurant details:`, error.message);
+    }
   };
+  
+
+  // Confirm valid coordinates before rendering the Marker
+  const latitude = parseFloat(restaurant.latitude);
+  const longitude = parseFloat(restaurant.longitude);
+
+  if (isNaN(latitude) || isNaN(longitude)) {
+    console.error(`[RestaurantMarker] Invalid coordinates for restaurant:`, restaurant);
+    return null; // Skip rendering if coordinates are invalid
+  }
 
   return (
     <Marker
       coordinate={{
-        latitude: restaurant.latitude,
-        longitude: restaurant.longitude,
+        latitude,
+        longitude,
       }}
       onPress={onMarkerPress}
     >
-      {/* Custom Marker Image */}
-      <Image source={foodIcon} style={styles.markerImage} resizeMode="contain"/>
+      <Image source={foodIcon} style={styles.markerImage} resizeMode="contain" />
     </Marker>
   );
 };

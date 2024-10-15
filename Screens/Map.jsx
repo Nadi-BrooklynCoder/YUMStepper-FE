@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -22,11 +22,14 @@ const Map = ({ route }) => {
     directions,
     setDirections,
     isNearRestaurant,
+    userLocation,
+    fetchNearByPlaces,
   } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
   const [sideModalVisible, setSideModalVisible] = useState(false);
   const navigation = useNavigation();
+  const searchTimeout = useRef(null);
 
   // Function to handle search
   const handleSearch = (query) => {
@@ -36,16 +39,24 @@ const Map = ({ route }) => {
     if (query.trim() === "") {
       setFilteredRestaurants([]);
     } else {
-      const filtered = restaurants.filter((restaurant) =>
-        restaurant.name.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredRestaurants(filtered);
+      clearTimeout(searchTimeout.current);
+      searchTimeout.current = setTimeout(() => {
+        const filtered = restaurants.filter((restaurant) =>
+          restaurant.name.toLowerCase().includes(query.toLowerCase())
+        );
+        setFilteredRestaurants(filtered);
+      }, 500);
     }
   };
 
+  useEffect(() => {
+    if (userLocation && userLocation.latitude) {
+      fetchNearByPlaces(); // Fetch nearby places when user location updates
+    }
+  }, [userLocation]);
+
   return (
     <View style={{ flex: 1 }}>
-
       {/* Map Search Bar */}
       <SearchMap setSearchQuery={handleSearch} searchQuery={searchQuery} />
 
@@ -95,7 +106,7 @@ const Map = ({ route }) => {
             keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
               <TouchableOpacity
-                onPress={() => {
+                onPress={async () => {
                   Keyboard.dismiss(); // Dismiss the keyboard
                   setSelectedRestaurant(item);
                   setSideModalVisible(true);
@@ -179,3 +190,4 @@ const styles = StyleSheet.create({
 });
 
 export default Map;
+

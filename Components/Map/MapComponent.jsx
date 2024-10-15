@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useContext } from "react";
-import MapView, { Marker, PROVIDER_GOOGLE, AnimatedRegion, Polyline } from "react-native-maps";
-import { StyleSheet, Animated } from "react-native";
+import { Marker, PROVIDER_GOOGLE, AnimatedRegion, Polyline } from "react-native-maps";
+import ForwardedMapView from "../Map/ForwardedMapView";
+import { StyleSheet, Animated, Linking } from "react-native";
 import * as Location from "expo-location";
 import { AuthContext } from "../../Context/AuthContext";
 import yumLogo from "../../assets/yummm.png";
@@ -9,7 +10,7 @@ import yumLogo from "../../assets/yummm.png";
 import RestaurantMarker from "./RestaurantMarker";
 
 const MapComponent = ({ setSideModalVisible }) => {
-  const { setUserLocation, userLocation, directions, restaurants, handleGetDirections, selectedRestaurant } = useContext(AuthContext);
+  const { setUserLocation, userLocation, directions, nearbyPlaces, handleGetDirections, selectedRestaurant, setSelectedRestaurant, userId } = useContext(AuthContext);
 
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const mapViewRef = useRef(null);
@@ -17,8 +18,8 @@ const MapComponent = ({ setSideModalVisible }) => {
 
   const animatedRegion = useRef( // USER LOCATION
     new AnimatedRegion({
-      latitude: 40.743175215962026, //Initial latitude
-      longitude: -73.94192180308748, // Initial longitude
+      latitude: 40.743175215962026, //Initial latitude Pursuit
+      longitude: -73.94192180308748, // Initial longitude Pursuit
       latitudeDelta: 0.0922,
       longitudeDelta: 0.0421,
     })
@@ -32,7 +33,14 @@ const MapComponent = ({ setSideModalVisible }) => {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           console.error("Permission to access location was denied");
+          alert("Please allow location access in settings to use this feature.");
+          Linking.openSettings();
           return;
+        }
+
+        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+        if (backgroundStatus !== "granted") {
+          console.warn("Background permission denied.");
         }
 
         // Watch user's position and heading
@@ -93,22 +101,18 @@ const MapComponent = ({ setSideModalVisible }) => {
     // Cleanup function to remove the location watcher
     return () => {
       if (locationSubscription) {
-        if (typeof locationSubscription.remove === "function") {
-          locationSubscription.remove(); // Remove for expo-location
-        } else if (typeof locationSubscription.destroy === "function") {
-          locationSubscription.destroy(); // Fallback if remove doesn't exist
-        }
+        locationSubscription.remove();
       }
     };
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const updateMapAndDirections = async () => {
       if (mapViewRef.current) {
         mapViewRef.current.animateToRegion(
           {
-            latitude: userLocation?.latitude || 40.775818,
-            longitude: userLocation?.longitude || -73.972761,
+            latitude: userLocation?.latitude,
+            longitude: userLocation?.longitude,
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           },
@@ -116,29 +120,33 @@ const MapComponent = ({ setSideModalVisible }) => {
         );
       }
 
-      // Update Polyline as the user moves. Selected Restaurant will be an object with the current restaurant selected for travel. 
+      // Update Polyline as the user moves. Selected Restaurant will be an object with the current restaurant selected for travel.
       if (selectedRestaurant.id) {
-        await handleGetDirections();
+        // await getDirectionsFromGoogleMaps();
+        console.log("Selected Restaurant Data: ", selectedRestaurant); // Logging selected restaurant data, including Yelp details
       }
-
-      // Optionally fetch nearby places
-      // fetchNearByPlaces();
     };
 
     updateMapAndDirections();
   }, [userLocation]);
 
+  // Log the nearbyPlaces to see the structure
+  useEffect(() => {
+    console.log("Nearby Places:", nearbyPlaces);
+  }, [nearbyPlaces]);
+
   return (
-    <MapView
+    <ForwardedMapView
       ref={mapViewRef}
-      // provider={PROVIDER_GOOGLE}
+      provider={PROVIDER_GOOGLE}
       style={styles.map}
       initialRegion={{
-        latitude: userLocation?.latitude || 37.78825,
-        longitude: userLocation?.longitude || -122.4324,
+        latitude: userLocation?.latitude,
+        longitude: userLocation?.longitude,
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
       }}
+      onPress={() => setSelectedRestaurant({})}
     >
       {/* Marker for the user's current location */}
       {userLocation && (
@@ -159,9 +167,13 @@ const MapComponent = ({ setSideModalVisible }) => {
         </Marker.Animated>
       )}
 
-      {/* Marker for each restaurant */}
-      {restaurants.map((restaurant, index) => (
-        <RestaurantMarker restaurant={restaurant} key={index} setSideModalVisible={setSideModalVisible}/>
+      {/* Marker for each nearby place */}
+      {nearbyPlaces?.map((restaurant, index) => (
+        <RestaurantMarker
+          restaurant={restaurant}
+          key={index}
+          setSideModalVisible={setSideModalVisible}
+        />
       ))}
 
       {/* Directions Polyline */}
@@ -172,7 +184,7 @@ const MapComponent = ({ setSideModalVisible }) => {
           strokeWidth={4}
         />
       )}
-    </MapView>
+    </ForwardedMapView>
   );
 };
 

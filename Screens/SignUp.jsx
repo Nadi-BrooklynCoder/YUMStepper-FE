@@ -21,18 +21,31 @@ const SignUpForm = () => {
     const handleSignUp = async (values) => {
         try {
             const response = await axios.post(`${API_BASE_URL}/users`, values);
-            
             const { token, newUser } = response.data;
-            await login(token, newUser.id); 
-            
-            navigation.navigate('Profile', { userId: newUser.id, token: token }); 
-
-            Alert.alert('Success', 'User registered successfully!');
+    
+            if (newUser && newUser.id && token) {
+                // Update the context with token and userId
+                await login(token, newUser.id, navigation);
+                
+                // Notify user of successful registration
+                Alert.alert('Success', 'User registered successfully!');
+            } else {
+                throw new Error("User registration failed");
+            }
         } catch (error) {
             console.error('Error signing up:', error);
-            Alert.alert('Error', 'There was an error during sign up. Please try again.');
+            
+            let errorMessage = 'There was an error during sign up. Please try again.';
+            
+            if (error.response && error.response.data && error.response.data.error) {
+                errorMessage = error.response.data.error;
+            }
+            
+            Alert.alert('Error', errorMessage);
         }
     };
+    
+    
 
     return (
         <View style={styles.container}>

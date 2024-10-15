@@ -6,6 +6,9 @@ import { AuthContext } from '../Context/AuthContext';
 import StepsContainer from '../Components/Profile/StepsContainer';
 import CheckinContainer from '../Components/Profile/CheckinContainer';
 import axios from 'axios';
+import { API_BASE_URL } from '@env';
+
+
 
 const Profile = () => {
     const { userToken, userId, logout } = useContext(AuthContext);
@@ -20,9 +23,17 @@ const Profile = () => {
 
     useEffect(() => {
         const fetchUser = async () => {
+            console.log(userId)
+            if (!userId) {
+                console.error("Invalid userId. Cannot fetch user.");
+                return;
+            }
+    
+            console.log("Fetching user with ID:", userId);
+    
             try {
-                const response = await axios.get(`https://demo-day-be.onrender.com/users/${userId}`, {
-                headers: { Authorization: `${userToken}` },
+                const response = await axios.get(`${API_BASE_URL}/users/${userId}`, {
+                    headers: { Authorization: `Bearer ${userToken}` },
                 });
                 setUser(response.data);
             } catch (err) {
@@ -36,17 +47,24 @@ const Profile = () => {
                 }
             }
         };
-
+    
         fetchUser();
     }, [userId, userToken]);
+    
+    
 
-    const handleLogout = () => {
-        logout();
-        navigation.navigate('Home');
+    const handleLogout = async () => {
+        await logout(navigation);
+        // navigation.navigate('MainApp', { screen: 'Home' });
     };
+    
+
+    // if (Object.keys(user).length === 0) {
+    //     return <Text>Loading...</Text>;
+    // }
 
     if (!user) {
-        return <Text>Loading...</Text>;
+        return <Text>Loading...</Text>
     }
 
     const renderScene = SceneMap({
@@ -56,12 +74,15 @@ const Profile = () => {
 
     const renderTabBar = (props) => (
         <TabBar
+            key={props.navigationState.routes[props.navigationState.index].key}
             {...props}
             indicatorStyle={{ backgroundColor: 'blue' }}
             style={{ backgroundColor: 'white' }}
             labelStyle={{ color: 'black' }}
         />
     );
+
+
 
     return (
         <View style={{ flex: 1 }}>

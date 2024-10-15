@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../Context/AuthContext';
 import StepsCard from './StepsCard';
+import { API_BASE_URL } from '@env';
 
 const StepsContainer = ({ displayType }) => {
   const { userId, userToken, stepsToPoints } = useContext(AuthContext);
@@ -12,7 +13,7 @@ const StepsContainer = ({ displayType }) => {
   useEffect(() => {
     const fetchSteps = async () => {
       try {
-        const response = await axios.get(`https://demo-day-be.onrender.com/users/${userId}/steps`, {
+        const response = await axios.get(`${API_BASE_URL}users/${userId}/steps`, {
           headers: { Authorization: `${userToken}` },
         });
         Array.isArray(response.data) && setStepsData(response.data);

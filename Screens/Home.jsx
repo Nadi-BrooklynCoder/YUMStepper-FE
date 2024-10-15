@@ -13,8 +13,8 @@ const Home = () => {
 
   let [fontsLoaded] = useFonts({
     Montserrat_700Bold,
-    Itim: require('../assets/fonts/Itim-Regular.ttf'),
-    'Open-Sans': require('../assets/fonts/OpenSans-Bold.ttf'),
+    Itim_400Regular: require('../assets/fonts/Itim-Regular.ttf'),
+    OpenSans_700Bold: require('../assets/fonts/OpenSans-Bold.ttf'),
   });
 
   if (!fontsLoaded) {
