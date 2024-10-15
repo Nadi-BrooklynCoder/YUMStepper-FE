@@ -95,17 +95,28 @@ void TextAttributes::apply(TextAttributes textAttributes) {
   isHighlighted = textAttributes.isHighlighted.has_value()
       ? textAttributes.isHighlighted
       : isHighlighted;
+  // TextAttributes "inherits" the isPressable value from ancestors, so this
+  // only applies the current node's value for isPressable if it is truthy.
+  isPressable =
+      textAttributes.isPressable.has_value() && *textAttributes.isPressable
+      ? textAttributes.isPressable
+      : isPressable;
   layoutDirection = textAttributes.layoutDirection.has_value()
       ? textAttributes.layoutDirection
       : layoutDirection;
   accessibilityRole = textAttributes.accessibilityRole.has_value()
       ? textAttributes.accessibilityRole
       : accessibilityRole;
+  role = textAttributes.role.has_value() ? textAttributes.role : role;
+
+  textAlignVertical = textAttributes.textAlignVertical.has_value()
+      ? textAttributes.textAlignVertical
+      : textAlignVertical;
 }
 
 #pragma mark - Operators
 
-bool TextAttributes::operator==(const TextAttributes &rhs) const {
+bool TextAttributes::operator==(const TextAttributes& rhs) const {
   return std::tie(
              foregroundColor,
              backgroundColor,
@@ -116,6 +127,7 @@ bool TextAttributes::operator==(const TextAttributes &rhs) const {
              allowFontScaling,
              dynamicTypeRamp,
              alignment,
+             textAlignVertical,
              baseWritingDirection,
              lineBreakStrategy,
              textDecorationColor,
@@ -124,8 +136,10 @@ bool TextAttributes::operator==(const TextAttributes &rhs) const {
              textShadowOffset,
              textShadowColor,
              isHighlighted,
+             isPressable,
              layoutDirection,
              accessibilityRole,
+             role,
              textTransform) ==
       std::tie(
              rhs.foregroundColor,
@@ -137,6 +151,7 @@ bool TextAttributes::operator==(const TextAttributes &rhs) const {
              rhs.allowFontScaling,
              rhs.dynamicTypeRamp,
              rhs.alignment,
+             rhs.textAlignVertical,
              rhs.baseWritingDirection,
              rhs.lineBreakStrategy,
              rhs.textDecorationColor,
@@ -145,8 +160,10 @@ bool TextAttributes::operator==(const TextAttributes &rhs) const {
              rhs.textShadowOffset,
              rhs.textShadowColor,
              rhs.isHighlighted,
+             rhs.isPressable,
              rhs.layoutDirection,
              rhs.accessibilityRole,
+             rhs.role,
              rhs.textTransform) &&
       floatEquality(opacity, rhs.opacity) &&
       floatEquality(fontSize, rhs.fontSize) &&
@@ -156,7 +173,7 @@ bool TextAttributes::operator==(const TextAttributes &rhs) const {
       floatEquality(textShadowRadius, rhs.textShadowRadius);
 }
 
-bool TextAttributes::operator!=(const TextAttributes &rhs) const {
+bool TextAttributes::operator!=(const TextAttributes& rhs) const {
   return !(*this == rhs);
 }
 
@@ -213,8 +230,12 @@ SharedDebugStringConvertibleList TextAttributes::getDebugProps() const {
 
       // Special
       debugStringConvertibleItem("isHighlighted", isHighlighted),
+      debugStringConvertibleItem("isPressable", isPressable),
       debugStringConvertibleItem("layoutDirection", layoutDirection),
       debugStringConvertibleItem("accessibilityRole", accessibilityRole),
+      debugStringConvertibleItem("role", role),
+
+      debugStringConvertibleItem("textAlignVertical", textAlignVertical),
   };
 }
 #endif

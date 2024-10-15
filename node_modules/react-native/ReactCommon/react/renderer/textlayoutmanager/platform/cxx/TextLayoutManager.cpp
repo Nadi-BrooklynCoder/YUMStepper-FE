@@ -7,26 +7,32 @@
 
 #include "TextLayoutManager.h"
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
-void *TextLayoutManager::getNativeTextLayoutManager() const {
-  return (void *)this;
+void* TextLayoutManager::getNativeTextLayoutManager() const {
+  return (void*)this;
 }
 
 TextMeasurement TextLayoutManager::measure(
     AttributedStringBox attributedStringBox,
     ParagraphAttributes paragraphAttributes,
-    LayoutConstraints layoutConstraints,
-    std::shared_ptr<void>) const {
+    const TextLayoutContext& /*layoutContext*/,
+    LayoutConstraints layoutConstraints) const {
   TextMeasurement::Attachments attachments;
-  for (auto const &fragment : attributedStringBox.getValue().getFragments()) {
+  for (const auto& fragment : attributedStringBox.getValue().getFragments()) {
     if (fragment.isAttachment()) {
       attachments.push_back(
           TextMeasurement::Attachment{{{0, 0}, {0, 0}}, false});
     }
   }
   return TextMeasurement{{0, 0}, attachments};
+}
+
+TextMeasurement TextLayoutManager::measureCachedSpannableById(
+    int64_t /*cacheId*/,
+    const ParagraphAttributes& /*paragraphAttributes*/,
+    LayoutConstraints /*layoutConstraints*/) const {
+  return {};
 }
 
 LinesMeasurements TextLayoutManager::measureLines(
@@ -36,12 +42,4 @@ LinesMeasurements TextLayoutManager::measureLines(
   return {};
 };
 
-std::shared_ptr<void> TextLayoutManager::getHostTextStorage(
-    AttributedString attributedString,
-    ParagraphAttributes paragraphAttributes,
-    LayoutConstraints layoutConstraints) const {
-  return nullptr;
-}
-
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

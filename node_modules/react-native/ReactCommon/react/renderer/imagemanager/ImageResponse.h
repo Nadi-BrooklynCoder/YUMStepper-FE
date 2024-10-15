@@ -9,8 +9,7 @@
 
 #include <memory>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 /*
  * Represents retrieved image bitmap and any associated platform-specific info.
@@ -35,5 +34,13 @@ class ImageResponse final {
   std::shared_ptr<void> metadata_{};
 };
 
-} // namespace react
-} // namespace facebook
+class ImageLoadError {
+ public:
+  explicit ImageLoadError(std::shared_ptr<void> error);
+  std::shared_ptr<void> getError() const;
+
+ private:
+  std::shared_ptr<void> error_{};
+};
+
+} // namespace facebook::react

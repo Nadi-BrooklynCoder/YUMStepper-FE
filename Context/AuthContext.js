@@ -4,6 +4,7 @@ import { getDistance } from 'geolib';
 import polyline from '@mapbox/polyline';
 import { GOOGLE_API_KEY, API_BASE_URL } from '@env';
 import axios from "axios";
+import * as Location from 'expo-location';
 
 export const AuthContext = createContext();
 
@@ -11,7 +12,7 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [userToken, setUserToken] = useState(null);
     const [userId, setUserId] = useState(null);
-    const [userLocation, setUserLocation] = useState({});
+    const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
     const [directions, setDirections] = useState([]);
     const [userSteps, setUserSteps] = useState(0);
     const [directionSteps, setDirectionSteps] = useState(0);
@@ -20,55 +21,81 @@ export const AuthProvider = ({ children }) => {
     const [nearbyPlaces, setNearbyPlaces] = useState([]);
     const [isNearRestaurant, setIsNearRestaurant] = useState(false);
 
+    useEffect(() => {
+        if (userId === null && userToken) {
+            console.error("User ID is null. Logging out user.");
+            logout();
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        let locationSubscription = null;
+    
+        const watchUserLocation = async () => {
+            try {
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    console.error('Permission to access location was denied');
+                    return;
+                }
+
+                locationSubscription = await Location.watchPositionAsync(
+                    {
+                        accuracy: Location.Accuracy.Balanced,
+                        timeInterval: 2000,
+                        distanceInterval: 5,
+                    },
+                    (location) => {
+                        const { latitude, longitude } = location.coords;
+
+                        // Update userLocation in the context state
+                        setUserLocation({ latitude, longitude });
+                    }
+                );
+            } catch (error) {
+                console.error('Error watching user location:', error);
+            }
+        };
+
+        watchUserLocation();
+
+        return () => {
+            if (locationSubscription) {
+                locationSubscription.remove();
+            }
+        }; // Cleanup function
+    }, []);
+
     const fetchNearByPlaces = async () => {
         try {
-            if (userLocation.latitude) {
-                const res = await axios.get(
-                    `${API_BASE_URL}/googlePlaces/nearby?lat=${userLocation.latitude}&lng=${userLocation.longitude}`
-                );
+            const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`);
+            if (res.data.length > 0) {
                 setNearbyPlaces(res.data);
+            } else {
+                console.log("No restaurants found.");
             }
         } catch (err) {
-            if (err.response) {
-                console.error("Error response:", err.response.data);
-                console.error("Status:", err.response.status);
-            } else if (err.request) {
-                console.error("No response received:", err.request);
-            } else {
-                console.error("Error", err.message);
-            }
+            console.error("Error fetching restaurants:", err);
         }
     };
 
-    const fetchRestaurants = async () => {
-        try {
-            const res = await axios.get(`${API_BASE_URL}/restaurants`);
-            setRestaurants(res.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleGetDirections = async () => {
+    const getDirectionsFromGoogleMaps = async () => {
         if (!userLocation.latitude || !userLocation.longitude) {
             console.error("User location is not available");
             return;
-        } 
+        }
 
         try {
             const response = await axios.get(
-                `${API_BASE_URL}/googlePlaces/direction?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destLat=${selectedRestaurant.latitude}&destLng=${selectedRestaurant.longitude}`
+                `${API_BASE_URL}/googlePlaces/directions?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destLat=${selectedRestaurant.latitude}&destLng=${selectedRestaurant.longitude}`
             );
 
             if (response?.data?.routes.length > 0) {
                 const points = response.data.routes[0].overview_polyline.points;
-
-                // Decode the polyline using @mapbox/polyline
                 const decodedPoints = polyline.decode(points).map(([latitude, longitude]) => ({
                     latitude,
                     longitude,
                 }));
-
                 setDirections(decodedPoints);
             } else {
                 console.error('No routes found');
@@ -78,31 +105,53 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const login = async (token, userId) => {
-        setUserToken(token);
-        setIsLoading(false);
-        setUserId(userId);
-        // Store the token in AsyncStorage
-        await AsyncStorage.setItem('userToken', token);
-        await AsyncStorage.setItem('userId', userId.toString());
+    const login = async (token, userId, navigation) => {
+        if (!userId) {
+            console.error("Invalid userId during login");
+            return;
+        }
+
+        try {
+            await AsyncStorage.setItem('userToken', token);
+            await AsyncStorage.setItem('userId', userId.toString());
+            setUserToken(token);
+            setUserId(userId);
+            if (navigation) {
+                navigation.navigate('Profile');
+            }
+        } catch (e) {
+            console.error('Failed to save userId to storage:', e);
+        }
     };
 
-    const logout = async () => {
-        setUserToken(null);
-        setIsLoading(false);
-        // Remove the token from AsyncStorage
-        await AsyncStorage.removeItem('userToken');
-        await AsyncStorage.removeItem('userId');
+    const logout = async (navigation) => {
+        try {
+            setUserToken(null);
+            setUserId(null);
+            setUserLocation({ latitude: null, longitude: null });
+            setSelectedRestaurant({});
+            setDirections([]);
+            setIsLoading(false);
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('userId');
+
+            navigation.navigate('Home');
+        } catch (e) {
+            console.error('Failed to clear storage during logout:', e);
+        }
     };
 
     const checkLoginStatus = async () => {
         try {
             let token = await AsyncStorage.getItem('userToken');
-            if (token) {
+            let storedUserId = await AsyncStorage.getItem('userId');
+    
+            if (token && storedUserId) {
                 setUserToken(token);
+                setUserId(parseInt(storedUserId));
             }
         } catch (e) {
-            console.error('Failed to fetch the token from storage');
+            console.error('Failed to fetch the token or userId from storage');
         } finally {
             setIsLoading(false);
         }
@@ -110,30 +159,31 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         checkLoginStatus();
-        fetchRestaurants();
+        fetchNearByPlaces();
     }, []);
+
+    useEffect(() => {
+        if (userLocation.latitude && userLocation.longitude) {
+            fetchNearByPlaces();
+        }
+    }, [userLocation]);
 
     const calculateSteps = async () => {
         if (!userLocation.latitude || !selectedRestaurant?.latitude) {
-            return; 
+            return;
         }
 
-        // Calculate the distance between current location and destination in meters
         const totalDistance = getDistance(
             { latitude: userLocation.latitude, longitude: userLocation.longitude },
             { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
         );
 
-        // Assuming average step length is 0.7 meters
         const averageStepLength = 0.7; // in meters
-
-        // Calculate the number of steps
         const numberOfSteps = Math.round(totalDistance / averageStepLength);
-        
         setDirectionSteps(numberOfSteps);
     };
 
-    const stepsToPoints = (steps)  =>{
+    const stepsToPoints = (steps) => {
         if (steps <= 1000) {
             return Math.floor(steps / 100);
         } else if (steps <= 5000) {
@@ -141,29 +191,22 @@ export const AuthProvider = ({ children }) => {
         } else {
             return Math.floor(steps / 50);
         }
-    }
+    };
 
-    // useEffect to update isNearRestaurant when locations change
     useEffect(() => {
         const checkProximity = () => {
             if (
                 userLocation.latitude && userLocation.longitude &&
                 selectedRestaurant.latitude && selectedRestaurant.longitude
             ) {
-                // Calculate the distance in meters
                 const distance = getDistance(
                     { latitude: userLocation.latitude, longitude: userLocation.longitude },
                     { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
                 );
 
-                // Set threshold distance in meters (e.g., 50 meters)
-                const thresholdDistance = 50;
+                const thresholdDistance = 50; // in meters
 
-                if (distance <= thresholdDistance) {
-                    setIsNearRestaurant(true);
-                } else {
-                    setIsNearRestaurant(false);
-                }
+                setIsNearRestaurant(distance <= thresholdDistance);
             } else {
                 setIsNearRestaurant(false);
             }
@@ -188,12 +231,13 @@ export const AuthProvider = ({ children }) => {
             calculateSteps,
             setSelectedRestaurant,
             selectedRestaurant,
-            handleGetDirections,
+            getDirectionsFromGoogleMaps,
             directionSteps,
             restaurants,
             fetchNearByPlaces,
-            isNearRestaurant, 
-            stepsToPoints
+            isNearRestaurant,
+            stepsToPoints,
+            nearbyPlaces
         }}>
             {children}
         </AuthContext.Provider>

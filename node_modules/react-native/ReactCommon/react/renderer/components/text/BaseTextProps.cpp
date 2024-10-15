@@ -8,18 +8,18 @@
 #include "BaseTextProps.h"
 
 #include <react/renderer/attributedstring/conversions.h>
-#include <react/renderer/core/CoreFeatures.h>
 #include <react/renderer/core/graphicsConversions.h>
 #include <react/renderer/core/propsConversions.h>
 #include <react/renderer/debug/DebugStringConvertibleItem.h>
+#include <react/utils/CoreFeatures.h>
 
 namespace facebook::react {
 
 static TextAttributes convertRawProp(
-    PropsParserContext const &context,
-    RawProps const &rawProps,
-    TextAttributes const &sourceTextAttributes,
-    TextAttributes const &defaultTextAttributes) {
+    const PropsParserContext& context,
+    const RawProps& rawProps,
+    const TextAttributes& sourceTextAttributes,
+    const TextAttributes& defaultTextAttributes) {
   auto textAttributes = TextAttributes{};
 
   // Color (not accessed by ViewProps)
@@ -91,6 +91,12 @@ static TextAttributes convertRawProp(
       "textTransform",
       sourceTextAttributes.textTransform,
       defaultTextAttributes.textTransform);
+  textAttributes.textAlignVertical = convertRawProp(
+      context,
+      rawProps,
+      "textAlignVertical",
+      sourceTextAttributes.textAlignVertical,
+      defaultTextAttributes.textAlignVertical);
 
   // Paragraph
   textAttributes.lineHeight = convertRawProp(
@@ -165,6 +171,12 @@ static TextAttributes convertRawProp(
       "isHighlighted",
       sourceTextAttributes.isHighlighted,
       defaultTextAttributes.isHighlighted);
+  textAttributes.isPressable = convertRawProp(
+      context,
+      rawProps,
+      "isPressable",
+      sourceTextAttributes.isPressable,
+      defaultTextAttributes.isPressable);
 
   // In general, we want this class to access props in the same order
   // that ViewProps accesses them in, so that RawPropParser can optimize
@@ -182,6 +194,13 @@ static TextAttributes convertRawProp(
       "accessibilityRole",
       sourceTextAttributes.accessibilityRole,
       defaultTextAttributes.accessibilityRole);
+
+  textAttributes.role = convertRawProp(
+      context,
+      rawProps,
+      "role",
+      sourceTextAttributes.role,
+      defaultTextAttributes.role);
 
   // Color (accessed in this order by ViewProps)
   textAttributes.opacity = convertRawProp(
@@ -201,9 +220,9 @@ static TextAttributes convertRawProp(
 }
 
 BaseTextProps::BaseTextProps(
-    const PropsParserContext &context,
-    const BaseTextProps &sourceProps,
-    const RawProps &rawProps)
+    const PropsParserContext& context,
+    const BaseTextProps& sourceProps,
+    const RawProps& rawProps)
     : textAttributes(
           CoreFeatures::enablePropIteratorSetter
               ? sourceProps.textAttributes
@@ -214,10 +233,10 @@ BaseTextProps::BaseTextProps(
                     TextAttributes{})){};
 
 void BaseTextProps::setProp(
-    const PropsParserContext &context,
+    const PropsParserContext& context,
     RawPropsPropNameHash hash,
-    const char * /*propName*/,
-    RawValue const &value) {
+    const char* /*propName*/,
+    const RawValue& value) {
   static auto defaults = TextAttributes{};
 
   switch (hash) {
@@ -249,6 +268,12 @@ void BaseTextProps::setProp(
         defaults, value, textAttributes, lineHeight, "lineHeight");
     REBUILD_FIELD_SWITCH_CASE(
         defaults, value, textAttributes, alignment, "textAlign");
+    REBUILD_FIELD_SWITCH_CASE(
+        defaults,
+        value,
+        textAttributes,
+        textAlignVertical,
+        "textAlignVertical");
     REBUILD_FIELD_SWITCH_CASE(
         defaults,
         value,
@@ -288,11 +313,14 @@ void BaseTextProps::setProp(
     REBUILD_FIELD_SWITCH_CASE(
         defaults, value, textAttributes, isHighlighted, "isHighlighted");
     REBUILD_FIELD_SWITCH_CASE(
+        defaults, value, textAttributes, isPressable, "isPressable");
+    REBUILD_FIELD_SWITCH_CASE(
         defaults,
         value,
         textAttributes,
         accessibilityRole,
         "accessibilityRole");
+    REBUILD_FIELD_SWITCH_CASE(defaults, value, textAttributes, role, "role");
     REBUILD_FIELD_SWITCH_CASE(
         defaults, value, textAttributes, opacity, "opacity");
     REBUILD_FIELD_SWITCH_CASE(

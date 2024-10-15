@@ -9,10 +9,9 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 add_compile_options(
         -fexceptions
         -frtti
-        -std=c++17
+        -std=c++20
         -Wall
         -Wpedantic
-        -Wno-gnu-zero-variadic-macro-arguments
         -DFOLLY_NO_CONFIG=1
         -DLOG_TAG=\"ReactNative\")
 
@@ -24,4 +23,5 @@ target_include_directories(sampleturbomodule PUBLIC .)
 target_link_libraries(sampleturbomodule
         fbjni
         jsi
-        react_nativemodule_core)
+        react_nativemodule_core
+        turbomodulejsijni)

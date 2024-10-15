@@ -53,33 +53,33 @@ const AppNav = () => {
     return (
         <NavigationContainer>
             <Stack.Navigator
-                screenOptions={{
-                    headerStyle: {
-                        backgroundColor: '#9b1422',  // Set your custom color here
-                    },
-                    headerTintColor: 'antiquewhite',  // Set the color for the text and icons
-                    headerTitleStyle: {
-                        fontWeight: 'bold',  // Style the header title text
-                    },
-                }}
-            >
-                {userToken ? (
-                    // User is authenticated, show bottom tab navigator
-                    <Stack.Screen
-                        name="MainApp"
-                        component={BottomTabNav}
-                        options={{ headerShown: false }} // Hide the header for bottom tabs
-                    />
-                ) : (
-                    // User is not authenticated, show login/signup screens
-                    <>
-                        <Stack.Screen name="Home" component={Home} />
-                        <Stack.Screen name="Login" component={Login} />
-                        <Stack.Screen name="SignUp" component={SignUp} />
-                        <Stack.Screen name="Profile" component={Profile} />
-                    </>
-                )}
-            </Stack.Navigator>
+        screenOptions={{
+        headerStyle: {
+            backgroundColor: '#9b1422',  // Set your custom color here
+        },
+        headerTintColor: 'antiquewhite',  // Set the color for the text and icons
+        headerTitleStyle: {
+            fontWeight: 'bold',  // Style the header title text
+        },
+    }}
+>
+    {userToken ? (
+        // User is authenticated, show bottom tab navigator
+        <Stack.Screen
+            name="MainApp"
+            component={BottomTabNav}
+            options={{ headerShown: false }} // Hide the header for bottom tabs
+        />
+    ) : (
+        // User is not authenticated, show login/signup screens
+        <>
+            <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="SignUp" component={SignUp} />
+        </>
+    )}
+</Stack.Navigator>
+
         </NavigationContainer>
     );
 };

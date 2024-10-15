@@ -13,20 +13,19 @@
 #include <ReactCommon/TurboModule.h>
 #include <fbjni/fbjni.h>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 /**
- * C++ class for module 'SampleTurboModule'
+ * JNI C++ class for module 'NativeSampleTurboModule'
  */
 class JSI_EXPORT NativeSampleTurboModuleSpecJSI : public JavaTurboModule {
  public:
-  NativeSampleTurboModuleSpecJSI(const JavaTurboModule::InitParams &params);
+  NativeSampleTurboModuleSpecJSI(const JavaTurboModule::InitParams& params);
 };
 
+JSI_EXPORT
 std::shared_ptr<TurboModule> SampleTurboModuleSpec_ModuleProvider(
-    const std::string &moduleName,
-    const JavaTurboModule::InitParams &params);
+    const std::string& moduleName,
+    const JavaTurboModule::InitParams& params);
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

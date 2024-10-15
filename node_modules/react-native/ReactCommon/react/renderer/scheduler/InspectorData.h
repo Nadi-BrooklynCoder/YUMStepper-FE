@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#pragma once
+
 #include <vector>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 struct InspectorData {
   std::vector<std::string> hierarchy;
@@ -20,5 +21,4 @@ struct InspectorData {
   folly::dynamic props;
 };
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

@@ -10,15 +10,15 @@
 #include "RAMBundleRegistry.h"
 
 #include <folly/Conv.h>
+#include <jsinspector-modern/ReactCdp.h>
 
 #include <chrono>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 std::string JSExecutor::getSyntheticBundlePath(
     uint32_t bundleId,
-    const std::string &bundlePath) {
+    const std::string& bundlePath) {
   if (bundleId == RAMBundleRegistry::MAIN_BUNDLE_ID) {
     return bundlePath;
   }
@@ -35,5 +35,12 @@ double JSExecutor::performanceNow() {
   return duration / NANOSECONDS_IN_MILLISECOND;
 }
 
-} // namespace react
-} // namespace facebook
+jsinspector_modern::RuntimeTargetDelegate&
+JSExecutor::getRuntimeTargetDelegate() {
+  if (!runtimeTargetDelegate_) {
+    runtimeTargetDelegate_.emplace(getDescription());
+  }
+  return *runtimeTargetDelegate_;
+}
+
+} // namespace facebook::react

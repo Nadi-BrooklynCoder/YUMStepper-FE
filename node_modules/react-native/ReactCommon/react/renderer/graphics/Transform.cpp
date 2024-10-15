@@ -14,8 +14,8 @@
 
 namespace facebook::react {
 
-#ifdef RN_DEBUG_STRING_CONVERTIBLE
-void Transform::print(Transform const &t, std::string prefix) {
+#if RN_DEBUG_STRING_CONVERTIBLE
+void Transform::print(const Transform& t, std::string prefix) {
   LOG(ERROR) << prefix << "[ " << t.matrix[0] << " " << t.matrix[1] << " "
              << t.matrix[2] << " " << t.matrix[3] << " ]";
   LOG(ERROR) << prefix << "[ " << t.matrix[4] << " " << t.matrix[5] << " "
@@ -41,8 +41,12 @@ Transform Transform::HorizontalInversion() {
 
 Transform Transform::Perspective(Float perspective) {
   auto transform = Transform{};
+  auto Zero = ValueUnit(0, UnitType::Point);
   transform.operations.push_back(TransformOperation{
-      TransformOperationType::Perspective, perspective, 0, 0});
+      TransformOperationType::Perspective,
+      ValueUnit(perspective, UnitType::Point),
+      Zero,
+      Zero});
   transform.matrix[11] = -1 / perspective;
   return transform;
 }
@@ -54,7 +58,10 @@ Transform Transform::Scale(Float x, Float y, Float z) {
   Float zprime = isZero(z) ? 0 : z;
   if (xprime != 1 || yprime != 1 || zprime != 1) {
     transform.operations.push_back(TransformOperation{
-        TransformOperationType::Scale, xprime, yprime, zprime});
+        TransformOperationType::Scale,
+        ValueUnit(xprime, UnitType::Point),
+        ValueUnit(yprime, UnitType::Point),
+        ValueUnit(zprime, UnitType::Point)});
     transform.matrix[0] = xprime;
     transform.matrix[5] = yprime;
     transform.matrix[10] = zprime;
@@ -69,7 +76,10 @@ Transform Transform::Translate(Float x, Float y, Float z) {
   Float zprime = isZero(z) ? 0 : z;
   if (xprime != 0 || yprime != 0 || zprime != 0) {
     transform.operations.push_back(TransformOperation{
-        TransformOperationType::Translate, xprime, yprime, zprime});
+        TransformOperationType::Translate,
+        ValueUnit(xprime, UnitType::Point),
+        ValueUnit(yprime, UnitType::Point),
+        ValueUnit(zprime, UnitType::Point)});
     transform.matrix[12] = xprime;
     transform.matrix[13] = yprime;
     transform.matrix[14] = zprime;
@@ -81,8 +91,11 @@ Transform Transform::Skew(Float x, Float y) {
   auto transform = Transform{};
   Float xprime = isZero(x) ? 0 : x;
   Float yprime = isZero(y) ? 0 : y;
-  transform.operations.push_back(
-      TransformOperation{TransformOperationType::Skew, xprime, yprime, 0});
+  transform.operations.push_back(TransformOperation{
+      TransformOperationType::Skew,
+      ValueUnit(xprime, UnitType::Point),
+      ValueUnit(yprime, UnitType::Point),
+      ValueUnit(0, UnitType::Point)});
   transform.matrix[4] = std::tan(xprime);
   transform.matrix[1] = std::tan(yprime);
   return transform;
@@ -91,8 +104,12 @@ Transform Transform::Skew(Float x, Float y) {
 Transform Transform::RotateX(Float radians) {
   auto transform = Transform{};
   if (!isZero(radians)) {
-    transform.operations.push_back(
-        TransformOperation{TransformOperationType::Rotate, radians, 0, 0});
+    auto Zero = ValueUnit(0, UnitType::Point);
+    transform.operations.push_back(TransformOperation{
+        TransformOperationType::Rotate,
+        ValueUnit(radians, UnitType::Point),
+        Zero,
+        Zero});
     transform.matrix[5] = std::cos(radians);
     transform.matrix[6] = std::sin(radians);
     transform.matrix[9] = -std::sin(radians);
@@ -104,8 +121,12 @@ Transform Transform::RotateX(Float radians) {
 Transform Transform::RotateY(Float radians) {
   auto transform = Transform{};
   if (!isZero(radians)) {
-    transform.operations.push_back(
-        TransformOperation{TransformOperationType::Rotate, 0, radians, 0});
+    auto Zero = ValueUnit(0, UnitType::Point);
+    transform.operations.push_back(TransformOperation{
+        TransformOperationType::Rotate,
+        Zero,
+        ValueUnit(radians, UnitType::Point),
+        Zero});
     transform.matrix[0] = std::cos(radians);
     transform.matrix[2] = -std::sin(radians);
     transform.matrix[8] = std::sin(radians);
@@ -117,8 +138,12 @@ Transform Transform::RotateY(Float radians) {
 Transform Transform::RotateZ(Float radians) {
   auto transform = Transform{};
   if (!isZero(radians)) {
-    transform.operations.push_back(
-        TransformOperation{TransformOperationType::Rotate, 0, 0, radians});
+    auto Zero = ValueUnit(0, UnitType::Point);
+    transform.operations.push_back(TransformOperation{
+        TransformOperationType::Rotate,
+        Zero,
+        Zero,
+        ValueUnit(radians, UnitType::Point)});
     transform.matrix[0] = std::cos(radians);
     transform.matrix[1] = std::sin(radians);
     transform.matrix[4] = -std::sin(radians);
@@ -129,8 +154,6 @@ Transform Transform::RotateZ(Float radians) {
 
 Transform Transform::Rotate(Float x, Float y, Float z) {
   auto transform = Transform{};
-  transform.operations.push_back(
-      TransformOperation{TransformOperationType::Rotate, x, y, z});
   if (!isZero(x)) {
     transform = transform * Transform::RotateX(x);
   }
@@ -144,24 +167,33 @@ Transform Transform::Rotate(Float x, Float y, Float z) {
 }
 
 Transform Transform::FromTransformOperation(
-    TransformOperation transformOperation) {
+    TransformOperation transformOperation,
+    const Size& size) {
   if (transformOperation.type == TransformOperationType::Perspective) {
-    return Transform::Perspective(transformOperation.x);
+    return Transform::Perspective(transformOperation.x.resolve(0));
   }
   if (transformOperation.type == TransformOperationType::Scale) {
     return Transform::Scale(
-        transformOperation.x, transformOperation.y, transformOperation.z);
+        transformOperation.x.resolve(0),
+        transformOperation.y.resolve(0),
+        transformOperation.z.resolve(0));
   }
   if (transformOperation.type == TransformOperationType::Translate) {
+    auto translateX = transformOperation.x.resolve(size.width);
+    auto translateY = transformOperation.y.resolve(size.height);
+
     return Transform::Translate(
-        transformOperation.x, transformOperation.y, transformOperation.z);
+        translateX, translateY, transformOperation.z.resolve(0));
   }
   if (transformOperation.type == TransformOperationType::Skew) {
-    return Transform::Skew(transformOperation.x, transformOperation.y);
+    return Transform::Skew(
+        transformOperation.x.resolve(0), transformOperation.y.resolve(0));
   }
   if (transformOperation.type == TransformOperationType::Rotate) {
     return Transform::Rotate(
-        transformOperation.x, transformOperation.y, transformOperation.z);
+        transformOperation.x.resolve(0),
+        transformOperation.y.resolve(0),
+        transformOperation.z.resolve(0));
   }
 
   // Identity or Arbitrary
@@ -170,29 +202,37 @@ Transform Transform::FromTransformOperation(
 
 TransformOperation Transform::DefaultTransformOperation(
     TransformOperationType type) {
+  auto Zero = ValueUnit{0, UnitType::Point};
+  auto One = ValueUnit{1, UnitType::Point};
   switch (type) {
     case TransformOperationType::Arbitrary:
-      return TransformOperation{TransformOperationType::Arbitrary, 0, 0, 0};
+      return TransformOperation{
+          TransformOperationType::Arbitrary, Zero, Zero, Zero};
     case TransformOperationType::Perspective:
-      return TransformOperation{TransformOperationType::Perspective, 0, 0, 0};
+      return TransformOperation{
+          TransformOperationType::Perspective, Zero, Zero, Zero};
     case TransformOperationType::Scale:
-      return TransformOperation{TransformOperationType::Scale, 1, 1, 1};
+      return TransformOperation{TransformOperationType::Scale, One, One, One};
     case TransformOperationType::Translate:
-      return TransformOperation{TransformOperationType::Translate, 0, 0, 0};
+      return TransformOperation{
+          TransformOperationType::Translate, Zero, Zero, Zero};
     case TransformOperationType::Rotate:
-      return TransformOperation{TransformOperationType::Rotate, 0, 0, 0};
+      return TransformOperation{
+          TransformOperationType::Rotate, Zero, Zero, Zero};
     case TransformOperationType::Skew:
-      return TransformOperation{TransformOperationType::Skew, 0, 0, 0};
+      return TransformOperation{TransformOperationType::Skew, Zero, Zero, Zero};
     default:
     case TransformOperationType::Identity:
-      return TransformOperation{TransformOperationType::Identity, 0, 0, 0};
+      return TransformOperation{
+          TransformOperationType::Identity, Zero, Zero, Zero};
   }
 }
 
 Transform Transform::Interpolate(
     Float animationProgress,
-    Transform const &lhs,
-    Transform const &rhs) {
+    const Transform& lhs,
+    const Transform& rhs,
+    const Size& size) {
   // Iterate through operations and reconstruct an interpolated resulting
   // transform If at any point we hit an "Arbitrary" Transform, return at that
   // point
@@ -238,52 +278,76 @@ Transform Transform::Interpolate(
     react_native_assert(type == rhsOp.type);
 
     result = result *
-        Transform::FromTransformOperation(TransformOperation{
-            type,
-            lhsOp.x + (rhsOp.x - lhsOp.x) * animationProgress,
-            lhsOp.y + (rhsOp.y - lhsOp.y) * animationProgress,
-            lhsOp.z + (rhsOp.z - lhsOp.z) * animationProgress});
+        Transform::FromTransformOperation(
+                 TransformOperation{
+                     type,
+                     ValueUnit(
+                         lhsOp.x.resolve(size.width) +
+                             (rhsOp.x.resolve(size.width) -
+                              lhsOp.x.resolve(size.width)) *
+                                 animationProgress,
+                         UnitType::Point),
+                     ValueUnit(
+                         lhsOp.y.resolve(size.height) +
+                             (rhsOp.y.resolve(size.height) -
+                              lhsOp.y.resolve(size.height)) *
+                                 animationProgress,
+                         UnitType::Point),
+                     ValueUnit(
+                         lhsOp.z.resolve(0) +
+                             (rhsOp.z.resolve(0) - lhsOp.z.resolve(0)) *
+                                 animationProgress,
+                         UnitType::Point)},
+                 size);
   }
 
   return result;
 }
 
-bool Transform::isVerticalInversion(Transform const &transform) {
+bool Transform::isVerticalInversion(const Transform& transform) {
   return transform.at(1, 1) == -1;
 }
 
-bool Transform::isHorizontalInversion(Transform const &transform) {
+bool Transform::isHorizontalInversion(const Transform& transform) {
   return transform.at(0, 0) == -1;
 }
 
-bool Transform::operator==(Transform const &rhs) const {
+bool Transform::operator==(const Transform& rhs) const {
   for (auto i = 0; i < 16; i++) {
     if (matrix[i] != rhs.matrix[i]) {
+      return false;
+    }
+  }
+  if (this->operations.size() != rhs.operations.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < this->operations.size(); i++) {
+    if (this->operations[i] != rhs.operations[i]) {
       return false;
     }
   }
   return true;
 }
 
-bool Transform::operator!=(Transform const &rhs) const {
+bool Transform::operator!=(const Transform& rhs) const {
   return !(*this == rhs);
 }
 
-Transform Transform::operator*(Transform const &rhs) const {
+Transform Transform::operator*(const Transform& rhs) const {
   if (*this == Transform::Identity()) {
     return rhs;
   }
 
-  const auto &lhs = *this;
+  const auto& lhs = *this;
   auto result = Transform{};
-  for (const auto &op : this->operations) {
+  for (const auto& op : this->operations) {
     if (op.type == TransformOperationType::Identity &&
         !result.operations.empty()) {
       continue;
     }
     result.operations.push_back(op);
   }
-  for (const auto &op : rhs.operations) {
+  for (const auto& op : rhs.operations) {
     if (op.type == TransformOperationType::Identity &&
         !result.operations.empty()) {
       continue;
@@ -347,15 +411,15 @@ Transform Transform::operator*(Transform const &rhs) const {
   return result;
 }
 
-Float &Transform::at(int i, int j) {
+Float& Transform::at(int i, int j) {
   return matrix[(i * 4) + j];
 }
 
-Float const &Transform::at(int i, int j) const {
+const Float& Transform::at(int i, int j) const {
   return matrix[(i * 4) + j];
 }
 
-Point operator*(Point const &point, Transform const &transform) {
+Point operator*(const Point& point, const Transform& transform) {
   if (transform == Transform::Identity()) {
     return point;
   }
@@ -365,29 +429,32 @@ Point operator*(Point const &point, Transform const &transform) {
   return {result.x, result.y};
 }
 
-Rect operator*(Rect const &rect, Transform const &transform) {
-  auto centre = rect.getCenter();
+Rect operator*(const Rect& rect, const Transform& transform) {
+  auto center = rect.getCenter();
+  return transform.applyWithCenter(rect, center);
+}
 
-  auto a = Point{rect.origin.x, rect.origin.y} - centre;
-  auto b = Point{rect.getMaxX(), rect.origin.y} - centre;
-  auto c = Point{rect.getMaxX(), rect.getMaxY()} - centre;
-  auto d = Point{rect.origin.x, rect.getMaxY()} - centre;
+Rect Transform::applyWithCenter(const Rect& rect, const Point& center) const {
+  auto a = Point{rect.origin.x, rect.origin.y} - center;
+  auto b = Point{rect.getMaxX(), rect.origin.y} - center;
+  auto c = Point{rect.getMaxX(), rect.getMaxY()} - center;
+  auto d = Point{rect.origin.x, rect.getMaxY()} - center;
 
-  auto vectorA = transform * Vector{a.x, a.y, 0, 1};
-  auto vectorB = transform * Vector{b.x, b.y, 0, 1};
-  auto vectorC = transform * Vector{c.x, c.y, 0, 1};
-  auto vectorD = transform * Vector{d.x, d.y, 0, 1};
+  auto vectorA = *this * Vector{a.x, a.y, 0, 1};
+  auto vectorB = *this * Vector{b.x, b.y, 0, 1};
+  auto vectorC = *this * Vector{c.x, c.y, 0, 1};
+  auto vectorD = *this * Vector{d.x, d.y, 0, 1};
 
-  Point transformedA{vectorA.x + centre.x, vectorA.y + centre.y};
-  Point transformedB{vectorB.x + centre.x, vectorB.y + centre.y};
-  Point transformedC{vectorC.x + centre.x, vectorC.y + centre.y};
-  Point transformedD{vectorD.x + centre.x, vectorD.y + centre.y};
+  Point transformedA{vectorA.x + center.x, vectorA.y + center.y};
+  Point transformedB{vectorB.x + center.x, vectorB.y + center.y};
+  Point transformedC{vectorC.x + center.x, vectorC.y + center.y};
+  Point transformedD{vectorD.x + center.x, vectorD.y + center.y};
 
   return Rect::boundingRect(
       transformedA, transformedB, transformedC, transformedD);
 }
 
-EdgeInsets operator*(EdgeInsets const &edgeInsets, Transform const &transform) {
+EdgeInsets operator*(const EdgeInsets& edgeInsets, const Transform& transform) {
   return EdgeInsets{
       edgeInsets.left * transform.matrix[0],
       edgeInsets.top * transform.matrix[5],
@@ -395,7 +462,7 @@ EdgeInsets operator*(EdgeInsets const &edgeInsets, Transform const &transform) {
       edgeInsets.bottom * transform.matrix[5]};
 }
 
-Vector operator*(Transform const &transform, Vector const &vector) {
+Vector operator*(const Transform& transform, const Vector& vector) {
   return {
       vector.x * transform.at(0, 0) + vector.y * transform.at(1, 0) +
           vector.z * transform.at(2, 0) + vector.w * transform.at(3, 0),
@@ -408,7 +475,7 @@ Vector operator*(Transform const &transform, Vector const &vector) {
   };
 }
 
-Size operator*(Size const &size, Transform const &transform) {
+Size operator*(const Size& size, const Transform& transform) {
   if (transform == Transform::Identity()) {
     return size;
   }

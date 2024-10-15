@@ -3,6 +3,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../../Context/AuthContext';
 import axios from 'axios';
 import CheckinCard from './CheckinCard';
+import { API_BASE_URL } from '@env';
 
 const CheckinContainer = () => {
   const { userId } = useContext(AuthContext);
@@ -12,7 +13,7 @@ const CheckinContainer = () => {
   useEffect(() => {
     const fetchCheckins = async () => {
       try {
-        const response = await axios.get(`https://demo-day-be.onrender.com/checkins`);
+        const response = await axios.get(`${API_BASE_URL}/checkins`);
         const userCheckins = response.data.filter((ci) => ci.user_id == userId);
         setCheckins(userCheckins);
         setLoading(false);

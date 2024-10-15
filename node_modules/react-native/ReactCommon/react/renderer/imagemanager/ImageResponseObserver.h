@@ -9,8 +9,7 @@
 
 #include <react/renderer/imagemanager/ImageResponse.h>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 /*
  * Represents any observer of ImageResponse progression, completion, or failure.
@@ -20,10 +19,10 @@ class ImageResponseObserver {
  public:
   virtual ~ImageResponseObserver() noexcept = default;
 
-  virtual void didReceiveProgress(float progress) const = 0;
-  virtual void didReceiveImage(ImageResponse const &imageResponse) const = 0;
-  virtual void didReceiveFailure() const = 0;
+  virtual void didReceiveProgress(float progress, int64_t loaded, int64_t total)
+      const = 0;
+  virtual void didReceiveImage(const ImageResponse& imageResponse) const = 0;
+  virtual void didReceiveFailure(const ImageLoadError& error) const = 0;
 };
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

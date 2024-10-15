@@ -16,8 +16,7 @@
 #include <react/renderer/core/ShadowNodeFragment.h>
 #include <react/renderer/debug/DebugStringConvertibleItem.h>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 /*
  * Template for all <View>-like classes (classes which have all same props
@@ -25,16 +24,18 @@ namespace react {
  * For example: <Paragraph>, <Image>, but not <Text>, <RawText>.
  */
 template <
-    const char *concreteComponentName,
+    const char* concreteComponentName,
     typename ViewPropsT = ViewProps,
     typename ViewEventEmitterT = ViewEventEmitter,
-    typename... Ts>
+    typename StateDataT = StateData,
+    bool usesMapBufferForStateData = false>
 class ConcreteViewShadowNode : public ConcreteShadowNode<
                                    concreteComponentName,
                                    YogaLayoutableShadowNode,
                                    ViewPropsT,
                                    ViewEventEmitterT,
-                                   Ts...> {
+                                   StateDataT,
+                                   usesMapBufferForStateData> {
   static_assert(
       std::is_base_of<ViewProps, ViewPropsT>::value,
       "ViewPropsT must be a descendant of ViewProps");
@@ -51,19 +52,20 @@ class ConcreteViewShadowNode : public ConcreteShadowNode<
       YogaLayoutableShadowNode,
       ViewPropsT,
       ViewEventEmitterT,
-      Ts...>;
+      StateDataT,
+      usesMapBufferForStateData>;
 
   ConcreteViewShadowNode(
-      ShadowNodeFragment const &fragment,
-      ShadowNodeFamily::Shared const &family,
+      const ShadowNodeFragment& fragment,
+      const ShadowNodeFamily::Shared& family,
       ShadowNodeTraits traits)
       : BaseShadowNode(fragment, family, traits) {
     initialize();
   }
 
   ConcreteViewShadowNode(
-      ShadowNode const &sourceShadowNode,
-      ShadowNodeFragment const &fragment)
+      const ShadowNode& sourceShadowNode,
+      const ShadowNodeFragment& fragment)
       : BaseShadowNode(sourceShadowNode, fragment) {
     initialize();
   }
@@ -81,38 +83,36 @@ class ConcreteViewShadowNode : public ConcreteShadowNode<
   }
 
   Transform getTransform() const override {
-    return BaseShadowNode::getConcreteProps().transform;
+    auto layoutMetrics = BaseShadowNode::getLayoutMetrics();
+    return BaseShadowNode::getConcreteProps().resolveTransform(layoutMetrics);
   }
 
-#pragma mark - DebugStringConvertible
-
-#if RN_DEBUG_STRING_CONVERTIBLE
-  SharedDebugStringConvertibleList getDebugProps() const override {
-    auto list = SharedDebugStringConvertibleList{};
-
-    auto basePropsList = ShadowNode::getDebugProps();
-    std::move(
-        basePropsList.begin(), basePropsList.end(), std::back_inserter(list));
-
-    list.push_back(std::make_shared<DebugStringConvertibleItem>(
-        "layout", "", LayoutableShadowNode::getDebugProps()));
-
-    return list;
+  bool canBeTouchTarget() const override {
+    auto pointerEvents =
+        BaseShadowNode::getConcreteProps().ViewProps::pointerEvents;
+    return pointerEvents == PointerEventsMode::Auto ||
+        pointerEvents == PointerEventsMode::BoxOnly;
   }
-#endif
+
+  bool canChildrenBeTouchTarget() const override {
+    auto pointerEvents =
+        BaseShadowNode::getConcreteProps().ViewProps::pointerEvents;
+    return pointerEvents == PointerEventsMode::Auto ||
+        pointerEvents == PointerEventsMode::BoxNone;
+  }
 
  private:
   void initialize() noexcept {
-    auto &props = BaseShadowNode::getConcreteProps();
+    auto& props = BaseShadowNode::getConcreteProps();
 
-    if (props.yogaStyle.display() == YGDisplayNone) {
+    if (props.yogaStyle.display() == yoga::Display::None) {
       BaseShadowNode::traits_.set(ShadowNodeTraits::Trait::Hidden);
     } else {
       BaseShadowNode::traits_.unset(ShadowNodeTraits::Trait::Hidden);
     }
 
     // `zIndex` is only defined for non-`static` positioned views.
-    if (props.yogaStyle.positionType() != YGPositionTypeStatic) {
+    if (props.yogaStyle.positionType() != yoga::PositionType::Static) {
       BaseShadowNode::orderIndex_ = props.zIndex.value_or(0);
     } else {
       BaseShadowNode::orderIndex_ = 0;
@@ -120,5 +120,4 @@ class ConcreteViewShadowNode : public ConcreteShadowNode<
   }
 };
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

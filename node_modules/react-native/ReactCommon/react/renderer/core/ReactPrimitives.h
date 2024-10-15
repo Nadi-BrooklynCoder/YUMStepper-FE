@@ -7,19 +7,14 @@
 
 #pragma once
 
-#include <folly/dynamic.h>
-#include <memory>
 #include <string>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 /*
  * `Tag` and `InstanceHandle` are used to address React Native components.
  */
 using Tag = int32_t;
-using InstanceHandle = struct InstanceHandleDummyStruct {
-} *;
 
 /*
  * An id of a running Surface instance that is used to refer to the instance.
@@ -38,7 +33,7 @@ using ComponentHandle = int64_t;
  * String identifier for components used for addressing them from
  * JavaScript side.
  */
-using ComponentName = char const *;
+using ComponentName = const char*;
 
 /*
  * Defines how visual side effects (views, images, text, and so on) are
@@ -74,5 +69,4 @@ enum class DisplayMode {
   Hidden = 2,
 };
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

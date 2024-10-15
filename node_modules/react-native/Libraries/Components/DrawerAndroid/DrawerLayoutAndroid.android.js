@@ -19,7 +19,6 @@ import type {DirectEventHandler} from '../../Types/CodegenTypes';
 
 import StyleSheet from '../../StyleSheet/StyleSheet';
 import dismissKeyboard from '../../Utilities/dismissKeyboard';
-import Platform from '../../Utilities/Platform';
 import StatusBar from '../StatusBar/StatusBar';
 import View from '../View/View';
 import AndroidDrawerLayoutNativeComponent, {
@@ -120,7 +119,7 @@ type Props = $ReadOnly<{|
 |}>;
 
 type State = {|
-  statusBarBackgroundColor: ColorValue,
+  drawerOpened: boolean,
 |};
 
 /**
@@ -169,7 +168,9 @@ class DrawerLayoutAndroid extends React.Component<Props, State> {
       React.ElementRef<typeof AndroidDrawerLayoutNativeComponent>,
     >();
 
-  state: State = {statusBarBackgroundColor: null};
+  state: State = {
+    drawerOpened: false,
+  };
 
   render(): React.Node {
     const {
@@ -180,8 +181,7 @@ class DrawerLayoutAndroid extends React.Component<Props, State> {
       onDrawerClose,
       ...props
     } = this.props;
-    const drawStatusBar =
-      Platform.Version >= 21 && this.props.statusBarBackgroundColor != null;
+    const drawStatusBar = this.props.statusBarBackgroundColor != null;
     const drawerViewWrapper = (
       <View
         style={[
@@ -191,6 +191,7 @@ class DrawerLayoutAndroid extends React.Component<Props, State> {
             backgroundColor: drawerBackgroundColor,
           },
         ]}
+        pointerEvents={this.state.drawerOpened ? 'auto' : 'none'}
         collapsable={false}>
         {renderNavigationView()}
         {drawStatusBar && <View style={styles.drawerStatusBar} />}
@@ -247,12 +248,18 @@ class DrawerLayoutAndroid extends React.Component<Props, State> {
   };
 
   _onDrawerOpen = () => {
+    this.setState({
+      drawerOpened: true,
+    });
     if (this.props.onDrawerOpen) {
       this.props.onDrawerOpen();
     }
   };
 
   _onDrawerClose = () => {
+    this.setState({
+      drawerOpened: false,
+    });
     if (this.props.onDrawerClose) {
       this.props.onDrawerClose();
     }

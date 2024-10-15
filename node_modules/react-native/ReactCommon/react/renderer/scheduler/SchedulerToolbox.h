@@ -13,14 +13,12 @@
 #include <react/renderer/componentregistry/ComponentDescriptorFactory.h>
 #include <react/renderer/core/EventBeat.h>
 #include <react/renderer/leakchecker/LeakChecker.h>
-
 #include <react/renderer/uimanager/UIManagerCommitHook.h>
 #include <react/renderer/uimanager/primitives.h>
 #include <react/utils/ContextContainer.h>
 #include <react/utils/RunLoopObserver.h>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 /*
  * Contains all external dependencies of Scheduler.
@@ -51,17 +49,11 @@ struct SchedulerToolbox final {
   RuntimeExecutor runtimeExecutor;
 
   /*
-   * Represent connections with a platform-specific UI run loops.
-   */
-  RunLoopObserver::Factory mainRunLoopObserverFactory;
-
-  /*
    * Asynchronous & synchronous event beats.
    * Represent connections with the platform-specific run loops and general
    * purpose background queue.
    */
   EventBeat::Factory asynchronousEventBeatFactory;
-  EventBeat::Factory synchronousEventBeatFactory;
 
   /*
    * General-purpose executor that is used to dispatch work on some utility
@@ -76,8 +68,7 @@ struct SchedulerToolbox final {
   /*
    * A list of `UIManagerCommitHook`s that should be registered in `UIManager`.
    */
-  std::vector<std::shared_ptr<UIManagerCommitHook const>> commitHooks;
+  std::vector<std::shared_ptr<UIManagerCommitHook>> commitHooks;
 };
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

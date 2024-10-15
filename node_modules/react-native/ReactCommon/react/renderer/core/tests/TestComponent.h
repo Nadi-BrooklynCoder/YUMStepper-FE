@@ -18,6 +18,10 @@
 #include <react/renderer/core/RawProps.h>
 #include <react/renderer/core/ShadowNode.h>
 
+#ifdef ANDROID
+#include <folly/dynamic.h>
+#endif
+
 /**
  * This defines a set of TestComponent classes: Props, ShadowNode,
  * ComponentDescriptor. To be used for testing purpose.
@@ -25,9 +29,16 @@
 
 namespace facebook::react {
 
-class TestState {
- public:
-  int number;
+struct TestState {
+  TestState() = default;
+
+#ifdef ANDROID
+  TestState(const TestState& previousState, folly::dynamic&& data){};
+
+  folly::dynamic getDynamic() const {
+    return {};
+  }
+#endif
 };
 
 static const char TestComponentName[] = "Test";
@@ -37,9 +48,9 @@ class TestProps : public ViewProps {
   TestProps() = default;
 
   TestProps(
-      const PropsParserContext &context,
-      const TestProps &sourceProps,
-      const RawProps &rawProps)
+      const PropsParserContext& context,
+      const TestProps& sourceProps,
+      const RawProps& rawProps)
       : ViewProps(context, sourceProps, rawProps) {}
 };
 
@@ -65,7 +76,8 @@ class TestShadowNode final : public ConcreteViewShadowNode<
 
   facebook::react::Point _contentOriginOffset{};
 
-  facebook::react::Point getContentOriginOffset() const override {
+  facebook::react::Point getContentOriginOffset(
+      bool /*includeTransform*/) const override {
     return _contentOriginOffset;
   }
 };

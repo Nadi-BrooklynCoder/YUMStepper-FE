@@ -11,10 +11,9 @@
 
 #import "RCTTextLayoutManager.h"
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
-TextLayoutManager::TextLayoutManager(ContextContainer::Shared const &contextContainer)
+TextLayoutManager::TextLayoutManager(const ContextContainer::Shared &contextContainer)
 {
   self_ = wrapManagedObject([RCTTextLayoutManager new]);
 }
@@ -25,31 +24,13 @@ std::shared_ptr<void> TextLayoutManager::getNativeTextLayoutManager() const
   return self_;
 }
 
-std::shared_ptr<void> TextLayoutManager::getHostTextStorage(
-    AttributedString attributedString,
-    ParagraphAttributes paragraphAttributes,
-    LayoutConstraints layoutConstraints) const
-{
-  RCTTextLayoutManager *textLayoutManager = (RCTTextLayoutManager *)unwrapManagedObject(self_);
-  CGSize maximumSize = CGSize{layoutConstraints.maximumSize.width, CGFLOAT_MAX};
-
-  NSTextStorage *textStorage = [textLayoutManager textStorageForAttributesString:attributedString
-                                                             paragraphAttributes:paragraphAttributes
-                                                                            size:maximumSize];
-  return wrapManagedObject(textStorage);
-}
-
 TextMeasurement TextLayoutManager::measure(
     AttributedStringBox attributedStringBox,
     ParagraphAttributes paragraphAttributes,
-    LayoutConstraints layoutConstraints,
-    std::shared_ptr<void> hostTextStorage) const
+    const TextLayoutContext &layoutContext,
+    LayoutConstraints layoutConstraints) const
 {
   RCTTextLayoutManager *textLayoutManager = (RCTTextLayoutManager *)unwrapManagedObject(self_);
-  NSTextStorage *textStorage;
-  if (hostTextStorage) {
-    textStorage = unwrapManagedObject(hostTextStorage);
-  }
 
   auto measurement = TextMeasurement{};
 
@@ -58,7 +39,7 @@ TextMeasurement TextLayoutManager::measure(
       auto &attributedString = attributedStringBox.getValue();
 
       measurement = measureCache_.get(
-          {attributedString, paragraphAttributes, layoutConstraints}, [&](TextMeasureCacheKey const &key) {
+          {attributedString, paragraphAttributes, layoutConstraints}, [&](const TextMeasureCacheKey &key) {
             auto telemetry = TransactionTelemetry::threadLocalTelemetry();
             if (telemetry) {
               telemetry->willMeasureText();
@@ -66,8 +47,7 @@ TextMeasurement TextLayoutManager::measure(
 
             auto measurement = [textLayoutManager measureAttributedString:attributedString
                                                       paragraphAttributes:paragraphAttributes
-                                                        layoutConstraints:layoutConstraints
-                                                              textStorage:textStorage];
+                                                        layoutConstraints:layoutConstraints];
 
             if (telemetry) {
               telemetry->didMeasureText();
@@ -89,8 +69,7 @@ TextMeasurement TextLayoutManager::measure(
 
       measurement = [textLayoutManager measureNSAttributedString:nsAttributedString
                                              paragraphAttributes:paragraphAttributes
-                                               layoutConstraints:layoutConstraints
-                                                     textStorage:textStorage];
+                                               layoutConstraints:layoutConstraints];
 
       if (telemetry) {
         telemetry->didMeasureText();
@@ -116,5 +95,4 @@ LinesMeasurements TextLayoutManager::measureLines(
                                                    size:{size.width, size.height}];
 }
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

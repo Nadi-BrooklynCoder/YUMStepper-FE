@@ -385,15 +385,6 @@ export type NativeProps = $ReadOnly<{|
     |}>,
   >,
 
-  onTextInput?: ?BubblingEventHandler<
-    $ReadOnly<{|
-      target: Int32,
-      text: string,
-      previousText: string,
-      range: $ReadOnly<{|start: Double, end: Double|}>,
-    |}>,
-  >,
-
   /**
    * Callback that is called when text input ends.
    */
@@ -484,6 +475,11 @@ export type NativeProps = $ReadOnly<{|
    * The highlight and cursor color of the text input.
    */
   selectionColor?: ?ColorValue,
+
+  /**
+   * The text selection handle color.
+   */
+  selectionHandleColor?: ?ColorValue,
 
   /**
    * The start and end of the text input's selection. Set start and end to
@@ -657,12 +653,6 @@ export const __INTERNAL_VIEW_CONFIG: PartialViewConfig = {
         captured: 'onSubmitEditingCapture',
       },
     },
-    topTextInput: {
-      phasedRegistrationNames: {
-        bubbled: 'onTextInput',
-        captured: 'onTextInputCapture',
-      },
-    },
   },
   directEventTypes: {
     topScroll: {
@@ -692,6 +682,9 @@ export const __INTERNAL_VIEW_CONFIG: PartialViewConfig = {
     fontStyle: true,
     textShadowOffset: true,
     selectionColor: {process: require('../../StyleSheet/processColor').default},
+    selectionHandleColor: {
+      process: require('../../StyleSheet/processColor').default,
+    },
     placeholderTextColor: {
       process: require('../../StyleSheet/processColor').default,
     },

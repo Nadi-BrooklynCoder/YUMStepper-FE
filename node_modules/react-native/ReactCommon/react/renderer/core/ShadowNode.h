@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
-#include <butter/small_vector.h>
 #include <react/renderer/core/EventEmitter.h>
 #include <react/renderer/core/Props.h>
 #include <react/renderer/core/ReactPrimitives.h>
@@ -21,34 +22,28 @@
 #include <react/renderer/core/State.h>
 #include <react/renderer/debug/DebugStringConvertible.h>
 
-namespace facebook {
-namespace react {
-
-static constexpr const int kShadowNodeChildrenSmallVectorSize = 8;
+namespace facebook::react {
 
 class ComponentDescriptor;
 struct ShadowNodeFragment;
+struct ShadowNodeWrapper;
 
 class ShadowNode : public Sealable,
                    public DebugStringConvertible,
                    public jsi::NativeState {
  public:
-  using Shared = std::shared_ptr<ShadowNode const>;
-  using Weak = std::weak_ptr<ShadowNode const>;
+  using Shared = std::shared_ptr<const ShadowNode>;
+  using Weak = std::weak_ptr<const ShadowNode>;
   using Unshared = std::shared_ptr<ShadowNode>;
-  using ListOfShared =
-      butter::small_vector<Shared, kShadowNodeChildrenSmallVectorSize>;
-  using ListOfWeak =
-      butter::small_vector<Weak, kShadowNodeChildrenSmallVectorSize>;
-  using SharedListOfShared = std::shared_ptr<ListOfShared const>;
+  using ListOfShared = std::vector<Shared>;
+  using ListOfWeak = std::vector<Weak>;
+  using SharedListOfShared = std::shared_ptr<const ListOfShared>;
   using UnsharedListOfShared = std::shared_ptr<ListOfShared>;
   using UnsharedListOfWeak = std::shared_ptr<ListOfWeak>;
 
-  using AncestorList = butter::small_vector<
-      std::pair<
-          std::reference_wrapper<ShadowNode const> /* parentNode */,
-          int /* childIndex */>,
-      64>;
+  using AncestorList = std::vector<std::pair<
+      std::reference_wrapper<const ShadowNode> /* parentNode */,
+      int /* childIndex */>>;
 
   static SharedListOfShared emptySharedShadowNodeSharedList();
 
@@ -56,7 +51,7 @@ class ShadowNode : public Sealable,
    * Returns `true` if nodes belong to the same family (they were cloned one
    * from each other or from the same source node).
    */
-  static bool sameFamily(const ShadowNode &first, const ShadowNode &second);
+  static bool sameFamily(const ShadowNode& first, const ShadowNode& second);
 
   /*
    * A set of traits associated with a particular class.
@@ -72,7 +67,7 @@ class ShadowNode : public Sealable,
    * Creates a Shadow Node based on fields specified in a `fragment`.
    */
   ShadowNode(
-      ShadowNodeFragment const &fragment,
+      const ShadowNodeFragment& fragment,
       ShadowNodeFamily::Shared family,
       ShadowNodeTraits traits);
 
@@ -82,21 +77,21 @@ class ShadowNode : public Sealable,
    * Note: `tag`, `surfaceId`, and `eventEmitter` cannot be changed.
    */
   ShadowNode(
-      const ShadowNode &sourceShadowNode,
-      const ShadowNodeFragment &fragment);
+      const ShadowNode& sourceShadowNode,
+      const ShadowNodeFragment& fragment);
 
   /*
    * Not copyable.
    */
-  ShadowNode(ShadowNode const &shadowNode) noexcept = delete;
-  ShadowNode &operator=(ShadowNode const &other) noexcept = delete;
+  ShadowNode(const ShadowNode& shadowNode) noexcept = delete;
+  ShadowNode& operator=(const ShadowNode& other) noexcept = delete;
 
-  virtual ~ShadowNode() = default;
+  virtual ~ShadowNode() override = default;
 
   /*
    * Clones the shadow node using stored `cloneFunction`.
    */
-  Unshared clone(const ShadowNodeFragment &fragment) const;
+  Unshared clone(const ShadowNodeFragment& fragment) const;
 
   /*
    * Clones the node (and partially the tree starting from the node) by
@@ -106,9 +101,9 @@ class ShadowNode : public Sealable,
    * Returns `nullptr` if the operation cannot be performed successfully.
    */
   Unshared cloneTree(
-      ShadowNodeFamily const &shadowNodeFamily,
-      std::function<Unshared(ShadowNode const &oldShadowNode)> const &callback)
-      const;
+      const ShadowNodeFamily& shadowNodeFamily,
+      const std::function<Unshared(const ShadowNode& oldShadowNode)>& callback,
+      ShadowNodeTraits traits = {}) const;
 
 #pragma mark - Getters
 
@@ -120,16 +115,17 @@ class ShadowNode : public Sealable,
    */
   ShadowNodeTraits getTraits() const;
 
-  Props::Shared const &getProps() const;
-  ListOfShared const &getChildren() const;
-  SharedEventEmitter const &getEventEmitter() const;
+  const Props::Shared& getProps() const;
+  const ListOfShared& getChildren() const;
+  const SharedEventEmitter& getEventEmitter() const;
+  jsi::Value getInstanceHandle(jsi::Runtime& runtime) const;
   Tag getTag() const;
   SurfaceId getSurfaceId() const;
 
   /*
    * Returns a concrete `ComponentDescriptor` that manages nodes of this type.
    */
-  const ComponentDescriptor &getComponentDescriptor() const;
+  const ComponentDescriptor& getComponentDescriptor() const;
 
   /*
    * Returns the `ContextContainer` used by this ShadowNode.
@@ -139,7 +135,7 @@ class ShadowNode : public Sealable,
   /*
    * Returns a state associated with the particular node.
    */
-  const State::Shared &getState() const;
+  const State::Shared& getState() const;
 
   /*
    * Returns a momentary value of the most recently created or committed state
@@ -159,15 +155,15 @@ class ShadowNode : public Sealable,
 
   void sealRecursive() const;
 
-  ShadowNodeFamily const &getFamily() const;
+  const ShadowNodeFamily& getFamily() const;
 
 #pragma mark - Mutating Methods
 
-  virtual void appendChild(Shared const &child);
+  virtual void appendChild(const Shared& child);
   virtual void replaceChild(
-      ShadowNode const &oldChild,
-      Shared const &newChild,
-      size_t suggestedIndex = -1);
+      const ShadowNode& oldChild,
+      const Shared& newChild,
+      size_t suggestedIndex = std::numeric_limits<size_t>::max());
 
   /*
    * Performs all side effects associated with mounting/unmounting in one place.
@@ -175,6 +171,44 @@ class ShadowNode : public Sealable,
    * `EventEmitter::DispatchMutex()` must be acquired before calling.
    */
   void setMounted(bool mounted) const;
+
+  /*
+   * Returns true if the shadow node has been promoted to be the next mounted
+   * tree.
+   */
+  bool getHasBeenPromoted() const;
+
+  /*
+   * Applies the most recent state to the ShadowNode if following conditions are
+   * met:
+   * - ShadowNode has a state.
+   * - ShadowNode has not been mounted before.
+   * - ShadowNode's current state is obsolete.
+   *
+   * Returns true if the state was applied, false otherwise.
+   */
+  bool progressStateIfNecessary();
+
+  /*
+   * Bind the runtime reference to this `ShadowNode` with a raw pointer,
+   * allowing to update the reference to this `ShadowNode` when cloned.
+   */
+  void setRuntimeShadowNodeReference(
+      ShadowNodeWrapper* runtimeShadowNodeReference) const;
+
+  /*
+   * Transfer the runtime reference to this `ShadowNode` to a new instance,
+   * updating the reference to point to the new `ShadowNode` referencing it.
+   */
+  void transferRuntimeShadowNodeReference(
+      const Shared& destinationShadowNode) const;
+
+  /*
+   * Transfer the runtime reference based on the fragment instructions.
+   */
+  void transferRuntimeShadowNodeReference(
+      const Shared& destinationShadowNode,
+      const ShadowNodeFragment& fragment) const;
 
 #pragma mark - DebugStringConvertible
 
@@ -189,7 +223,7 @@ class ShadowNode : public Sealable,
    * is used and useful for debug-printing purposes *only*.
    * Do not access this value in any circumstances.
    */
-  int const revision_;
+  const int revision_;
 #endif
 
  protected:
@@ -212,11 +246,20 @@ class ShadowNode : public Sealable,
    */
   ShadowNodeFamily::Shared family_;
 
+  /*
+   * True if shadow node will be mounted shortly in the future but for all
+   * intents and purposes it should be treated as mounted.
+   */
   mutable std::atomic<bool> hasBeenMounted_{false};
 
+  /*
+   * True if shadow node has been promoted to be the next mounted tree.
+   */
+  mutable bool hasBeenPromoted_{false};
+
   static Props::Shared propsForClonedShadowNode(
-      ShadowNode const &sourceShadowNode,
-      Props::Shared const &props);
+      const ShadowNode& sourceShadowNode,
+      const Props::Shared& props);
 
  protected:
   /*
@@ -224,7 +267,27 @@ class ShadowNode : public Sealable,
    * that class.
    */
   ShadowNodeTraits traits_;
+
+  /*
+   * Pointer to the runtime reference to this `ShadowNode`.
+   */
+  mutable ShadowNodeWrapper* runtimeShadowNodeReference_{};
 };
 
-} // namespace react
-} // namespace facebook
+static_assert(
+    std::has_virtual_destructor<ShadowNode>::value,
+    "ShadowNode must have a virtual destructor");
+
+struct ShadowNodeWrapper : public jsi::NativeState {
+  explicit ShadowNodeWrapper(ShadowNode::Shared shadowNode)
+      : shadowNode(std::move(shadowNode)) {}
+
+  // The below method needs to be implemented out-of-line in order for the class
+  // to have at least one "key function" (see
+  // https://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable)
+  ~ShadowNodeWrapper() override;
+
+  ShadowNode::Shared shadowNode;
+};
+
+} // namespace facebook::react

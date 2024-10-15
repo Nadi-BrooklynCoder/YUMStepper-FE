@@ -7,21 +7,23 @@ import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { AuthContext } from '../Context/AuthContext';
 import { useFonts } from 'expo-font';
+const API = API_BASE_URL;
 
 const LoginComponent = () => {
     const { login } = useContext(AuthContext);
     const navigation = useNavigation();
 
     const [isLoading, setIsLoading] = useState(false);
-    const API = API_BASE_URL;
+    const [errorMessage, setErrorMessage] = useState(null);
+    
 
     const [fontsLoaded] = useFonts({
-        Itim: require('../assets/fonts/Itim-Regular.ttf'),
-        'Open-Sans': require('../assets/fonts/OpenSans-Regular.ttf'),
+        Itim_400Regular: require('../assets/fonts/Itim-Regular.ttf'),
+        OpenSans_700Bold: require('../assets/fonts/OpenSans-Bold.ttf'),
     });
 
     if (!fontsLoaded) {
-        return <AppLoading />;
+        return <ActivityIndicator size="large" color="#007BFF" />;
     }
 
     const validationSchema = Yup.object({
@@ -30,20 +32,23 @@ const LoginComponent = () => {
     });
 
     const handleLogin = async (values) => {
+        console.log(values)
         const loginData = {
             username: values.username.trim(),
             password_hash: values.password,
         };
 
-        setIsLoading(true); // Start loading
-        Keyboard.dismiss()
+        setIsLoading(true);
+        setErrorMessage(null);
+        Keyboard.dismiss();
 
         try {
             const res = await axios.post(`${API}/users/login`, loginData);
             const { token, user } = res.data;
-            console.log(res)
+            console.log(user)
+
             // Call login function to store token in AsyncStorage and update state
-            await login(token, user.id);
+            await login(token, user.id, navigation);
 
             // Navigate to the Profile screen
             navigation.navigate('Profile');
@@ -51,15 +56,20 @@ const LoginComponent = () => {
             if (err.response) {
                 console.error('Error response:', err.response.data);
                 console.error('Status:', err.response.status);
+                setErrorMessage('Invalid username or password.');
             } else if (err.request) {
                 console.error('No response received:', err.request);
+                setErrorMessage('Network error. Please try again later.');
             } else {
                 console.error('Error', err.message);
+                setErrorMessage('An unexpected error occurred.');
             }
         } finally {
-            setIsLoading(false); // Stop loading
+            setIsLoading(false);
         }
     };
+
+
 
     return (
         <View style={styles.container}>
@@ -89,6 +99,9 @@ const LoginComponent = () => {
                             value={values.password}
                         />
                         {touched.password && errors.password && <Text style={styles.error}>{errors.password}</Text>}
+                        
+                        {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
+                        
                         {/* Loading Spinner */}
                         {isLoading ? (
                             <ActivityIndicator size="large" color="#007BFF" />
@@ -113,7 +126,8 @@ const styles = StyleSheet.create({
     container: {
         padding: 20,
         backgroundColor: 'antiquewhite',
-        height: 600,
+        flex: 1,
+        justifyContent: 'center',
     },
     title: {
         fontSize: 35,

@@ -7,8 +7,7 @@
 
 #import "RCTNativeSampleTurboModuleSpec.h"
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_voidFunc(
     facebook::jsi::Runtime &rt,
@@ -131,6 +130,66 @@ static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_getVal
           rt, PromiseKind, "getValueWithPromise", @selector(getValueWithPromise:resolve:reject:), args, count);
 }
 
+static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_voidFuncThrows(
+    facebook::jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const facebook::jsi::Value *args,
+    size_t count)
+{
+  return static_cast<ObjCTurboModule &>(turboModule)
+      .invokeObjCMethod(rt, VoidKind, "voidFuncThrows", @selector(voidFuncThrows), args, count);
+}
+
+static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_getObjectThrows(
+    facebook::jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const facebook::jsi::Value *args,
+    size_t count)
+{
+  return static_cast<ObjCTurboModule &>(turboModule)
+      .invokeObjCMethod(rt, ObjectKind, "getObjectThrows", @selector(getObjectThrows:), args, count);
+}
+
+static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_promiseThrows(
+    facebook::jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const facebook::jsi::Value *args,
+    size_t count)
+{
+  return static_cast<ObjCTurboModule &>(turboModule)
+      .invokeObjCMethod(rt, PromiseKind, "promiseThrows", @selector(promiseThrows:reject:), args, count);
+}
+
+static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_voidFuncAssert(
+    facebook::jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const facebook::jsi::Value *args,
+    size_t count)
+{
+  return static_cast<ObjCTurboModule &>(turboModule)
+      .invokeObjCMethod(rt, VoidKind, "voidFuncAssert", @selector(voidFuncAssert), args, count);
+}
+
+static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_getObjectAssert(
+    facebook::jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const facebook::jsi::Value *args,
+    size_t count)
+{
+  return static_cast<ObjCTurboModule &>(turboModule)
+      .invokeObjCMethod(rt, ObjectKind, "getObjectAssert", @selector(getObjectAssert:), args, count);
+}
+
+static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_promiseAssert(
+    facebook::jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const facebook::jsi::Value *args,
+    size_t count)
+{
+  return static_cast<ObjCTurboModule &>(turboModule)
+      .invokeObjCMethod(rt, PromiseKind, "promiseAssert", @selector(promiseAssert:reject:), args, count);
+}
+
 static facebook::jsi::Value __hostFunction_NativeSampleTurboModuleSpecJSI_getConstants(
     facebook::jsi::Runtime &rt,
     TurboModule &turboModule,
@@ -158,8 +217,13 @@ NativeSampleTurboModuleSpecJSI::NativeSampleTurboModuleSpecJSI(const ObjCTurboMo
       MethodMetadata{1, __hostFunction_NativeSampleTurboModuleSpecJSI_getValueWithCallback};
   methodMap_["getValueWithPromise"] =
       MethodMetadata{1, __hostFunction_NativeSampleTurboModuleSpecJSI_getValueWithPromise};
+  methodMap_["voidFuncThrows"] = MethodMetadata{0, __hostFunction_NativeSampleTurboModuleSpecJSI_voidFuncThrows};
+  methodMap_["getObjectThrows"] = MethodMetadata{1, __hostFunction_NativeSampleTurboModuleSpecJSI_getObjectThrows};
+  methodMap_["promiseThrows"] = MethodMetadata{0, __hostFunction_NativeSampleTurboModuleSpecJSI_promiseThrows};
+  methodMap_["voidFuncAssert"] = MethodMetadata{0, __hostFunction_NativeSampleTurboModuleSpecJSI_voidFuncAssert};
+  methodMap_["getObjectAssert"] = MethodMetadata{1, __hostFunction_NativeSampleTurboModuleSpecJSI_getObjectAssert};
+  methodMap_["promiseAssert"] = MethodMetadata{0, __hostFunction_NativeSampleTurboModuleSpecJSI_promiseAssert};
   methodMap_["getConstants"] = MethodMetadata{0, __hostFunction_NativeSampleTurboModuleSpecJSI_getConstants};
 }
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react
