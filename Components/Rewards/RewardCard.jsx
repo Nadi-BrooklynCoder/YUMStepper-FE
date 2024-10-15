@@ -8,7 +8,7 @@ import { AuthContext } from '../../Context/AuthContext';
 
 const RewardCard = ({ reward, setModalVisible }) => {
     const isRedeemable = user?.points_earned >= reward.points_required
-    const { isNearRestaurant, user, userId, setSelectedReward } = useContext(AuthContext)
+    const { isNearRestaurant, user, setSelectedReward } = useContext(AuthContext)
     const [fontsLoaded] = useFonts({
         Itim: require('../../assets/fonts/Itim-Regular.ttf'),
         'Open-Sans': require('../../assets/fonts/OpenSans-Regular.ttf'),

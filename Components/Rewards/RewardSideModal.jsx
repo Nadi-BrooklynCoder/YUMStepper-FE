@@ -4,8 +4,8 @@ import { AuthContext } from '../../Context/AuthContext';
 import { API_BASE_URL } from '@env';
 import axios from 'axios';
 
-const RewardSideModal = ({ reward, setModalVisible }) => {
-    const { user, userId, isNearRestaurant } = useContext(AuthContext);
+const RewardSideModal = ({ setModalVisible }) => {
+    const { selectedReward: reward, user, userId, isNearRestaurant } = useContext(AuthContext);
     const [showMessage, setShowMessage] = useState(false); // Track pop-up visibility
     const fadeAnim = useRef(new Animated.Value(0)).current; // Initial fade value
 
