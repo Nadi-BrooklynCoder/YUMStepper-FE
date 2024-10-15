@@ -27,7 +27,7 @@ const RewardCard = ({ reward, setModalVisible }) => {
         <View style={styles.container}>
             <TouchableOpacity
                 style={[styles.rewardButton, isRedeemable ? styles.redeemable : styles.locked]}
-                disabled={!isRedeemable}
+                disabled={!isRedeemable && !isNearRestaurant}
                 onPress={handleRedeem}
             >
                 <Text style={styles.rewardText}>{reward.details}</Text>
