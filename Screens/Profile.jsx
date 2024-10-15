@@ -11,8 +11,7 @@ import { API_BASE_URL } from '@env';
 
 
 const Profile = () => {
-    const { userToken, userId, logout } = useContext(AuthContext);
-    const [user, setUser] = useState({});
+    const { userToken, userId, logout, user, setUser } = useContext(AuthContext);
     const [index, setIndex] = useState(0);
     const [routes] = useState([
         { key: 'steps', title: 'Steps' },

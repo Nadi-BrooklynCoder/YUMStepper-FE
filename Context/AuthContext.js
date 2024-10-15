@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [userToken, setUserToken] = useState(null);
     const [userId, setUserId] = useState(null);
+    const [user, setUser] = useState({});
     const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
     const [directions, setDirections] = useState([]);
     const [userSteps, setUserSteps] = useState(0);
@@ -19,6 +20,7 @@ export const AuthProvider = ({ children }) => {
     const [restaurants, setRestaurants] = useState([]);
     const [nearbyPlaces, setNearbyPlaces] = useState([]);
     const [isNearRestaurant, setIsNearRestaurant] = useState(false);
+    const [selectedReward, setSelectedReward] = useState({})
 
     useEffect(() => {
         if (userId === null && userToken) {
@@ -236,7 +238,11 @@ export const AuthProvider = ({ children }) => {
             fetchNearByPlaces,
             isNearRestaurant,
             stepsToPoints,
-            nearbyPlaces
+            nearbyPlaces,
+            user,
+            setUser,
+            selectedReward,
+            setSelectedReward,
         }}>
             {children}
         </AuthContext.Provider>
