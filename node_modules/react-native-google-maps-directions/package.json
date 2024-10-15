@@ -1,0 +1,32 @@
+{
+  "name": "react-native-google-maps-directions",
+  "version": "2.1.1",
+  "description": "Get direction using Google Maps in React Native",
+  "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tiaanduplessis/react-native-google-maps-directions.git"
+  },
+  "homepage": "https://github.com/tiaanduplessis/react-native-google-maps-directions",
+  "bugs": "https://github.com/tiaanduplessis/react-native-google-maps-directions/issues",
+  "author": "Tiaan du Plessis",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "lint": "standard --fix",
+    "pretest": "npm run lint",
+    "test": "echo 'No tests!'"
+  },
+  "keywords": [
+    "react-native,",
+    "linking,",
+    "google-maps,",
+    "directions",
+    "react-native-google-maps-directions"
+  ],
+  "devDependencies": {
+    "standard": "14.3.1"
+  }
+}
