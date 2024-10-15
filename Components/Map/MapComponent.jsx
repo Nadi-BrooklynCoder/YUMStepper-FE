@@ -137,7 +137,7 @@ const MapComponent = ({ setSideModalVisible }) => {
 
   return (
     <ForwardedMapView
-      ref={mapViewRef}
+      // ref={mapViewRef}
       provider={PROVIDER_GOOGLE}
       style={styles.map}
       initialRegion={{

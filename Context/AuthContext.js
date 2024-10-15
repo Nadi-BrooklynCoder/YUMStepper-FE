@@ -101,6 +101,7 @@ export const AuthProvider = ({ children }) => {
                 console.error('No routes found');
             }
         } catch (error) {
+        
             console.error('Error fetching directions', error);
         }
     };
