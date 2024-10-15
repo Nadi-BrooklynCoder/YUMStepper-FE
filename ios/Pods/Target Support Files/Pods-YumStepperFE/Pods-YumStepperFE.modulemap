@@ -1,0 +1,6 @@
+module Pods_YumStepperFE {
+  umbrella header "Pods-YumStepperFE-umbrella.h"
+
+  export *
+  module * { export * }
+}
