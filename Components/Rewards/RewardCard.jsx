@@ -1,11 +1,14 @@
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useFonts } from 'expo-font';
 import AppLoading from 'expo-app-loading';
+import { API_BASE_URL } from '@env';
+import axios from 'axios';
+import { AuthContext } from '../../Context/AuthContext';
 
-const RewardCard = ({ reward }) => {
-    const [modalVisible, setModalVisible] = useState(false);
-
+const RewardCard = ({ reward, setModalVisible }) => {
+    const isRedeemable = user?.points_earned >= reward.points_required
+    const { isNearRestaurant, user, setSelectedReward } = useContext(AuthContext)
     const [fontsLoaded] = useFonts({
         Itim: require('../../assets/fonts/Itim-Regular.ttf'),
         'Open-Sans': require('../../assets/fonts/OpenSans-Regular.ttf'),
@@ -16,52 +19,20 @@ const RewardCard = ({ reward }) => {
     }
 
     const handleRedeem = () => {
+        setSelectedReward(reward)
         setModalVisible(true);
     };
 
     return (
         <View style={styles.container}>
             <TouchableOpacity
-                style={[styles.rewardButton, reward.isRedeemable ? styles.redeemable : styles.locked]}
-                disabled={!reward.isRedeemable}
+                style={[styles.rewardButton, isRedeemable ? styles.redeemable : styles.locked]}
+                disabled={!isRedeemable && !isNearRestaurant}
                 onPress={handleRedeem}
             >
                 <Text style={styles.rewardText}>{reward.details}</Text>
                 <Text style={styles.pointsText}>Cost: {reward.points} Points</Text>
             </TouchableOpacity>
-
-            {reward.isRedeemable && (
-                <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={() => setModalVisible(false)}
-                >
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.rewardDetail}>{reward.details}</Text>
-                            <Image source={{ uri: reward.qr_code }} style={styles.qrCode} />
-                            <Text style={styles.expiration}>Expires on: {reward.expiration_date}</Text>
-
-                            <TouchableOpacity
-                                style={styles.useButton}
-                                onPress={() => {
-                                    setModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.useButtonText}>Use Now</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.saveButton}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={styles.saveButtonText}>Save for Later</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
-            )}
         </View>
     );
 };

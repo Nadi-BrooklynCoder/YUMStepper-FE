@@ -8,7 +8,8 @@ import {
   Keyboard,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-
+import { API_BASE_URL } from '@env';
+import axios from "axios";
 import MapComponent from "../Components/Map/MapComponent";
 import SearchMap from "../Components/Map/SearchMap";
 import MapSide from "../Components/Map/MapSide";
@@ -23,6 +24,8 @@ const Map = ({ route }) => {
     setDirections,
     isNearRestaurant,
     userLocation,
+    user,
+    userId,
     fetchNearByPlaces,
   } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,6 +51,17 @@ const Map = ({ route }) => {
       }, 500);
     }
   };
+
+  const handleCheckIn = async () => {
+    if(isNearRestaurant) {
+      try {
+        await axios.put(`${API_BASE_URL}/users/${userId}`, {...user, points_earned: user.points_earned += 25}) // ADD POINTS AT CHECK IN
+        navigation.navigate("Rewards");
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }
 
   useEffect(() => {
     if (userLocation && userLocation.latitude) {
@@ -81,11 +95,7 @@ const Map = ({ route }) => {
               },
             ]}
             disabled={!isNearRestaurant}
-            onPress={() => {
-              if (isNearRestaurant) {
-                navigation.navigate("Rewards");
-              }
-            }}
+            onPress={handleCheckIn}
           >
             <Text style={styles.checkInButtonText}>Check In</Text>
           </TouchableOpacity>
