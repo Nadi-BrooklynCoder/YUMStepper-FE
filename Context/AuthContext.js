@@ -1,4 +1,3 @@
-import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDistance } from 'geolib';
 import polyline from '@mapbox/polyline';
@@ -90,8 +89,8 @@ export const AuthProvider = ({ children }) => {
                 `${API_BASE_URL}/googlePlaces/directions?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destLat=${selectedRestaurant.latitude}&destLng=${selectedRestaurant.longitude}`
             );
 
-            if (response?.data?.routes.length > 0) {
-                const points = response.data.routes[0].overview_polyline.points;
+            if (response?.data?.directions.legs.length > 0) {
+                const points = response.data.directions.overview_polyline.points;
                 const decodedPoints = polyline.decode(points).map(([latitude, longitude]) => ({
                     latitude,
                     longitude,
