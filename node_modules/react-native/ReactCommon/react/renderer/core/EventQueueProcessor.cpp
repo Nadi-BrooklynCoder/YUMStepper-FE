@@ -17,12 +17,10 @@ namespace facebook::react {
 EventQueueProcessor::EventQueueProcessor(
     EventPipe eventPipe,
     EventPipeConclusion eventPipeConclusion,
-    StatePipe statePipe,
-    std::weak_ptr<EventLogger> eventLogger)
+    StatePipe statePipe)
     : eventPipe_(std::move(eventPipe)),
       eventPipeConclusion_(std::move(eventPipeConclusion)),
-      statePipe_(std::move(statePipe)),
-      eventLogger_(std::move(eventLogger)) {}
+      statePipe_(std::move(statePipe)) {}
 
 void EventQueueProcessor::flushEvents(
     jsi::Runtime& runtime,
@@ -54,7 +52,7 @@ void EventQueueProcessor::flushEvents(
       reactPriority = ReactEventPriority::Discrete;
     }
 
-    auto eventLogger = eventLogger_.lock();
+    auto eventLogger = getEventLogger();
     if (eventLogger != nullptr) {
       eventLogger->onEventProcessingStart(event.loggingTag);
     }

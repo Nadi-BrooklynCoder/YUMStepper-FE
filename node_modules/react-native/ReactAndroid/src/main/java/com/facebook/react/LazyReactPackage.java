@@ -106,7 +106,6 @@ public abstract class LazyReactPackage implements ReactPackage {
     }
     return modules;
   }
-
   /**
    * @param reactContext react application context that can be used to create View Managers.
    * @return list of module specs that can create the View Managers.

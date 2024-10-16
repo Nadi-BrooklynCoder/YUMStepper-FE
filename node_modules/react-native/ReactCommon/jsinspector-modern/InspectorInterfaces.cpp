@@ -28,8 +28,7 @@ const folly::dynamic targetCapabilitiesToDynamic(
     const InspectorTargetCapabilities& capabilities) {
   return folly::dynamic::object(
       "nativePageReloads", capabilities.nativePageReloads)(
-      "nativeSourceCodeFetching", capabilities.nativeSourceCodeFetching)(
-      "prefersFuseboxFrontend", capabilities.prefersFuseboxFrontend);
+      "nativeSourceCodeFetching", capabilities.nativeSourceCodeFetching);
 }
 
 namespace {

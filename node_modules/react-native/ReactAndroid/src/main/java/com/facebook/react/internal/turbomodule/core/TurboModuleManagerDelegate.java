@@ -58,8 +58,7 @@ public abstract class TurboModuleManagerDelegate {
 
   public boolean unstable_isLegacyModuleRegistered(String moduleName) {
     return false;
-  }
-  ;
+  };
 
   public List<String> getEagerInitModuleNames() {
     return new ArrayList<>();

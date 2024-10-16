@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Geometry/Model/GMUGeometryContainer.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUGeometryContainer.h

@@ -19,9 +19,7 @@ public interface RootView {
    */
   void onChildStartedNativeGesture(View childView, MotionEvent ev);
 
-  /**
-   * @deprecated
-   */
+  /** @deprecated */
   @Deprecated
   default void onChildStartedNativeGesture(MotionEvent ev) {
     onChildStartedNativeGesture(null, ev);

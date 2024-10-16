@@ -80,6 +80,7 @@ static NSString *const kRCTLegacyInteropChildIndexKey = @"index";
 {
   static NSMutableSet<NSString *> *supported = [NSMutableSet setWithObjects:@"DatePicker",
                                                                             @"ProgressView",
+                                                                            @"SegmentedControl",
                                                                             @"MaskedView",
                                                                             @"ARTSurfaceView",
                                                                             @"ARTText",
@@ -178,8 +179,8 @@ static NSString *const kRCTLegacyInteropChildIndexKey = @"index";
 
 - (void)unmountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index
 {
-  if (_adapter && index < _adapter.paperView.reactSubviews.count) {
-    [_adapter.paperView removeReactSubview:_adapter.paperView.reactSubviews[index]];
+  if (_adapter) {
+    [_adapter.paperView removeReactSubview:childComponentView];
   } else {
     [_viewsToBeUnmounted addObject:childComponentView];
   }
@@ -192,7 +193,7 @@ static NSString *const kRCTLegacyInteropChildIndexKey = @"index";
 
 - (void)updateState:(const State::Shared &)state oldState:(const State::Shared &)oldState
 {
-  _state = std::static_pointer_cast<const LegacyViewManagerInteropShadowNode::ConcreteState>(state);
+  _state = std::static_pointer_cast<LegacyViewManagerInteropShadowNode::ConcreteState const>(state);
 }
 
 - (void)finalizeUpdates:(RNComponentViewUpdateMask)updateMask
@@ -216,7 +217,7 @@ static NSString *const kRCTLegacyInteropChildIndexKey = @"index";
       if (weakSelf) {
         __typeof(self) strongSelf = weakSelf;
         const auto &eventEmitter =
-            static_cast<const LegacyViewManagerInteropViewEventEmitter &>(*strongSelf->_eventEmitter);
+            static_cast<LegacyViewManagerInteropViewEventEmitter const &>(*strongSelf->_eventEmitter);
         eventEmitter.dispatchEvent(eventName, event);
       }
     };

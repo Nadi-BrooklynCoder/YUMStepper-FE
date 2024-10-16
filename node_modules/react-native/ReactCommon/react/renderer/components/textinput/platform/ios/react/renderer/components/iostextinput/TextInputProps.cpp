@@ -18,8 +18,75 @@ TextInputProps::TextInputProps(
     const PropsParserContext& context,
     const TextInputProps& sourceProps,
     const RawProps& rawProps)
-    : BaseTextInputProps(context, sourceProps, rawProps),
+    : ViewProps(context, sourceProps, rawProps),
+      BaseTextProps(context, sourceProps, rawProps),
       traits(convertRawProp(context, rawProps, sourceProps.traits, {})),
+      paragraphAttributes(convertRawProp(
+          context,
+          rawProps,
+          sourceProps.paragraphAttributes,
+          {})),
+      defaultValue(convertRawProp(
+          context,
+          rawProps,
+          "defaultValue",
+          sourceProps.defaultValue,
+          {})),
+      placeholder(convertRawProp(
+          context,
+          rawProps,
+          "placeholder",
+          sourceProps.placeholder,
+          {})),
+      placeholderTextColor(convertRawProp(
+          context,
+          rawProps,
+          "placeholderTextColor",
+          sourceProps.placeholderTextColor,
+          {})),
+      maxLength(convertRawProp(
+          context,
+          rawProps,
+          "maxLength",
+          sourceProps.maxLength,
+          {})),
+      cursorColor(convertRawProp(
+          context,
+          rawProps,
+          "cursorColor",
+          sourceProps.cursorColor,
+          {})),
+      selectionColor(convertRawProp(
+          context,
+          rawProps,
+          "selectionColor",
+          sourceProps.selectionColor,
+          {})),
+      selectionHandleColor(convertRawProp(
+          context,
+          rawProps,
+          "selectionHandleColor",
+          sourceProps.selectionHandleColor,
+          {})),
+      underlineColorAndroid(convertRawProp(
+          context,
+          rawProps,
+          "underlineColorAndroid",
+          sourceProps.underlineColorAndroid,
+          {})),
+      text(convertRawProp(context, rawProps, "text", sourceProps.text, {})),
+      mostRecentEventCount(convertRawProp(
+          context,
+          rawProps,
+          "mostRecentEventCount",
+          sourceProps.mostRecentEventCount,
+          {})),
+      autoFocus(convertRawProp(
+          context,
+          rawProps,
+          "autoFocus",
+          sourceProps.autoFocus,
+          {})),
       selection(convertRawProp(
           context,
           rawProps,
@@ -44,6 +111,15 @@ TextInputProps::TextInputProps(
           "onChangeSync",
           sourceProps.onChangeSync,
           {})){};
+
+void TextInputProps::setProp(
+    const PropsParserContext& context,
+    RawPropsPropNameHash hash,
+    const char* propName,
+    const RawValue& value) {
+  ViewProps::setProp(context, hash, propName, value);
+  BaseTextProps::setProp(context, hash, propName, value);
+}
 
 TextAttributes TextInputProps::getEffectiveTextAttributes(
     Float fontSizeMultiplier) const {

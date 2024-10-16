@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Geometry/Model/GMUPolygon.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUPolygon.h

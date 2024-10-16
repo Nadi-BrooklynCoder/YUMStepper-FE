@@ -1,6 +1,6 @@
 {
   "name": "React-hermes",
-  "version": "0.75.4",
+  "version": "0.74.5",
   "summary": "Hermes engine for React Native",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.75.4"
+    "tag": "v0.74.5"
   },
   "public_header_files": "executor/HermesExecutorFactory.h",
   "source_files": [
@@ -26,16 +26,16 @@
   "header_dir": "reacthermes",
   "dependencies": {
     "React-cxxreact": [
-      "0.75.4"
+      "0.74.5"
     ],
     "React-jsiexecutor": [
-      "0.75.4"
+      "0.74.5"
     ],
     "React-jsinspector": [
 
     ],
     "React-perflogger": [
-      "0.75.4"
+      "0.74.5"
     ],
     "RCT-Folly": [
       "2024.01.01.00"

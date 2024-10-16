@@ -14,7 +14,6 @@
 #include <shared_mutex>
 
 #include <react/renderer/componentregistry/ComponentDescriptorRegistry.h>
-#include <react/renderer/consistency/ShadowTreeRevisionConsistencyManager.h>
 #include <react/renderer/core/InstanceHandle.h>
 #include <react/renderer/core/RawValue.h>
 #include <react/renderer/core/ShadowNode.h>
@@ -25,9 +24,6 @@
 #include <react/renderer/mounting/ShadowTreeRegistry.h>
 #include <react/renderer/uimanager/UIManagerAnimationDelegate.h>
 #include <react/renderer/uimanager/UIManagerDelegate.h>
-#include <react/renderer/uimanager/consistency/LatestShadowTreeRevisionProvider.h>
-#include <react/renderer/uimanager/consistency/LazyShadowTreeRevisionConsistencyManager.h>
-#include <react/renderer/uimanager/consistency/ShadowTreeRevisionProvider.h>
 #include <react/renderer/uimanager/primitives.h>
 #include <react/utils/ContextContainer.h>
 
@@ -78,7 +74,7 @@ class UIManager final : public ShadowTreeDelegate {
    * The callback is called synchronously on the same thread.
    */
   void visitBinding(
-      const std::function<void(const UIManagerBinding& uiManagerBinding)>&
+      const std::function<void(UIManagerBinding const& uiManagerBinding)>&
           callback,
       jsi::Runtime& runtime) const;
 
@@ -97,9 +93,18 @@ class UIManager final : public ShadowTreeDelegate {
   ShadowNode::Shared getNewestCloneOfShadowNode(
       const ShadowNode& shadowNode) const;
 
-  ShadowTreeRevisionConsistencyManager*
-  getShadowTreeRevisionConsistencyManager();
-  ShadowTreeRevisionProvider* getShadowTreeRevisionProvider();
+  ShadowNode::Shared getNewestParentOfShadowNode(
+      const ShadowNode& shadowNode) const;
+
+  ShadowNode::Shared getNewestPositionedAncestorOfShadowNode(
+      const ShadowNode& shadowNode) const;
+
+  std::string getTextContentInNewestCloneOfShadowNode(
+      const ShadowNode& shadowNode) const;
+
+  int compareDocumentPosition(
+      const ShadowNode& shadowNode,
+      const ShadowNode& otherShadowNode) const;
 
 #pragma mark - Surface Start & Stop
 
@@ -147,7 +152,7 @@ class UIManager final : public ShadowTreeDelegate {
   void completeSurface(
       SurfaceId surfaceId,
       const ShadowNode::UnsharedListOfShared& rootChildren,
-      ShadowTree::CommitOptions commitOptions);
+      ShadowTree::CommitOptions commitOptions) const;
 
   void setIsJSResponder(
       const ShadowNode::Shared& shadowNode,
@@ -218,10 +223,6 @@ class UIManager final : public ShadowTreeDelegate {
       const jsi::Value& successCallback,
       const jsi::Value& failureCallback) const;
 
-  ShadowNode::Shared getShadowNodeInSubtree(
-      const ShadowNode& shadowNode,
-      const ShadowNode::Shared& ancestorShadowNode) const;
-
   SharedComponentDescriptorRegistry componentDescriptorRegistry_;
   UIManagerDelegate* delegate_{};
   UIManagerAnimationDelegate* animationDelegate_{nullptr};
@@ -237,11 +238,6 @@ class UIManager final : public ShadowTreeDelegate {
   mutable std::vector<UIManagerMountHook*> mountHooks_;
 
   std::unique_ptr<LeakChecker> leakChecker_;
-
-  std::unique_ptr<LazyShadowTreeRevisionConsistencyManager>
-      lazyShadowTreeRevisionConsistencyManager_;
-  std::unique_ptr<LatestShadowTreeRevisionProvider>
-      latestShadowTreeRevisionProvider_;
 };
 
 } // namespace facebook::react

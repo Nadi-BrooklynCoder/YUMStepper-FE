@@ -13,7 +13,7 @@ import type {
   ReactNativeFeatureFlagsJsOnlyOverrides,
 } from './ReactNativeFeatureFlags';
 
-import NativeReactNativeFeatureFlags from './specs/NativeReactNativeFeatureFlags';
+import NativeReactNativeFeatureFlags from './NativeReactNativeFeatureFlags';
 
 const accessedFeatureFlags: Set<string> = new Set();
 let overrides: ?ReactNativeFeatureFlagsJsOnlyOverrides;
@@ -29,6 +29,7 @@ function createGetter<T: boolean | number | string>(
 
   return () => {
     if (cachedValue == null) {
+      accessedFeatureFlags.add(configName);
       cachedValue = customValueGetter() ?? defaultValue;
     }
     return cachedValue;
@@ -43,10 +44,7 @@ export function createJavaScriptFlagGetter<
 ): Getter<ReturnType<ReactNativeFeatureFlagsJsOnly[K]>> {
   return createGetter(
     configName,
-    () => {
-      accessedFeatureFlags.add(configName);
-      return overrides?.[configName]?.();
-    },
+    () => overrides?.[configName]?.(),
     defaultValue,
   );
 }
@@ -59,13 +57,7 @@ export function createNativeFlagGetter<K: $Keys<NativeFeatureFlags>>(
 ): Getter<ReturnType<$NonMaybeType<NativeFeatureFlags[K]>>> {
   return createGetter(
     configName,
-    () => {
-      const valueFromNative = NativeReactNativeFeatureFlags?.[configName]?.();
-      if (valueFromNative == null) {
-        logUnavailableNativeModuleError(configName);
-      }
-      return valueFromNative;
-    },
+    () => NativeReactNativeFeatureFlags?.[configName]?.(),
     defaultValue,
   );
 }
@@ -89,15 +81,4 @@ export function setOverrides(
   }
 
   overrides = newOverrides;
-}
-
-const reportedConfigNames: Set<string> = new Set();
-
-function logUnavailableNativeModuleError(configName: string): void {
-  if (!reportedConfigNames.has(configName)) {
-    reportedConfigNames.add(configName);
-    console.error(
-      `Could not access feature flag '${configName}' because native module method was not available`,
-    );
-  }
 }

@@ -34,7 +34,6 @@ import java.lang.ref.WeakReference;
 @Nullsafe(Nullsafe.Mode.LOCAL)
 class MaintainVisibleScrollPositionHelper<ScrollViewT extends ViewGroup & HasSmoothScroll>
     implements UIManagerListener {
-
   private final ScrollViewT mScrollView;
   private final boolean mHorizontal;
   private @Nullable Config mConfig;
@@ -43,7 +42,6 @@ class MaintainVisibleScrollPositionHelper<ScrollViewT extends ViewGroup & HasSmo
   private boolean mListening = false;
 
   public static class Config {
-
     public final int minIndexForVisible;
     public final @Nullable Integer autoScrollToTopThreshold;
 
@@ -118,7 +116,7 @@ class MaintainVisibleScrollPositionHelper<ScrollViewT extends ViewGroup & HasSmo
       int deltaX = newFrame.left - mPrevFirstVisibleFrame.left;
       if (deltaX != 0) {
         int scrollX = mScrollView.getScrollX();
-        mScrollView.scrollToPreservingMomentum(scrollX + deltaX, mScrollView.getScrollY());
+        mScrollView.scrollTo(scrollX + deltaX, mScrollView.getScrollY());
         mPrevFirstVisibleFrame = newFrame;
         if (mConfig.autoScrollToTopThreshold != null
             && scrollX <= mConfig.autoScrollToTopThreshold) {
@@ -129,7 +127,7 @@ class MaintainVisibleScrollPositionHelper<ScrollViewT extends ViewGroup & HasSmo
       int deltaY = newFrame.top - mPrevFirstVisibleFrame.top;
       if (deltaY != 0) {
         int scrollY = mScrollView.getScrollY();
-        mScrollView.scrollToPreservingMomentum(mScrollView.getScrollX(), scrollY + deltaY);
+        mScrollView.scrollTo(mScrollView.getScrollX(), scrollY + deltaY);
         mPrevFirstVisibleFrame = newFrame;
         if (mConfig.autoScrollToTopThreshold != null
             && scrollY <= mConfig.autoScrollToTopThreshold) {
@@ -162,12 +160,7 @@ class MaintainVisibleScrollPositionHelper<ScrollViewT extends ViewGroup & HasSmo
     int currentScroll = mHorizontal ? mScrollView.getScrollX() : mScrollView.getScrollY();
     for (int i = mConfig.minIndexForVisible; i < contentView.getChildCount(); i++) {
       View child = contentView.getChildAt(i);
-
-      // Compute the position of the end of the child
-      float position =
-          mHorizontal ? child.getX() + child.getWidth() : child.getY() + child.getHeight();
-
-      // If the child is partially visible or this is the last child, select it as the anchor.
+      float position = mHorizontal ? child.getX() : child.getY();
       if (position > currentScroll || i == contentView.getChildCount() - 1) {
         mFirstVisibleView = new WeakReference<>(child);
         Rect frame = new Rect();

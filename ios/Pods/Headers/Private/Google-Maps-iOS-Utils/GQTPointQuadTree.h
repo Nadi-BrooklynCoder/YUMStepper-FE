@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/QuadTree/GQTPointQuadTree.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GQTPointQuadTree.h

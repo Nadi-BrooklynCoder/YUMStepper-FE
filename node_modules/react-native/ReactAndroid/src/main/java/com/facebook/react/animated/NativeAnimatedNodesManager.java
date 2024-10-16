@@ -427,8 +427,7 @@ public class NativeAnimatedNodesManager implements EventDispatcherListener {
     }
     if (mReactApplicationContext == null) {
       throw new IllegalStateException(
-          "connectAnimatedNodeToView: Animated node could not be connected, no"
-              + " ReactApplicationContext: "
+          "connectAnimatedNodeToView: Animated node could not be connected, no ReactApplicationContext: "
               + viewTag);
     }
 
@@ -439,8 +438,7 @@ public class NativeAnimatedNodesManager implements EventDispatcherListener {
       ReactSoftExceptionLogger.logSoftException(
           TAG,
           new ReactNoCrashSoftException(
-              "connectAnimatedNodeToView: Animated node could not be connected to UIManager -"
-                  + " uiManager disappeared for tag: "
+              "connectAnimatedNodeToView: Animated node could not be connected to UIManager - uiManager disappeared for tag: "
                   + viewTag));
       return;
     }

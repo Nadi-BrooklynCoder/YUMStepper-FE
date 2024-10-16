@@ -47,7 +47,7 @@ InstanceTarget::~InstanceTarget() {
   // they hold an InstanceTarget& that we must guarantee is valid.
   assert(
       agents_.empty() &&
-      "InstanceAgent objects must be destroyed before their InstanceTarget. Did you call HostTarget::unregisterInstance()?");
+      "InstanceAgent objects must be destroyed before their InstanceTarget. Did you call PageTarget::unregisterInstance()?");
 }
 
 RuntimeTarget& InstanceTarget::registerRuntime(

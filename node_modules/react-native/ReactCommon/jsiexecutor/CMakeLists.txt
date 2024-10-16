@@ -20,7 +20,7 @@ add_library(jsireact
 target_include_directories(jsireact PUBLIC .)
 
 target_link_libraries(jsireact
-        react_cxxreact
+        reactnative
         reactperflogger
         folly_runtime
         glog

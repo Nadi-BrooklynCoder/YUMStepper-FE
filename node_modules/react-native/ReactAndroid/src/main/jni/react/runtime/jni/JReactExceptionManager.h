@@ -9,7 +9,7 @@
 
 #include <fbjni/fbjni.h>
 #include <jni.h>
-#include <jserrorhandler/JsErrorHandler.h>
+#include <react/common/mapbuffer/JReadableMapBuffer.h>
 
 namespace facebook::react {
 
@@ -19,7 +19,7 @@ class JReactExceptionManager
   static auto constexpr kJavaDescriptor =
       "Lcom/facebook/react/interfaces/exceptionmanager/ReactJsExceptionHandler;";
 
-  void reportJsException(const JsErrorHandler::ParsedError& error);
+  void reportJsException(const JReadableMapBuffer::javaobject errorMapBuffer);
 };
 
 } // namespace facebook::react

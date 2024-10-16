@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Heatmap/GMUWeightedLatLng.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUWeightedLatLng.h

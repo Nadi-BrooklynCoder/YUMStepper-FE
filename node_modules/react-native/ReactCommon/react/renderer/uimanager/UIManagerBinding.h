@@ -70,7 +70,6 @@ class UIManagerBinding : public jsi::HostObject {
   jsi::Value get(jsi::Runtime& runtime, const jsi::PropNameID& name) override;
 
   UIManager& getUIManager();
-  PointerEventsProcessor& getPointerEventsProcessor();
 
  private:
   /*

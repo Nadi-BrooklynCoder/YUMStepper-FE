@@ -63,7 +63,6 @@ type RCTNetworkingEventDefinitions = $ReadOnly<{
 declare const RCTNetworking: interface {
   addListener<K: $Keys<RCTNetworkingEventDefinitions>>(
     eventType: K,
-    // $FlowFixMe[invalid-computed-prop]
     listener: (...$ElementType<RCTNetworkingEventDefinitions, K>) => mixed,
     context?: mixed,
   ): EventSubscription,

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "CdpJson.h"
+#include <jsinspector-modern/Parsing.h>
 
 namespace facebook::react::jsinspector_modern {
 

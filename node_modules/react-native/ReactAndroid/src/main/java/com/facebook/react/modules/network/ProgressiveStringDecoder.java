@@ -31,9 +31,7 @@ class ProgressiveStringDecoder {
 
   private byte[] remainder = null;
 
-  /**
-   * @param charset expected charset of the data
-   */
+  /** @param charset expected charset of the data */
   public ProgressiveStringDecoder(Charset charset) {
     mDecoder = charset.newDecoder();
   }

@@ -14,11 +14,6 @@
 #ifndef __cplusplus
 #error This file must be compiled as Obj-C++. If you are importing it, you must change your file extension to .mm.
 #endif
-
-// Avoid multiple includes of rnscreens symbols
-#ifndef rnscreens_H
-#define rnscreens_H
-
 #import <Foundation/Foundation.h>
 #import <RCTRequired/RCTRequired.h>
 #import <RCTTypeSafety/RCTConvertHelpers.h>
@@ -46,4 +41,3 @@ namespace facebook::react {
   };
 } // namespace facebook::react
 
-#endif // rnscreens_H

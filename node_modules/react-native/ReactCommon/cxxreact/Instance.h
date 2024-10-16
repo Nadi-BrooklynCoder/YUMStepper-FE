@@ -47,7 +47,7 @@ class RN_EXPORT Instance : private jsinspector_modern::InstanceTargetDelegate {
       std::shared_ptr<JSExecutorFactory> jsef,
       std::shared_ptr<MessageQueueThread> jsQueue,
       std::shared_ptr<ModuleRegistry> moduleRegistry,
-      jsinspector_modern::HostTarget* inspectorTarget = nullptr);
+      jsinspector_modern::PageTarget* inspectorTarget = nullptr);
 
   void initializeRuntime();
 
@@ -136,7 +136,7 @@ class RN_EXPORT Instance : private jsinspector_modern::InstanceTargetDelegate {
 
   /**
    * Unregisters the instance from the inspector. This method must be called
-   * on the main (non-JS) thread, AFTER \c initializeBridge has completed.
+   * on the main (non-JS) thread.
    */
   void unregisterFromInspector();
 
@@ -164,21 +164,21 @@ class RN_EXPORT Instance : private jsinspector_modern::InstanceTargetDelegate {
     std::weak_ptr<NativeToJsBridge> m_nativeToJsBridge;
     std::mutex m_mutex;
     bool m_shouldBuffer = true;
-    std::list<CallFunc> m_workBuffer;
+    std::list<std::function<void()>> m_workBuffer;
 
-    void scheduleAsync(CallFunc&& work) noexcept;
+    void scheduleAsync(std::function<void()>&& work) noexcept;
 
    public:
     void setNativeToJsBridgeAndFlushCalls(
         std::weak_ptr<NativeToJsBridge> nativeToJsBridge);
-    void invokeAsync(CallFunc&& work) noexcept override;
-    void invokeSync(CallFunc&& work) override;
+    void invokeAsync(std::function<void()>&& work) noexcept override;
+    void invokeSync(std::function<void()>&& work) override;
   };
 
   std::shared_ptr<JSCallInvoker> jsCallInvoker_ =
       std::make_shared<JSCallInvoker>();
 
-  jsinspector_modern::HostTarget* parentInspectorTarget_{nullptr};
+  jsinspector_modern::PageTarget* parentInspectorTarget_{nullptr};
   jsinspector_modern::InstanceTarget* inspectorTarget_{nullptr};
   jsinspector_modern::RuntimeTarget* runtimeInspectorTarget_{nullptr};
 };

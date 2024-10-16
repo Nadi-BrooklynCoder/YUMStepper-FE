@@ -6,10 +6,10 @@ module.exports = ({ config }) => ({
   name: 'YumStepper-FE',
   slug: 'YumStepper-FE-New',
   version: '1.0.0',
+  owner: 'nad1191',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  owner: 'nad1191',
   splash: {
     image: './assets/splash.png',
     resizeMode: 'contain',
@@ -51,7 +51,7 @@ module.exports = ({ config }) => ({
     apiBaseUrl: process.env.API_BASE_URL,
     googleApiKey: process.env.GOOGLE_API_KEY,
     eas: {
-      projectId: '2c51e589-b778-4f1d-bb3c-92962add2555',
+      projectId: '7544a13a-d5de-4846-be20-36cbea9108ff',
     },
   },
   assetBundlePatterns: [

@@ -11,10 +11,21 @@ package com.facebook.react.runtime.cxxreactpackage
 import com.facebook.jni.HybridData
 import com.facebook.proguard.annotations.DoNotStrip
 import com.facebook.react.common.annotations.UnstableReactNativeAPI
+import com.facebook.soloader.SoLoader
 
 /** CxxReactPackage is used to register C++ Turbo Modules with React Native. */
-@UnstableReactNativeAPI
-public abstract class CxxReactPackage protected constructor(hybridData: HybridData?) {
+@UnstableReactNativeAPI()
+public abstract class CxxReactPackage {
 
-  @DoNotStrip @Suppress("NoHungarianNotation") private var mHybridData: HybridData? = hybridData
+  @DoNotStrip @Suppress("NoHungarianNotation") private var mHybridData: HybridData?
+
+  protected constructor(hybridData: HybridData?) {
+    mHybridData = hybridData
+  }
+
+  private companion object {
+    init {
+      SoLoader.loadLibrary("react_cxxreactpackage")
+    }
+  }
 }

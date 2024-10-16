@@ -18,15 +18,6 @@
 #import <React/RCTTextDecorationLineType.h>
 #import <yoga/Yoga.h>
 
-typedef NS_ENUM(NSInteger, RCTColorSpace) {
-  RCTColorSpaceSRGB,
-  RCTColorSpaceDisplayP3,
-};
-
-// Change the default color space
-RCTColorSpace RCTGetDefaultColorSpace(void);
-RCT_EXTERN void RCTSetDefaultColorSpace(RCTColorSpace colorSpace);
-
 /**
  * This class provides a collection of conversion functions for mapping
  * JSON objects to native types and classes. These are useful when writing
@@ -80,7 +71,6 @@ typedef NSURL RCTFileURL;
 + (UIReturnKeyType)UIReturnKeyType:(id)json;
 + (UIUserInterfaceStyle)UIUserInterfaceStyle:(id)json API_AVAILABLE(ios(12));
 + (UIInterfaceOrientationMask)UIInterfaceOrientationMask:(NSString *)orientation;
-+ (UIModalPresentationStyle)UIModalPresentationStyle:(id)json;
 
 #if !TARGET_OS_TV
 + (UIDataDetectorTypes)UIDataDetectorTypes:(id)json;
@@ -104,13 +94,6 @@ typedef NSURL RCTFileURL;
 
 + (CGAffineTransform)CGAffineTransform:(id)json;
 
-+ (UIColor *)UIColorWithRed:(CGFloat)red green:(CGFloat)green blue:(CGFloat)blue alpha:(CGFloat)alpha;
-+ (UIColor *)UIColorWithRed:(CGFloat)red
-                      green:(CGFloat)green
-                       blue:(CGFloat)blue
-                      alpha:(CGFloat)alpha
-              andColorSpace:(RCTColorSpace)colorSpace;
-+ (RCTColorSpace)RCTColorSpaceFromString:(NSString *)colorSpace;
 + (UIColor *)UIColor:(id)json;
 + (CGColorRef)CGColor:(id)json CF_RETURNS_NOT_RETAINED;
 

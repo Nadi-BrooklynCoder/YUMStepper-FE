@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/QuadTree/GQTBounds.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GQTBounds.h

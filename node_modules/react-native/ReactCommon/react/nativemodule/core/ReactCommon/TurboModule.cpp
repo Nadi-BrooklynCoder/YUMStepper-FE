@@ -40,22 +40,25 @@ TurboModule::TurboModule(
     : name_(std::move(name)), jsInvoker_(std::move(jsInvoker)) {}
 
 void TurboModule::emitDeviceEvent(
+    jsi::Runtime& runtime,
     const std::string& eventName,
     ArgFactory argFactory) {
-  jsInvoker_->invokeAsync([eventName, argFactory](jsi::Runtime& rt) {
-    jsi::Value emitter = rt.global().getProperty(rt, "__rctDeviceEventEmitter");
+  jsInvoker_->invokeAsync([&runtime, eventName, argFactory]() {
+    jsi::Value emitter =
+        runtime.global().getProperty(runtime, "__rctDeviceEventEmitter");
     if (!emitter.isUndefined()) {
-      jsi::Object emitterObject = emitter.asObject(rt);
+      jsi::Object emitterObject = emitter.asObject(runtime);
       // TODO: consider caching these
       jsi::Function emitFunction =
-          emitterObject.getPropertyAsFunction(rt, "emit");
+          emitterObject.getPropertyAsFunction(runtime, "emit");
       std::vector<jsi::Value> args;
-      args.emplace_back(jsi::String::createFromAscii(rt, eventName.c_str()));
+      args.emplace_back(
+          jsi::String::createFromAscii(runtime, eventName.c_str()));
       if (argFactory) {
-        argFactory(rt, args);
+        argFactory(runtime, args);
       }
       emitFunction.callWithThis(
-          rt, emitterObject, (const jsi::Value*)args.data(), args.size());
+          runtime, emitterObject, (const jsi::Value*)args.data(), args.size());
     }
   });
 }

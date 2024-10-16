@@ -44,9 +44,7 @@ public class FabricComponents {
     sComponentNames.put("ImpressionTrackingView", "RCTImpressionTrackingView");
   }
 
-  /**
-   * @return the name of component in the Fabric environment
-   */
+  /** @return the name of component in the Fabric environment */
   public static String getFabricComponentName(String componentName) {
     String component = sComponentNames.get(componentName);
     return component != null ? component : componentName;

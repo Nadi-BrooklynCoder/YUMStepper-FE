@@ -14,46 +14,46 @@ namespace facebook::react {
 static jsi::Value __hostFunction_NativeAsyncStorageModuleCxxSpecJSI_multiGet(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeAsyncStorageModuleCxxSpecJSI *>(&turboModule)->multiGet(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asObject(rt).asArray(rt),
-    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt).asFunction(rt)
+    args[0].asObject(rt).asArray(rt),
+    args[1].asObject(rt).asFunction(rt)
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeAsyncStorageModuleCxxSpecJSI_multiSet(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeAsyncStorageModuleCxxSpecJSI *>(&turboModule)->multiSet(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asObject(rt).asArray(rt),
-    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt).asFunction(rt)
+    args[0].asObject(rt).asArray(rt),
+    args[1].asObject(rt).asFunction(rt)
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeAsyncStorageModuleCxxSpecJSI_multiRemove(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeAsyncStorageModuleCxxSpecJSI *>(&turboModule)->multiRemove(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asObject(rt).asArray(rt),
-    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt).asFunction(rt)
+    args[0].asObject(rt).asArray(rt),
+    args[1].asObject(rt).asFunction(rt)
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeAsyncStorageModuleCxxSpecJSI_multiMerge(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeAsyncStorageModuleCxxSpecJSI *>(&turboModule)->multiMerge(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asObject(rt).asArray(rt),
-    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt).asFunction(rt)
+    args[0].asObject(rt).asArray(rt),
+    args[1].asObject(rt).asFunction(rt)
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeAsyncStorageModuleCxxSpecJSI_getAllKeys(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeAsyncStorageModuleCxxSpecJSI *>(&turboModule)->getAllKeys(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asObject(rt).asFunction(rt)
+    args[0].asObject(rt).asFunction(rt)
   );
   return jsi::Value::undefined();
 }
 static jsi::Value __hostFunction_NativeAsyncStorageModuleCxxSpecJSI_clear(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   static_cast<NativeAsyncStorageModuleCxxSpecJSI *>(&turboModule)->clear(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asObject(rt).asFunction(rt)
+    args[0].asObject(rt).asFunction(rt)
   );
   return jsi::Value::undefined();
 }

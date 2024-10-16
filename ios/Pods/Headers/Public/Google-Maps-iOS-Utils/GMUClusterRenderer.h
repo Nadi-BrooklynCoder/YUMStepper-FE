@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Clustering/View/GMUClusterRenderer.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUClusterRenderer.h

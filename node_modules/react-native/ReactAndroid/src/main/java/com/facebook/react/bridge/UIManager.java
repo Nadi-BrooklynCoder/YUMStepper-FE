@@ -74,9 +74,7 @@ public interface UIManager extends PerformanceCounter {
    */
   void dispatchCommand(int reactTag, String commandId, @Nullable ReadableArray commandArgs);
 
-  /**
-   * @return the {@link EventDispatcher} object that is used by this class.
-   */
+  /** @return the {@link EventDispatcher} object that is used by this class. */
   <T> T getEventDispatcher();
 
   /**

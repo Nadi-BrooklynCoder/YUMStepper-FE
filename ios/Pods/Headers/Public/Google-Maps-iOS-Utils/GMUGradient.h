@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Heatmap/GMUGradient.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUGradient.h

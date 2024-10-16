@@ -11,6 +11,8 @@
 
 namespace facebook::react::LegacyUIManagerConstantsProviderBinding {
 
+using ProviderType = std::function<jsi::Value()>;
+
 /*
  * Installs RN$LegacyInterop_UIManager_getConstants binding into JavaScript
  * runtime. It is supposed to be used as a substitute to UIManager.getConstants
@@ -19,9 +21,9 @@ namespace facebook::react::LegacyUIManagerConstantsProviderBinding {
 void install(
     jsi::Runtime& runtime,
     const std::string& name,
-    std::function<jsi::Value(jsi::Runtime&)>&& provider);
+    std::function<jsi::Value()>&& provider);
 void install(
     jsi::Runtime& runtime,
     const std::string& name,
-    std::function<jsi::Value(jsi::Runtime&, const std::string&)>&& provider);
+    std::function<jsi::Value(std::string)>&& provider);
 } // namespace facebook::react::LegacyUIManagerConstantsProviderBinding

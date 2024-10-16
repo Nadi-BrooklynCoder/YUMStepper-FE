@@ -21,7 +21,6 @@ std::shared_ptr<RuntimeTarget> RuntimeTarget::create(
   std::shared_ptr<RuntimeTarget> runtimeTarget{
       new RuntimeTarget(executionContextDescription, delegate, jsExecutor)};
   runtimeTarget->setExecutor(selfExecutor);
-  runtimeTarget->installGlobals();
   return runtimeTarget;
 }
 
@@ -32,11 +31,6 @@ RuntimeTarget::RuntimeTarget(
     : executionContextDescription_(executionContextDescription),
       delegate_(delegate),
       jsExecutor_(jsExecutor) {}
-
-void RuntimeTarget::installGlobals() {
-  // NOTE: RuntimeTarget::installConsoleHandler is in RuntimeTargetConsole.cpp
-  installConsoleHandler();
-}
 
 std::shared_ptr<RuntimeAgent> RuntimeTarget::createAgent(
     FrontendChannel channel,
@@ -52,8 +46,7 @@ std::shared_ptr<RuntimeAgent> RuntimeTarget::createAgent(
           channel,
           sessionState,
           std::move(runtimeAgentState.delegateState),
-          executionContextDescription_,
-          jsExecutor_));
+          executionContextDescription_));
   agents_.insert(runtimeAgent);
   return runtimeAgent;
 }

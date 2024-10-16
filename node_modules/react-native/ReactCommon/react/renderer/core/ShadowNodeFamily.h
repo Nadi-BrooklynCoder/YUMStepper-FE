@@ -91,12 +91,13 @@ class ShadowNodeFamily final {
    * Sets and gets the most recent state.
    */
   std::shared_ptr<const State> getMostRecentState() const;
-  void setMostRecentState(const std::shared_ptr<const State>& state) const;
+  void setMostRecentState(const std::shared_ptr<State const>& state) const;
 
   /*
    * Dispatches a state update with given priority.
    */
-  void dispatchRawState(StateUpdate&& stateUpdate) const;
+  void dispatchRawState(StateUpdate&& stateUpdate, EventPriority priority)
+      const;
 
   /*
    * Holds currently applied native props. `nullptr` if setNativeProps API is
@@ -134,7 +135,7 @@ class ShadowNodeFamily final {
   /*
    * Weak reference to the React instance handle
    */
-  const InstanceHandle::Shared instanceHandle_;
+  InstanceHandle::Shared const instanceHandle_;
 
   /*
    * `EventEmitter` associated with all nodes of the family.

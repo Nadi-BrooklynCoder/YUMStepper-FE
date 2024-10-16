@@ -1,6 +1,6 @@
 {
   "name": "React-Core",
-  "version": "0.75.4",
+  "version": "0.74.5",
   "summary": "The core of React Native.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,10 +10,12 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.75.4"
+    "tag": "v0.74.5"
   },
   "resource_bundles": {
-    "React-Core_privacy": "React/Resources/PrivacyInfo.xcprivacy"
+    "RCTI18nStrings": [
+      "React/I18n/strings/*.lproj"
+    ]
   },
   "compiler_flags": "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -DFOLLY_HAVE_CLOCK_GETTIME=1 -Wno-comma -Wno-shorten-64-to-32 -Wno-documentation -DUSE_HERMES=1",
   "header_dir": "React",
@@ -99,10 +101,10 @@
       ],
       "dependencies": {
         "React-Core/Default": [
-          "0.75.4"
+          "0.74.5"
         ],
         "React-Core/RCTWebSocket": [
-          "0.75.4"
+          "0.74.5"
         ]
       },
       "private_header_files": "React/Inspector/RCTCxx*.h"
@@ -112,7 +114,7 @@
       "source_files": "Libraries/WebSocket/*.{h,m}",
       "dependencies": {
         "React-Core/Default": [
-          "0.75.4"
+          "0.74.5"
         ]
       }
     },

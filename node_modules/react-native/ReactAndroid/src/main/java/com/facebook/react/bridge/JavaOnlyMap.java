@@ -7,8 +7,6 @@
 
 package com.facebook.react.bridge;
 
-import static androidx.core.util.Preconditions.checkNotNull;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.HashMap;
@@ -67,9 +65,7 @@ public class JavaOnlyMap implements ReadableMap, WritableMap {
     return res;
   }
 
-  /**
-   * @param keysAndValues keys and values, interleaved
-   */
+  /** @param keysAndValues keys and values, interleaved */
   private JavaOnlyMap(Object... keysAndValues) {
     if (keysAndValues.length % 2 != 0) {
       throw new IllegalArgumentException("You must provide the same number of keys and values");
@@ -112,11 +108,6 @@ public class JavaOnlyMap implements ReadableMap, WritableMap {
   @Override
   public int getInt(@NonNull String name) {
     return ((Number) mBackingMap.get(name)).intValue();
-  }
-
-  @Override
-  public long getLong(@NonNull String name) {
-    return ((Number) checkNotNull(mBackingMap.get(name))).longValue();
   }
 
   @Override
@@ -197,11 +188,6 @@ public class JavaOnlyMap implements ReadableMap, WritableMap {
   @Override
   public void putInt(@NonNull String key, int value) {
     mBackingMap.put(key, new Double(value));
-  }
-
-  @Override
-  public void putLong(@NonNull String key, long value) {
-    mBackingMap.put(key, value);
   }
 
   @Override

@@ -6,8 +6,6 @@ import * as Yup from 'yup';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { AuthContext } from '../Context/AuthContext';
-import { useFonts } from 'expo-font';
-const API = API_BASE_URL;
 
 const LoginComponent = () => {
     const { login } = useContext(AuthContext);
@@ -15,16 +13,6 @@ const LoginComponent = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
-    
-
-    const [fontsLoaded] = useFonts({
-        Itim_400Regular: require('../assets/fonts/Itim-Regular.ttf'),
-        OpenSans_700Bold: require('../assets/fonts/OpenSans-Bold.ttf'),
-    });
-
-    if (!fontsLoaded) {
-        return <ActivityIndicator size="large" color="#007BFF" />;
-    }
 
     const validationSchema = Yup.object({
         username: Yup.string().required('Username is required'),
@@ -32,10 +20,10 @@ const LoginComponent = () => {
     });
 
     const handleLogin = async (values) => {
-        console.log(values)
+        console.log(values);
         const loginData = {
             username: values.username.trim(),
-            password_hash: values.password,
+            password: values.password,
         };
 
         setIsLoading(true);
@@ -43,20 +31,31 @@ const LoginComponent = () => {
         Keyboard.dismiss();
 
         try {
-            const res = await axios.post(`${API}/users/login`, loginData);
+            const res = await axios.post(`${API_BASE_URL}/users/login`, loginData);
             const { token, user } = res.data;
-            console.log(user)
 
-            // Call login function to store token in AsyncStorage and update state
-            await login(token, user.id, navigation);
+            if (!user || !user.id) {
+                console.error('Invalid userId during login');
+                setErrorMessage('Login failed. Please try again.');
+                return;
+            }
 
-            // Navigate to the Profile screen
-            navigation.navigate('Profile');
+            const userId = user.id;
+
+            console.log('User ID:', userId);
+            await login(token, userId, navigation);
+
+            // Reset navigation to Profile after successful login
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Profile' }],
+            });
+
         } catch (err) {
             if (err.response) {
                 console.error('Error response:', err.response.data);
                 console.error('Status:', err.response.status);
-                setErrorMessage('Invalid username or password.');
+                setErrorMessage(err.response.data.error || 'Invalid username or password.');
             } else if (err.request) {
                 console.error('No response received:', err.request);
                 setErrorMessage('Network error. Please try again later.');
@@ -68,8 +67,6 @@ const LoginComponent = () => {
             setIsLoading(false);
         }
     };
-
-
 
     return (
         <View style={styles.container}>

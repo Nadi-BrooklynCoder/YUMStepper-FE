@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Clustering/Algo/GMUSimpleClusterAlgorithm.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUSimpleClusterAlgorithm.h

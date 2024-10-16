@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Geometry/GMUGeoJSONParser.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUGeoJSONParser.h

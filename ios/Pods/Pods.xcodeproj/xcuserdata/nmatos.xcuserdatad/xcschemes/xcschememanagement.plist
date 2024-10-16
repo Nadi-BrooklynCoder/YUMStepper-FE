@@ -9,6 +9,16 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>EXApplication-ExpoApplication_privacy.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>EXApplication.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>EXConstants-EXConstants.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -35,6 +45,16 @@
 			<false/>
 		</dict>
 		<key>EXManifests.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>EXNotifications-ExpoNotifications_privacy.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>EXNotifications.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -109,17 +129,17 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>GoogleMaps-GoogleMapsResources.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>GoogleMaps.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
 		</dict>
 		<key>Pods-YumStepperFE.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>RCT-Folly-RCT-Folly_privacy.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -140,6 +160,21 @@
 			<false/>
 		</dict>
 		<key>RCTTypeSafety.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RNAppleHealthKit.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RNBackgroundFetch-TSBackgroundFetchPrivacy.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RNBackgroundFetch.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -179,7 +214,12 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>React-Core-React-Core_privacy.xcscheme</key>
+		<key>React-Codegen.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-Core-RCTI18nStrings.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -195,11 +235,6 @@
 			<false/>
 		</dict>
 		<key>React-Fabric.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>React-FabricComponents.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -299,11 +334,6 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>React-cxxreact-React-cxxreact_privacy.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
 		<key>React-cxxreact.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -314,22 +344,7 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>React-defaultsnativemodule.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>React-domnativemodule.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
 		<key>React-featureflags.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>React-featureflagsnativemodule.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -340,11 +355,6 @@
 			<false/>
 		</dict>
 		<key>React-hermes.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>React-idlecallbacksnativemodule.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -379,27 +389,12 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>React-microtasksnativemodule.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
 		<key>React-nativeconfig.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
 		</dict>
 		<key>React-perflogger.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>React-performancetimeline.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>React-rendererconsistency.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -434,11 +429,6 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>ReactCodegen.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
 		<key>ReactCommon.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -450,11 +440,6 @@
 			<false/>
 		</dict>
 		<key>Yoga.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>boost-boost_privacy.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -495,11 +480,6 @@
 			<false/>
 		</dict>
 		<key>fmt.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
-		<key>glog-glog_privacy.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>

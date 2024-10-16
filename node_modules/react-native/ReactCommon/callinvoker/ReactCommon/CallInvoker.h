@@ -12,13 +12,9 @@
 
 #include "SchedulerPriority.h"
 
-namespace facebook::jsi {
-class Runtime;
-}
-
 namespace facebook::react {
 
-using CallFunc = std::function<void(jsi::Runtime&)>;
+using CallFunc = std::function<void()>;
 
 /**
  * An interface for a generic native-to-JS call invoker. See BridgeJSCallInvoker
@@ -35,29 +31,15 @@ class CallInvoker {
     invokeAsync(std::move(func));
   }
   virtual void invokeSync(CallFunc&& func) = 0;
-
-  // Backward compatibility only, prefer the CallFunc methods instead
-  virtual void invokeAsync(std::function<void()>&& func) noexcept {
-    invokeAsync([func](jsi::Runtime&) { func(); });
-  }
-
-  virtual void invokeSync(std::function<void()>&& func) {
-    invokeSync([func](jsi::Runtime&) { func(); });
-  }
-
   virtual ~CallInvoker() {}
 };
-
-using NativeMethodCallFunc = std::function<void()>;
 
 class NativeMethodCallInvoker {
  public:
   virtual void invokeAsync(
       const std::string& methodName,
-      NativeMethodCallFunc&& func) noexcept = 0;
-  virtual void invokeSync(
-      const std::string& methodName,
-      NativeMethodCallFunc&& func) = 0;
+      CallFunc&& func) noexcept = 0;
+  virtual void invokeSync(const std::string& methodName, CallFunc&& func) = 0;
   virtual ~NativeMethodCallInvoker() {}
 };
 

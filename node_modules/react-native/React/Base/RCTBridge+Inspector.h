@@ -18,7 +18,7 @@
  */
 @property (nonatomic, assign, readonly)
 #ifdef __cplusplus
-    facebook::react::jsinspector_modern::HostTarget *
+    facebook::react::jsinspector_modern::PageTarget *
 #else
     // The inspector infrastructure cannot be used in C or Swift code.
     void *

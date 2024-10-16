@@ -8,7 +8,6 @@
 #include "TextInputShadowNode.h"
 
 #include <react/debug/react_native_assert.h>
-#include <react/featureflags/ReactNativeFeatureFlags.h>
 #include <react/renderer/attributedstring/AttributedStringBox.h>
 #include <react/renderer/attributedstring/TextAttributes.h>
 #include <react/renderer/core/LayoutConstraints.h>
@@ -19,24 +18,6 @@
 namespace facebook::react {
 
 extern const char TextInputComponentName[] = "TextInput";
-
-TextInputShadowNode::TextInputShadowNode(
-    const ShadowNode& sourceShadowNode,
-    const ShadowNodeFragment& fragment)
-    : ConcreteViewShadowNode(sourceShadowNode, fragment) {
-  auto& sourceTextInputShadowNode =
-      static_cast<const TextInputShadowNode&>(sourceShadowNode);
-
-  if (ReactNativeFeatureFlags::enableCleanTextInputYogaNode()) {
-    if (!fragment.children && !fragment.props &&
-        sourceTextInputShadowNode.getIsLayoutClean()) {
-      // This ParagraphShadowNode was cloned but did not change
-      // in a way that affects its layout. Let's mark it clean
-      // to stop Yoga from traversing it.
-      cleanLayout();
-    }
-  }
-}
 
 AttributedStringBox TextInputShadowNode::attributedStringBoxToMeasure(
     const LayoutContext& layoutContext) const {
@@ -136,7 +117,8 @@ Size TextInputShadowNode::measureContent(
           attributedStringBoxToMeasure(layoutContext),
           getConcreteProps().getEffectiveParagraphAttributes(),
           textLayoutContext,
-          layoutConstraints)
+          layoutConstraints,
+          nullptr)
       .size;
 }
 

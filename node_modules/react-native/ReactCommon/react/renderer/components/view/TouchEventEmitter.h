@@ -45,10 +45,12 @@ class TouchEventEmitter : public EventEmitter {
   void dispatchTouchEvent(
       std::string type,
       const TouchEvent& event,
+      EventPriority priority,
       RawEvent::Category category) const;
   void dispatchPointerEvent(
       std::string type,
       const PointerEvent& event,
+      EventPriority priority,
       RawEvent::Category category) const;
 };
 

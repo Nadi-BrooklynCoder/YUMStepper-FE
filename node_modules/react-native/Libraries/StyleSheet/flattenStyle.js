@@ -34,7 +34,6 @@ function flattenStyle<TStyleProp: DangerouslyImpreciseStyleProp>(
       // $FlowFixMe[invalid-in-rhs]
       for (const key in computedStyle) {
         // $FlowFixMe[incompatible-use]
-        // $FlowFixMe[invalid-computed-prop]
         result[key] = computedStyle[key];
       }
     }

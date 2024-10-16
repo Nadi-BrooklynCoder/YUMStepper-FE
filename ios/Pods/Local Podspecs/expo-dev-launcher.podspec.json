@@ -32,11 +32,11 @@
   },
   "xcconfig": {
     "GCC_PREPROCESSOR_DEFINITIONS": "EX_DEV_LAUNCHER_VERSION=4.0.28",
-    "OTHER_CFLAGS": "$(inherited) -DREACT_NATIVE_TARGET_VERSION=75 -DUSE_HERMES"
+    "OTHER_CFLAGS": "$(inherited) -DREACT_NATIVE_TARGET_VERSION=74 -DUSE_HERMES"
   },
   "pod_target_xcconfig": {
     "DEFINES_MODULE": "YES",
-    "OTHER_CFLAGS[config=Debug]": "$(inherited) -DREACT_NATIVE_TARGET_VERSION=75 -DUSE_HERMES",
+    "OTHER_CFLAGS[config=Debug]": "$(inherited) -DREACT_NATIVE_TARGET_VERSION=74 -DUSE_HERMES",
     "OTHER_SWIFT_FLAGS[config=Debug]": "$(inherited) -DEX_DEV_CLIENT_NETWORK_INSPECTOR",
     "HEADER_SEARCH_PATHS": "\"$(PODS_ROOT)/Headers/Private/React-Core\" \"${PODS_ROOT}/Headers/Public/RNReanimated\" \"$(PODS_CONFIGURATION_BUILD_DIR)/EXManifests/Swift Compatibility Header\" \"$(PODS_CONFIGURATION_BUILD_DIR)/EXUpdatesInterface/Swift Compatibility Header\" \"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspector/jsinspector_modern.framework/Headers\" \"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/Yoga\"",
     "FRAMEWORK_SEARCH_PATHS": "\"${PODS_CONFIGURATION_BUILD_DIR}/RNReanimated\"",
@@ -80,7 +80,7 @@
     "React-RCTFabric": [
 
     ],
-    "ReactCodegen": [
+    "React-Codegen": [
 
     ],
     "RCTRequired": [
