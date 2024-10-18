@@ -7,6 +7,9 @@ const StepsCard = ({ step, displayType, stepsToPoints }) => {
   const value =
     displayType === 'steps' ? step.step_count : stepsToPoints(step.step_count);
 
+    console.log("StepsCard step prop:", step);
+
+
   return (
     <View style={styles.card}>
       <Text style={styles.valueText}>

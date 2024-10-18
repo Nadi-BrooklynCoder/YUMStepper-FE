@@ -1,11 +1,25 @@
-import React, { useEffect, useState, useRef, useContext } from "react";
-import { Marker, PROVIDER_GOOGLE, AnimatedRegion, Polyline} from "react-native-maps";
-import ForwardedMapView from "../Map/ForwardedMapView";
-import { StyleSheet, Animated, Linking, Image } from "react-native";
+import React, { useEffect, useState, useRef, useContext, forwardRef } from "react";
+import { StyleSheet, Animated, Linking, Image, Platform, View, Text } from "react-native";
 import * as Location from "expo-location";
 import { AuthContext } from "../../Context/AuthContext";
 import foodIcon from "../../assets/food-icon.png"; // Import the same icon
 import yumLogo from "../../assets/yummm.png";
+import ForwardedMapView from './ForwardedMapView';
+
+// Conditionally require modules that are not available on web
+let MapView;
+let Marker;
+let AnimatedRegion;
+let PROVIDER_GOOGLE;
+let Polyline;
+
+if (Platform.OS !== 'web') {
+  MapView = require('react-native-maps').default;
+  Marker = require('react-native-maps').Marker;
+  AnimatedRegion = require('react-native-maps').AnimatedRegion;
+  PROVIDER_GOOGLE = require('react-native-maps').PROVIDER_GOOGLE;
+  Polyline = require('react-native-maps').Polyline;
+} 
 
 // COMPONENTS
 import RestaurantMarker from "./RestaurantMarker";
@@ -28,6 +42,10 @@ const MapComponent = ({ setSideModalVisible }) => {
   ).current;
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
     let locationSubscription = null;
 
     const watchUserLocation = async () => {
@@ -104,6 +122,10 @@ const MapComponent = ({ setSideModalVisible }) => {
   }, [userId]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      return; // Skip updating directions on the web
+    }
+
     const updateMapAndDirections = async () => {
       if (mapViewRef.current) {
         mapViewRef.current.animateToRegion(
@@ -130,6 +152,14 @@ const MapComponent = ({ setSideModalVisible }) => {
   useEffect(() => {
     console.log("Nearby Places:", nearbyPlaces);
   }, [nearbyPlaces]);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.webFallbackContainer}>
+        <Text>Map is not available for the web version at this time.</Text>
+      </View>
+    );
+  }
 
   return (
     <ForwardedMapView

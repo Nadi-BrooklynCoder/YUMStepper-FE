@@ -1,12 +1,18 @@
 // StepsContainer.js
 
 import { View, Text } from 'react-native';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { AuthContext } from '../../Context/AuthContext';
 import StepsCard from './StepsCard';
 
 const StepsContainer = ({ displayType }) => {
   const { userSteps, stepsToPoints } = useContext(AuthContext);
+
+  useEffect(() => {
+    console.log("User Steps in Context:", userSteps);
+}, [userSteps]);
+console.log("StepsContainer received userSteps:", userSteps);
+
 
   return (
     <View>

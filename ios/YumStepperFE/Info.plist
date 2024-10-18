@@ -39,8 +39,6 @@
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
-    <key>GMSApiKey</key>
-    <string>AIzaSyCkM7_f9B3C16ES9XJQ78NWB5OlasBj8pQ</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSRequiresIPhoneOS</key>
@@ -53,7 +51,7 @@
       <true/>
     </dict>
     <key>NSFaceIDUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <string>Allow YUMStepper-FE to access your Face ID biometric data.</string>
     <key>NSHealthShareUsageDescription</key>
     <string>We need access to HealthKit to track steps.</string>
     <key>NSHealthUpdateUsageDescription</key>
@@ -70,7 +68,6 @@
       <string>processing</string>
       <string>remote-notification</string>
       <string>location</string>
-      <string>push-to-talk</string>
       <string>nearby-interaction</string>
     </array>
     <key>UILaunchStoryboardName</key>

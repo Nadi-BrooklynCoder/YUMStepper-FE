@@ -1,3 +1,5 @@
+// SignUpForm.js
+
 import React, { useContext, useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert, Text, ActivityIndicator } from 'react-native';
 import { Formik } from 'formik';
@@ -16,13 +18,17 @@ const SignUpForm = () => {
     const validationSchema = Yup.object({
         username: Yup.string().required('Username is required'),
         email: Yup.string().email('Invalid email').required('Email is required'),
-        password_hash: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+        password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
     });
 
     const handleSignUp = async (values) => {
+        console.log('API_BASE_URL:', API_BASE_URL);
+    
         setIsLoading(true);
         try {
             const response = await axios.post(`${API_BASE_URL}/users`, values);
+            console.log('Backend Response:', response.data);
+            
             const { token, newUser } = response.data;
 
             if (newUser && newUser.id && token) {
@@ -41,6 +47,8 @@ const SignUpForm = () => {
             
             if (error.response && error.response.data && error.response.data.error) {
                 errorMessage = error.response.data.error;
+            } else if (error.message) {
+                errorMessage = error.message;
             }
             
             Alert.alert('Error', errorMessage);
@@ -48,11 +56,11 @@ const SignUpForm = () => {
             setIsLoading(false);
         }
     };
-
+    
     return (
         <View style={styles.container}>
             <Formik
-                initialValues={{ username: '', email: '', password_hash: '' }}
+                initialValues={{ username: '', email: '', password: '' }}
                 validationSchema={validationSchema}
                 onSubmit={(values) => handleSignUp(values)}
             >
@@ -84,13 +92,13 @@ const SignUpForm = () => {
                         <TextInput
                             style={styles.input}
                             placeholder="Password"
-                            value={values.password_hash}
-                            onChangeText={handleChange('password_hash')}
-                            onBlur={handleBlur('password_hash')}
+                            value={values.password}
+                            onChangeText={handleChange('password')}
+                            onBlur={handleBlur('password')}
                             secureTextEntry
                         />
-                        {touched.password_hash && errors.password_hash && (
-                            <Text style={styles.error}>{errors.password_hash}</Text>
+                        {touched.password && errors.password && (
+                            <Text style={styles.error}>{errors.password}</Text>
                         )}
 
                         {isLoading ? (

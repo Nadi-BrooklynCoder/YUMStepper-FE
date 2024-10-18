@@ -6,11 +6,26 @@ import { getDistance } from 'geolib';
 import polyline from '@mapbox/polyline';
 import { API_BASE_URL } from '@env';
 import axios from "axios";
-import * as Location from 'expo-location';
+import { debounce } from 'lodash';
+import { Platform, Alert } from 'react-native'; // Added Alert for user feedback
+
+// modules that are not available on web
 import AppleHealthKit from 'react-native-health';
 import BackgroundFetch from 'react-native-background-fetch';
+import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
-import { debounce } from 'lodash';
+
+//trying to figure out how to do web
+// if (Platform.OS !== 'web') {
+//     AppleHealthKit = require('react-native-health').default;
+//     BackgroundFetch = require('react-native-background-fetch').default;
+//     Location = require('expo-location'); // Correctly require without .default
+//     Notifications = require('expo-notifications'); // Correctly require without .default
+
+//     // Debugging Logs
+//     console.log("Location module:", Location);
+//     console.log("Notifications module:", Notifications);
+// }
 
 export const AuthContext = createContext();
 
@@ -22,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState({});
     const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
     const [directions, setDirections] = useState([]);
-    const [userSteps, setUserSteps] = useState({ step_count: 0, date: '' }); // Modified to store an object
+    const [userSteps, setUserSteps] = useState({ step_count: 0, date: '' });
     const [directionSteps, setDirectionSteps] = useState(0);
     const [selectedRestaurant, setSelectedRestaurant] = useState({});
     const [restaurants, setRestaurants] = useState([]);
@@ -30,6 +45,8 @@ export const AuthProvider = ({ children }) => {
     const [isNearRestaurant, setIsNearRestaurant] = useState(false);
     const [selectedReward, setSelectedReward] = useState({});
     const [lastNotifiedStepCount, setLastNotifiedStepCount] = useState(0);
+    
+    const [heading, setHeading] = useState(0); 
 
     const hasFetchedUser = useRef(false); // To prevent multiple fetches
 
@@ -54,7 +71,7 @@ export const AuthProvider = ({ children }) => {
             console.log('Fetching user with ID:', currentUserId);
             const response = await axios.get(`${API_BASE_URL}/users/${currentUserId}`, {
                 headers: {
-                    Authorization: `Bearer ${currentUserToken}`,
+                    Authorization: `Bearer ${currentUserToken}`, // Retained Authorization header
                 },
             });
             setUser(response.data);
@@ -67,10 +84,11 @@ export const AuthProvider = ({ children }) => {
 
     // Effect to fetch user data when userId and userToken change
     useEffect(() => {
+        console.log("useEffect triggered for userId:", userId, "userToken:", userToken);
         if (userId && userToken && !hasFetchedUser.current) {
             fetchUserData(userId, userToken);
         } else {
-            if (userId || userToken) {
+            if (!userId || !userToken) { // Corrected condition
                 console.log("userId or userToken is not available, skipping fetchUser");
             }
         }
@@ -91,12 +109,15 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
+            if (Platform.OS !== 'web') {
+                await AsyncStorage.setItem('userToken', token);
+                await AsyncStorage.setItem('userId', userId.toString());
+            } else {
+                localStorage.setItem('userToken', token);
+                localStorage.setItem('userId', userId.toString());
+            }
             console.log('Saving User Token and ID:', { userId, token });
-
-            await AsyncStorage.setItem('userToken', token);
-            await AsyncStorage.setItem('userId', userId.toString());
-
-            // Set the state variables
+            
             setUserToken(token);
             setUserId(userId);
 
@@ -114,8 +135,13 @@ export const AuthProvider = ({ children }) => {
     // Logout Function
     const logout = async (navigation) => {
         try {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('userId');
+            if (Platform.OS !== 'web'){
+                await AsyncStorage.removeItem('userToken');
+                await AsyncStorage.removeItem('userId');
+            } else {
+                localStorage.removeItem('userToken');
+                localStorage.removeItem('userId');
+            }
 
             // Clear state variables
             setUserToken(null);
@@ -127,7 +153,7 @@ export const AuthProvider = ({ children }) => {
             setUser({});
             setUserSteps({ step_count: 0, date: '' }); // Reset userSteps
 
-            console.log('Logout successful. Cleared AsyncStorage and context state.');
+            console.log('Logout successful. Cleared storage and context state.');
 
             // Navigate to Home after everything is cleared
             if (navigation) {
@@ -144,9 +170,17 @@ export const AuthProvider = ({ children }) => {
     // Check Login Status
     const checkLoginStatus = async () => {
         try {
-            let token = await AsyncStorage.getItem('userToken');
-            let storedUserId = await AsyncStorage.getItem('userId');
+            let token;
+            let storedUserId;
 
+            if (Platform.OS !== 'web') {
+                token = await AsyncStorage.getItem('userToken');
+                storedUserId = await AsyncStorage.getItem('userId');
+            } else {
+                token = localStorage.getItem('userToken');
+                storedUserId = localStorage.getItem('userId');
+            }
+            
             if (token && storedUserId) {
                 setUserToken(token);
                 setUserId(parseInt(storedUserId));
@@ -164,13 +198,15 @@ export const AuthProvider = ({ children }) => {
     // Effect: On Mount
     useEffect(() => {
         checkLoginStatus();
-        fetchNearByPlaces();
+        if (Platform.OS !== 'web') {
+            fetchNearByPlaces();
+        }
         // Removed initializeHealthKit from here
     }, []);
 
     // Effect: Initialize HealthKit when userId and userToken are available
     useEffect(() => {
-        if (userId && userToken) {
+        if (userId && userToken && AppleHealthKit && BackgroundFetch) {
             initializeHealthKit();
         }
     }, [userId, userToken]);
@@ -184,10 +220,21 @@ export const AuthProvider = ({ children }) => {
 
     // Fetch Nearby Places with debouncing to minimize API calls
     const fetchNearByPlaces = async () => {
+        if (Platform.OS === 'web') return;
+
         try {
-            const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`);
-            if (res.data.length > 0) {
+            const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`, {
+                params: {
+                    latitude: userLocation.latitude,
+                    longitude: userLocation.longitude,
+                    radius: 1500, // Example radius in meters
+                    type: 'restaurant',
+                },
+                // Removed 'Content-Type' and 'Accept' headers
+            });
+            if (res.data && res.data.length > 0) {
                 setNearbyPlaces(res.data);
+                console.log("Nearby Places fetched:", res.data);
             } else {
                 console.log("No restaurants found.");
             }
@@ -196,7 +243,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const debouncedFetchNearByPlaces = useCallback(debounce(fetchNearByPlaces, 10000), []);
+    const debouncedFetchNearByPlaces = useCallback(debounce(fetchNearByPlaces, 10000), [userLocation]);
 
     // Get Directions from Google Maps with improved error handling
     const getDirectionsFromGoogleMaps = async () => {
@@ -205,18 +252,33 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
+        if (!selectedRestaurant.latitude || !selectedRestaurant.longitude) {
+            console.error("Selected restaurant location is not available");
+            return;
+        }
+
         try {
             const response = await axios.get(
-                `${API_BASE_URL}/googlePlaces/directions?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destLat=${selectedRestaurant.latitude}&destLng=${selectedRestaurant.longitude}`
+                `${API_BASE_URL}/googlePlaces/directions`,
+                {
+                    params: {
+                        originLat: userLocation.latitude,
+                        originLng: userLocation.longitude,
+                        destLat: selectedRestaurant.latitude,
+                        destLng: selectedRestaurant.longitude,
+                    },
+                    // Removed 'Content-Type' and 'Accept' headers
+                }
             );
 
-            if (response?.data?.directions.legs.length > 0) {
+            if (response?.data?.directions?.legs?.length > 0) {
                 const points = response.data.directions.overview_polyline.points;
                 const decodedPoints = polyline.decode(points).map(([latitude, longitude]) => ({
                     latitude,
                     longitude,
                 }));
                 setDirections(decodedPoints);
+                console.log("Directions fetched and decoded:", decodedPoints);
             } else {
                 console.error('No routes found');
             }
@@ -227,14 +289,30 @@ export const AuthProvider = ({ children }) => {
 
     // Effect: Watch User Location
     useEffect(() => {
+        if (Platform.OS === 'web') {
+            return;
+        }
+
         let locationSubscription = null;
 
-        const watchUserLocation = async () => {
+        const subscribeToLocation = async () => {
             try {
                 let { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    console.error('Permission to access location was denied');
+                console.log("Foreground location permission status:", status);
+                if (status !== "granted") {
+                    console.error("Permission to access location was denied");
+                    Alert.alert(
+                        "Location Permission Denied",
+                        "Please allow location access in settings to use this feature.",
+                        [{ text: "OK" }]
+                    );
                     return;
+                }
+
+                let { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+                console.log("Background location permission status:", backgroundStatus);
+                if (backgroundStatus !== "granted") {
+                    console.warn("Background permission denied.");
                 }
 
                 locationSubscription = await Location.watchPositionAsync(
@@ -244,30 +322,35 @@ export const AuthProvider = ({ children }) => {
                         distanceInterval: 5,
                     },
                     (location) => {
-                        const { latitude, longitude } = location.coords;
+                        const { latitude, longitude, heading: locationHeading } = location.coords;
 
-                        // Update userLocation in the context state
-                        setUserLocation({ latitude, longitude });
+                        setUserLocation({
+                            latitude,
+                            longitude,
+                        });
+
+                        setHeading(locationHeading || 0); // Updated here
+                        console.log("User location updated:", { latitude, longitude, heading: locationHeading });
                     }
                 );
             } catch (error) {
-                console.error('Error watching user location:', error);
+                console.error("Error watching user location:", error);
             }
         };
 
-        watchUserLocation();
+        subscribeToLocation();
 
         return () => {
             if (locationSubscription) {
                 locationSubscription.remove();
             }
-        }; // Cleanup function
-    }, []);
+        };
+    }, [userId]); // Removed userToken from dependencies as it might not be necessary
 
     // HealthKit Initialization and Step Tracking Functions
     const initializeHealthKit = () => {
-        if (!userId || !userToken) {
-            console.error("User details are not available for initializing HealthKit.");
+        if (!userId || !userToken || !AppleHealthKit || !BackgroundFetch) {
+            console.error("User details or modules are not available for initializing HealthKit.");
             return;
         }
 
@@ -280,7 +363,7 @@ export const AuthProvider = ({ children }) => {
 
         AppleHealthKit.initHealthKit(healthKitOptions, (err) => {
             if (err) {
-                console.error("HealthKit error: ", err);
+                console.error("HealthKit initialization failed: ", err);
                 return;
             }
             console.log("HealthKit successfully connected");
@@ -295,24 +378,31 @@ export const AuthProvider = ({ children }) => {
             startDate: new Date(today.setHours(0, 0, 0, 0)).toISOString(), // Start of the day
             endDate: new Date().toISOString(), // Current time
         };
-
+    
         AppleHealthKit.getDailyStepCountSamples(options, (err, results) => {
             if (err) {
-                console.log("Error fetching step data ", err);
+                console.log("Error fetching step data", err);
                 return;
             }
-
+    
             console.log("HealthKit step results:", results);
-
+    
+            if (!results || results.length === 0) {
+                console.log("No step data available for today.");
+                return;
+            }
+    
             const stepsToday = results.reduce((total, step) => total + step.value, 0);
-            triggerNotification(stepsToday);
-            syncStepsToBackend(stepsToday);
+            console.log(`Total steps today: ${stepsToday}`);
+            console.log("Setting userSteps with:", { step_count: stepsToday, date: new Date().toLocaleDateString() });
+
             setUserSteps({
                 step_count: stepsToday,
                 date: new Date().toLocaleDateString(), // Format the date as needed
             });
         });
     };
+    
 
     // Sync steps with improved error handling
     const syncStepsToBackend = async (steps) => {
@@ -330,7 +420,7 @@ export const AuthProvider = ({ children }) => {
                 },
                 {
                     headers: {
-                        Authorization: `Bearer ${userToken}`,
+                        Authorization: `Bearer ${userToken}`, // Retained Authorization header for step syncing
                     },
                 }
             );
@@ -342,8 +432,13 @@ export const AuthProvider = ({ children }) => {
 
     // Configure Background Fetch with adjusted interval
     const configureBackgroundFetch = () => {
+        if (!BackgroundFetch) {
+            console.error("BackgroundFetch module is not available");
+            return;
+        }
+
         BackgroundFetch.configure(
-            { minimumFetchInterval: 1 }, // Set to 15 minutes to save battery
+            { minimumFetchInterval: 15 }, // 15 minutes interval
             async (taskId) => {
                 console.log("Background fetch successful");
                 fetchStepCount();
@@ -363,14 +458,19 @@ export const AuthProvider = ({ children }) => {
         );
 
         if (milestoneReached) {
-            await Notifications.scheduleNotificationAsync({
-                content: {
-                    title: "Milestone Reached!",
-                    body: `Congratulations! You've reached ${milestoneReached} steps!`,
-                },
-                trigger: { seconds: 1 },
-            });
-            setLastNotifiedStepCount(milestoneReached);
+            try {
+                await Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: "Milestone Reached!",
+                        body: `Congratulations! You've reached ${milestoneReached} steps!`,
+                    },
+                    trigger: { seconds: 1 },
+                });
+                setLastNotifiedStepCount(milestoneReached);
+                console.log(`Notification for ${milestoneReached} steps sent.`);
+            } catch (error) {
+                console.error("Error scheduling notification:", error);
+            }
         }
     };
 
@@ -427,6 +527,21 @@ export const AuthProvider = ({ children }) => {
         }
     }, [distanceToRestaurant]);
 
+    const calculateSteps = useCallback(() => {
+        if (!userLocation.latitude || !selectedRestaurant?.latitude) {
+            return;
+        }
+
+        const totalDistance = getDistance(
+            { latitude: userLocation.latitude, longitude: userLocation.longitude },
+            { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
+        );
+
+        const averageStepLength = 0.7; // in meters
+        const stepsNeeded = Math.round(totalDistance / averageStepLength);
+        setDirectionSteps(stepsNeeded);
+    }, [userLocation, selectedRestaurant]);
+
     return (
         <AuthContext.Provider
             value={{
@@ -446,7 +561,7 @@ export const AuthProvider = ({ children }) => {
                 getDirectionsFromGoogleMaps,
                 directionSteps,
                 restaurants,
-                fetchNearByPlaces,
+                fetchNearByPlaces, // Now fetchNearByPlaces no longer includes Authorization headers
                 isNearRestaurant,
                 stepsToPoints,
                 nearbyPlaces,
@@ -454,6 +569,8 @@ export const AuthProvider = ({ children }) => {
                 setUser,
                 selectedReward,
                 setSelectedReward,
+                calculateSteps,
+                heading, // Optional: Expose heading if needed
             }}
         >
             {children}
