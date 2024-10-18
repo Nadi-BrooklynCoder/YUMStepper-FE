@@ -8,7 +8,6 @@
 package com.facebook.react.views.view;
 
 import android.view.View;
-import androidx.annotation.Nullable;
 import com.facebook.infer.annotation.Nullsafe;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.uimanager.ViewGroupManager;
@@ -53,7 +52,6 @@ public abstract class ReactClippingViewManager<T extends ReactViewGroup>
   }
 
   @Override
-  @Nullable
   public View getChildAt(T parent, int index) {
     boolean removeClippedSubviews = parent.getRemoveClippedSubviews();
     if (removeClippedSubviews) {
@@ -70,12 +68,10 @@ public abstract class ReactClippingViewManager<T extends ReactViewGroup>
     boolean removeClippedSubviews = parent.getRemoveClippedSubviews();
     if (removeClippedSubviews) {
       View child = getChildAt(parent, index);
-      if (child != null) {
-        if (child.getParent() != null) {
-          parent.removeView(child);
-        }
-        parent.removeViewWithSubviewClippingEnabled(child);
+      if (child.getParent() != null) {
+        parent.removeView(child);
       }
+      parent.removeViewWithSubviewClippingEnabled(child);
     } else {
       parent.removeViewAt(index);
     }

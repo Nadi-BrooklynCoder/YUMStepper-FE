@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Heatmap/GMUHeatmapTileLayer+Testing.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUHeatmapTileLayer+Testing.h

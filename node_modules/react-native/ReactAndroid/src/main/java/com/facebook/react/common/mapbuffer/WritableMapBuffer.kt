@@ -49,15 +49,6 @@ public class WritableMapBuffer : MapBuffer {
   public fun put(key: Int, value: Int): WritableMapBuffer = putInternal(key, value)
 
   /**
-   * Adds a long value for given key to the MapBuffer.
-   *
-   * @param key entry key
-   * @param value entry value
-   * @throws IllegalArgumentException if key is out of [UShort] range
-   */
-  public fun put(key: Int, value: Long): WritableMapBuffer = putInternal(key, value)
-
-  /**
    * Adds a double value for given key to the MapBuffer.
    *
    * @param key entry key
@@ -116,8 +107,6 @@ public class WritableMapBuffer : MapBuffer {
 
   override fun getInt(key: Int): Int = verifyValue(key, values.get(key))
 
-  override fun getLong(key: Int): Long = verifyValue(key, values.get(key))
-
   override fun getDouble(key: Int): Double = verifyValue(key, values.get(key))
 
   override fun getString(key: Int): String = verifyValue(key, values.get(key))
@@ -139,7 +128,6 @@ public class WritableMapBuffer : MapBuffer {
     return when (val value = this) {
       is Boolean -> DataType.BOOL
       is Int -> DataType.INT
-      is Long -> DataType.LONG
       is Double -> DataType.DOUBLE
       is String -> DataType.STRING
       is MapBuffer -> DataType.MAP
@@ -163,9 +151,6 @@ public class WritableMapBuffer : MapBuffer {
       get() = verifyValue(key, values.valueAt(index))
 
     override val intValue: Int
-      get() = verifyValue(key, values.valueAt(index))
-
-    override val longValue: Long
       get() = verifyValue(key, values.valueAt(index))
 
     override val doubleValue: Double

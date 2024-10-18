@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Geometry/Model/GMUStyleMap.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUStyleMap.h

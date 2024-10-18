@@ -101,6 +101,13 @@ export interface Spec extends TurboModule {
   +getDefaultEventTypes?: () => Array<string>;
   +setLayoutAnimationEnabledExperimental?: (enabled: boolean) => void;
   +sendAccessibilityEvent?: (reactTag: number, eventType: number) => void;
+  +showPopupMenu?: (
+    reactTag: number,
+    items: Array<string>,
+    error: (error: Object) => void,
+    success: (event: string, selected?: number) => void,
+  ) => void;
+  +dismissPopupMenu?: () => void;
 
   // ios only
   +lazilyLoadView?: (name: string) => Object; // revisit return

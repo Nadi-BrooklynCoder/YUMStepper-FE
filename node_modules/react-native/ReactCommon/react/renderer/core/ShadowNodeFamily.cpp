@@ -136,13 +136,15 @@ std::shared_ptr<const State> ShadowNodeFamily::getMostRecentStateIfObsolete(
   return mostRecentState_;
 }
 
-void ShadowNodeFamily::dispatchRawState(StateUpdate&& stateUpdate) const {
+void ShadowNodeFamily::dispatchRawState(
+    StateUpdate&& stateUpdate,
+    EventPriority priority) const {
   auto eventDispatcher = eventDispatcher_.lock();
   if (!eventDispatcher) {
     return;
   }
 
-  eventDispatcher->dispatchStateUpdate(std::move(stateUpdate));
+  eventDispatcher->dispatchStateUpdate(std::move(stateUpdate), priority);
 }
 
 } // namespace facebook::react

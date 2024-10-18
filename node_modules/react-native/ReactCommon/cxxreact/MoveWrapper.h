@@ -107,7 +107,7 @@ class MoveWrapper {
 
   // If you want these you're probably doing it wrong, though they'd be
   // easy enough to implement
-  MoveWrapper& operator=(const MoveWrapper&) = delete;
+  MoveWrapper& operator=(MoveWrapper const&) = delete;
   MoveWrapper& operator=(MoveWrapper&&) = delete;
 
  private:

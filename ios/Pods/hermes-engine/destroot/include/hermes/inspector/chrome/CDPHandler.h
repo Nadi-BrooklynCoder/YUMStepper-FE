@@ -132,8 +132,14 @@ struct INSPECTOR_EXPORT State {
   /// Incomplete type that stores the actual state.
   struct Private;
 
+  /// Custom deleter allowing the incomplete type to be used in a unique_ptr.
+  struct PrivateDeleter {
+    void operator()(Private *privateState) const;
+  };
+
   /// Create a new wrapper with the provided \p privateState.
-  explicit State(std::unique_ptr<Private> privateState);
+  explicit State(std::unique_ptr<Private, PrivateDeleter> &&privateState)
+      : privateState_(std::move(privateState)) {}
   ~State();
 
   /// Get the wrapped state.
@@ -143,7 +149,7 @@ struct INSPECTOR_EXPORT State {
 
  private:
   /// Pointer to the actual stored state, hidden from users of this wrapper.
-  std::unique_ptr<Private> privateState_;
+  std::unique_ptr<Private, PrivateDeleter> privateState_;
 };
 
 } // namespace chrome

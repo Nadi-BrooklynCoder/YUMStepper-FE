@@ -8,7 +8,6 @@
 package com.facebook.react.fabric.interop
 
 import android.view.View
-import com.facebook.react.common.annotations.UnstableReactNativeAPI
 
 /**
  * This interface is used as receiver parameter for [UIBlock].
@@ -18,7 +17,6 @@ import com.facebook.react.common.annotations.UnstableReactNativeAPI
  * @deprecated When developing new libraries for Fabric you should instead use [UIManagerListener]
  *   or View Commands to achieve a same results.
  */
-@UnstableReactNativeAPI
 @Deprecated("Use UIManagerListener or View Commands instead of addUIBlock and prependUIBlock.")
 public interface UIBlockViewResolver {
   /**

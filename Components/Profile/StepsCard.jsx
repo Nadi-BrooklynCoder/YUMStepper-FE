@@ -1,8 +1,14 @@
+// StepsCard.js
+
 import { View, Text, StyleSheet } from 'react-native';
 import React from 'react';
 
 const StepsCard = ({ step, displayType, stepsToPoints }) => {
-  const value = displayType === 'steps' ? step.step_count : stepsToPoints(step.step_count);
+  const value =
+    displayType === 'steps' ? step.step_count : stepsToPoints(step.step_count);
+
+    console.log("StepsCard step prop:", step);
+
 
   return (
     <View style={styles.card}>
@@ -16,18 +22,20 @@ const StepsCard = ({ step, displayType, stepsToPoints }) => {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: '#eee',
-    borderRadius: 5,
+    padding: 15,
+    marginVertical: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
   },
   valueText: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#333',
   },
   dateText: {
     fontSize: 14,
     color: '#666',
+    marginTop: 5,
   },
 });
 

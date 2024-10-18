@@ -14,11 +14,6 @@
 #ifndef __cplusplus
 #error This file must be compiled as Obj-C++. If you are importing it, you must change your file extension to .mm.
 #endif
-
-// Avoid multiple includes of pagerview symbols
-#ifndef pagerview_H
-#define pagerview_H
-
 #import <Foundation/Foundation.h>
 #import <RCTRequired/RCTRequired.h>
 #import <RCTTypeSafety/RCTConvertHelpers.h>
@@ -32,4 +27,3 @@
 
 
 
-#endif // pagerview_H

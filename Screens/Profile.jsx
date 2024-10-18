@@ -8,10 +8,8 @@ import CheckinContainer from '../Components/Profile/CheckinContainer';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 
-
-
 const Profile = () => {
-    const { userToken, userId, logout, user, setUser } = useContext(AuthContext);
+    const { userToken, userId, logout, user } = useContext(AuthContext);
     const [index, setIndex] = useState(0);
     const [routes] = useState([
         { key: 'steps', title: 'Steps' },
@@ -20,50 +18,20 @@ const Profile = () => {
 
     const navigation = useNavigation();
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            console.log(userId)
-            if (!userId) {
-                console.error("Invalid userId. Cannot fetch user.");
-                return;
-            }
-    
-            console.log("Fetching user with ID:", userId);
-    
-            try {
-                const response = await axios.get(`${API_BASE_URL}/users/${userId}`, {
-                    headers: { Authorization: `Bearer ${userToken}` },
-                });
-                setUser(response.data);
-            } catch (err) {
-                if (err.response) {
-                    console.error("Error response:", err.response.data);
-                    console.error("Status:", err.response.status);
-                } else if (err.request) {
-                    console.error("No response received:", err.request);
-                } else {
-                    console.error("Error", err.message);
-                }
-            }
-        };
-    
-        fetchUser();
-    }, [userId, userToken]);
-    
-    
-
     const handleLogout = async () => {
         await logout(navigation);
-        // navigation.navigate('MainApp', { screen: 'Home' });
     };
-    
 
-    // if (Object.keys(user).length === 0) {
-    //     return <Text>Loading...</Text>;
-    // }
+    if (!userId || !userToken) {
+        return (
+            <View style={styles.container}>
+                <Text>You are not logged in.</Text>
+            </View>
+        );
+    }
 
     if (!user) {
-        return <Text>Loading...</Text>
+        return <Text>Loading...</Text>;
     }
 
     const renderScene = SceneMap({
@@ -81,8 +49,6 @@ const Profile = () => {
         />
     );
 
-
-
     return (
         <View style={{ flex: 1 }}>
             <Text>Profile of: {user.username}</Text>
@@ -96,11 +62,11 @@ const Profile = () => {
                 initialLayout={{ width: Dimensions.get('window').width }}
             />
 
-            <CheckinContainer/>
+            <CheckinContainer />
 
             <Pressable onPress={() => navigation.navigate('Map', { userId, token: userToken })}>
                 <Text style={{ color: 'white', fontWeight: 'bold', padding: 20, backgroundColor: 'blue' }}>
-                Go to Map
+                    Go to Map
                 </Text>
             </Pressable>
 
@@ -110,5 +76,14 @@ const Profile = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        padding: 20,
+        backgroundColor: 'antiquewhite',
+        flex: 1,
+        justifyContent: 'center',
+    },
+});
 
 export default Profile;

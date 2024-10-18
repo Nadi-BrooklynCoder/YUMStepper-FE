@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Geometry/Model/GMUFeature.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUFeature.h

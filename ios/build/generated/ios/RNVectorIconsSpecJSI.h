@@ -40,14 +40,11 @@ protected:
     : TurboModule(std::string{NativeRNVectorIconsCxxSpec::kModuleName}, jsInvoker),
       delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
 
-
 private:
   class Delegate : public NativeRNVectorIconsCxxSpecJSI {
   public:
     Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
-      NativeRNVectorIconsCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
-
-    }
+      NativeRNVectorIconsCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {}
 
     jsi::Value getImageForFont(jsi::Runtime &rt, jsi::String fontName, jsi::String glyph, double fontSize, double color) override {
       static_assert(
@@ -75,7 +72,6 @@ private:
     }
 
   private:
-    friend class NativeRNVectorIconsCxxSpec;
     T *instance_;
   };
 

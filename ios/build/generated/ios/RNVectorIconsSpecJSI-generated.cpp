@@ -14,26 +14,26 @@ namespace facebook::react {
 static jsi::Value __hostFunction_NativeRNVectorIconsCxxSpecJSI_getImageForFont(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   return static_cast<NativeRNVectorIconsCxxSpecJSI *>(&turboModule)->getImageForFont(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
-    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt),
-    count <= 2 ? throw jsi::JSError(rt, "Expected argument in position 2 to be passed") : args[2].asNumber(),
-    count <= 3 ? throw jsi::JSError(rt, "Expected argument in position 3 to be passed") : args[3].asNumber()
+    args[0].asString(rt),
+    args[1].asString(rt),
+    args[2].asNumber(),
+    args[3].asNumber()
   );
 }
 static jsi::Value __hostFunction_NativeRNVectorIconsCxxSpecJSI_getImageForFontSync(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   return static_cast<NativeRNVectorIconsCxxSpecJSI *>(&turboModule)->getImageForFontSync(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
-    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt),
-    count <= 2 ? throw jsi::JSError(rt, "Expected argument in position 2 to be passed") : args[2].asNumber(),
-    count <= 3 ? throw jsi::JSError(rt, "Expected argument in position 3 to be passed") : args[3].asNumber()
+    args[0].asString(rt),
+    args[1].asString(rt),
+    args[2].asNumber(),
+    args[3].asNumber()
   );
 }
 static jsi::Value __hostFunction_NativeRNVectorIconsCxxSpecJSI_loadFontWithFileName(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
   return static_cast<NativeRNVectorIconsCxxSpecJSI *>(&turboModule)->loadFontWithFileName(
     rt,
-    count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
-    count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt)
+    args[0].asString(rt),
+    args[1].asString(rt)
   );
 }
 

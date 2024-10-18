@@ -17,6 +17,5 @@ export function convertObjectFitToResizeMode(objectFit: string): ResizeMode {
     fill: 'stretch',
     'scale-down': 'contain',
   };
-  // $FlowFixMe[invalid-computed-prop]
   return objectFitMap[objectFit];
 }

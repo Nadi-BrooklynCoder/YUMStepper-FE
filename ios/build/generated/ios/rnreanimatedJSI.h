@@ -38,14 +38,11 @@ protected:
     : TurboModule(std::string{NativeReanimatedModuleCxxSpec::kModuleName}, jsInvoker),
       delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
 
-
 private:
   class Delegate : public NativeReanimatedModuleCxxSpecJSI {
   public:
     Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
-      NativeReanimatedModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
-
-    }
+      NativeReanimatedModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {}
 
     bool installTurboModule(jsi::Runtime &rt, jsi::String valueUnpackerCode) override {
       static_assert(
@@ -57,7 +54,6 @@ private:
     }
 
   private:
-    friend class NativeReanimatedModuleCxxSpec;
     T *instance_;
   };
 

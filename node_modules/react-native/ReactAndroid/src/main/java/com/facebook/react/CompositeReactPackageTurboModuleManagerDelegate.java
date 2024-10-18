@@ -18,8 +18,7 @@ import java.util.List;
 
 @Deprecated(
     since =
-        "CompositeReactPackageTurboModuleManagerDelegate is deprecated and will be deleted in the"
-            + " future. Please use ReactPackage interface or BaseReactPackage instead.")
+        "CompositeReactPackageTurboModuleManagerDelegate is deprecated and will be deleted in the future. Please use ReactPackage interface or BaseReactPackage instead.")
 @DoNotStrip
 public class CompositeReactPackageTurboModuleManagerDelegate
     extends ReactPackageTurboModuleManagerDelegate {

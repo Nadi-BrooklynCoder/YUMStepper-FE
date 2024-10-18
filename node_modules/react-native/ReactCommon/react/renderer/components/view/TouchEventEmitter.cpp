@@ -45,25 +45,35 @@ static jsi::Value touchEventPayload(
 void TouchEventEmitter::dispatchTouchEvent(
     std::string type,
     const TouchEvent& event,
+    EventPriority priority,
     RawEvent::Category category) const {
   dispatchEvent(
       std::move(type),
       [event](jsi::Runtime& runtime) {
         return touchEventPayload(runtime, event);
       },
+      priority,
       category);
 }
 
 void TouchEventEmitter::dispatchPointerEvent(
     std::string type,
     const PointerEvent& event,
+    EventPriority priority,
     RawEvent::Category category) const {
   dispatchEvent(
-      std::move(type), std::make_shared<PointerEvent>(event), category);
+      std::move(type),
+      std::make_shared<PointerEvent>(event),
+      priority,
+      category);
 }
 
 void TouchEventEmitter::onTouchStart(const TouchEvent& event) const {
-  dispatchTouchEvent("touchStart", event, RawEvent::Category::ContinuousStart);
+  dispatchTouchEvent(
+      "touchStart",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousStart);
 }
 
 void TouchEventEmitter::onTouchMove(const TouchEvent& event) const {
@@ -73,25 +83,43 @@ void TouchEventEmitter::onTouchMove(const TouchEvent& event) const {
 }
 
 void TouchEventEmitter::onTouchEnd(const TouchEvent& event) const {
-  dispatchTouchEvent("touchEnd", event, RawEvent::Category::ContinuousEnd);
+  dispatchTouchEvent(
+      "touchEnd",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousEnd);
 }
 
 void TouchEventEmitter::onTouchCancel(const TouchEvent& event) const {
-  dispatchTouchEvent("touchCancel", event, RawEvent::Category::ContinuousEnd);
+  dispatchTouchEvent(
+      "touchCancel",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousEnd);
 }
 
 void TouchEventEmitter::onClick(const PointerEvent& event) const {
-  dispatchPointerEvent("click", event, RawEvent::Category::Discrete);
+  dispatchPointerEvent(
+      "click",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::Discrete);
 }
 
 void TouchEventEmitter::onPointerCancel(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "pointerCancel", event, RawEvent::Category::ContinuousEnd);
+      "pointerCancel",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousEnd);
 }
 
 void TouchEventEmitter::onPointerDown(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "pointerDown", event, RawEvent::Category::ContinuousStart);
+      "pointerDown",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousStart);
 }
 
 void TouchEventEmitter::onPointerMove(const PointerEvent& event) const {
@@ -99,37 +127,59 @@ void TouchEventEmitter::onPointerMove(const PointerEvent& event) const {
 }
 
 void TouchEventEmitter::onPointerUp(const PointerEvent& event) const {
-  dispatchPointerEvent("pointerUp", event, RawEvent::Category::ContinuousEnd);
+  dispatchPointerEvent(
+      "pointerUp",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousEnd);
 }
 
 void TouchEventEmitter::onPointerEnter(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "pointerEnter", event, RawEvent::Category::ContinuousStart);
+      "pointerEnter",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousStart);
 }
 
 void TouchEventEmitter::onPointerLeave(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "pointerLeave", event, RawEvent::Category::ContinuousEnd);
+      "pointerLeave",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousEnd);
 }
 
 void TouchEventEmitter::onPointerOver(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "pointerOver", event, RawEvent::Category::ContinuousStart);
+      "pointerOver",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousStart);
 }
 
 void TouchEventEmitter::onPointerOut(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "pointerOut", event, RawEvent::Category::ContinuousStart);
+      "pointerOut",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousStart);
 }
 
 void TouchEventEmitter::onGotPointerCapture(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "gotPointerCapture", event, RawEvent::Category::ContinuousStart);
+      "gotPointerCapture",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousStart);
 }
 
 void TouchEventEmitter::onLostPointerCapture(const PointerEvent& event) const {
   dispatchPointerEvent(
-      "lostPointerCapture", event, RawEvent::Category::ContinuousEnd);
+      "lostPointerCapture",
+      event,
+      EventPriority::AsynchronousBatched,
+      RawEvent::Category::ContinuousEnd);
 }
 
 } // namespace facebook::react

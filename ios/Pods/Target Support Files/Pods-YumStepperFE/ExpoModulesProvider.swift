@@ -6,6 +6,7 @@
  */
 
 import ExpoModulesCore
+import EXApplication
 import ExpoAsset
 import EXConstants
 import ExpoFileSystem
@@ -23,6 +24,7 @@ public class ExpoModulesProvider: ModulesProvider {
   public override func getModuleClasses() -> [AnyModule.Type] {
     #if EXPO_CONFIGURATION_DEBUG
     return [
+      ApplicationModule.self,
       AssetModule.self,
       ConstantsModule.self,
       FileSystemModule.self,
@@ -40,6 +42,7 @@ public class ExpoModulesProvider: ModulesProvider {
     ]
     #else
     return [
+      ApplicationModule.self,
       AssetModule.self,
       ConstantsModule.self,
       FileSystemModule.self,

@@ -428,9 +428,11 @@ class YG_EXPORT Style {
         computeInlineEndMargin(axis, Direction::LTR, widthSize);
   }
 
-  float computeGapForAxis(FlexDirection axis, float ownerSize) const {
+  float computeGapForAxis(FlexDirection axis) const {
     auto gap = isRow(axis) ? computeColumnGap() : computeRowGap();
-    return maxOrDefined(gap.resolve(ownerSize).unwrap(), 0.0f);
+    // TODO: Validate percentage gap, and expose ability to set percentage to
+    // public API
+    return maxOrDefined(gap.resolve(0.0f /*ownerSize*/).unwrap(), 0.0f);
   }
 
   bool flexStartMarginIsAuto(FlexDirection axis, Direction direction) const {

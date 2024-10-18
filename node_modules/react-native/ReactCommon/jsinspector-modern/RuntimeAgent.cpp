@@ -35,27 +35,28 @@ bool RuntimeAgent::handleRequest(const cdp::PreparsedRequest& req) {
     ExecutionContextSelector contextSelector = ExecutionContextSelector::all();
 
     // TODO: Eventually, move execution context targeting out of RuntimeAgent.
-    // Right now, there's only ever one context (Runtime) in a Host, so we can
+    // Right now, there's only ever one context (Runtime) in a Page, so we can
     // handle it here for simplicity, and use session state to propagate
     // bindings to the next RuntimeAgent.
     if (req.params.count("executionContextId")) {
       auto executionContextId = req.params["executionContextId"].getInt();
       if (executionContextId < (int64_t)std::numeric_limits<int32_t>::min() ||
           executionContextId > (int64_t)std::numeric_limits<int32_t>::max()) {
-        frontendChannel_(cdp::jsonError(
-            req.id,
-            cdp::ErrorCode::InvalidParams,
-            "Invalid execution context id"));
+        frontendChannel_(folly::toJson(folly::dynamic::object("id", req.id)(
+            "error",
+            folly::dynamic::object("code", -32602)(
+                "message", "Invalid execution context id"))));
         return true;
       }
       contextSelector =
           ExecutionContextSelector::byId((int32_t)executionContextId);
 
       if (req.params.count("executionContextName")) {
-        frontendChannel_(cdp::jsonError(
-            req.id,
-            cdp::ErrorCode::InvalidParams,
-            "executionContextName is mutually exclusive with executionContextId"));
+        frontendChannel_(folly::toJson(folly::dynamic::object("id", req.id)(
+            "error",
+            folly::dynamic::object("code", -32602)(
+                "message",
+                "executionContextName is mutually exclusive with executionContextId"))));
         return true;
       }
     } else if (req.params.count("executionContextName")) {
@@ -67,7 +68,10 @@ bool RuntimeAgent::handleRequest(const cdp::PreparsedRequest& req) {
     }
     sessionState_.subscribedBindings[bindingName].insert(contextSelector);
 
-    frontendChannel_(cdp::jsonResult(req.id));
+    folly::dynamic res = folly::dynamic::object("id", req.id)(
+        "result", folly::dynamic::object());
+    std::string json = folly::toJson(res);
+    frontendChannel_(json);
 
     return true;
   }
@@ -79,7 +83,10 @@ bool RuntimeAgent::handleRequest(const cdp::PreparsedRequest& req) {
     // if the subscription is targeted by context name.
     sessionState_.subscribedBindings.erase(req.params["name"].getString());
 
-    frontendChannel_(cdp::jsonResult(req.id));
+    folly::dynamic res = folly::dynamic::object("id", req.id)(
+        "result", folly::dynamic::object());
+    std::string json = folly::toJson(res);
+    frontendChannel_(json);
 
     return true;
   }
@@ -106,11 +113,12 @@ void RuntimeAgent::notifyBindingCalled(
     return;
   }
 
-  frontendChannel_(cdp::jsonNotification(
-      "Runtime.bindingCalled",
-      folly::dynamic::object(
-          "executionContextId", executionContextDescription_.id)(
-          "name", bindingName)("payload", payload)));
+  frontendChannel_(
+      folly::toJson(folly::dynamic::object("method", "Runtime.bindingCalled")(
+          "params",
+          folly::dynamic::object(
+              "executionContextId", executionContextDescription_.id)(
+              "name", bindingName)("payload", payload))));
 }
 
 RuntimeAgent::ExportedState RuntimeAgent::getExportedState() {

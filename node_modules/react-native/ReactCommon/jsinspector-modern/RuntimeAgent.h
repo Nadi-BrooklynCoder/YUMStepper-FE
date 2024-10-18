@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include "CdpJson.h"
 #include "InspectorInterfaces.h"
 #include "RuntimeAgentDelegate.h"
 #include "RuntimeTarget.h"
+
+#include <jsinspector-modern/Parsing.h>
 
 namespace facebook::react::jsinspector_modern {
 
@@ -35,7 +36,7 @@ class RuntimeAgent final {
    * \param executionContextDescription A description of the execution context
    * represented by this runtime. This is used for disambiguating the
    * source/destination of CDP messages when there are multiple runtimes
-   * (concurrently or over the life of a Host).
+   * (concurrently or over the life of a Page).
    * \param sessionState The state of the session that created this agent.
    * \param delegate The RuntimeAgentDelegate providing engine-specific
    * CDP functionality.

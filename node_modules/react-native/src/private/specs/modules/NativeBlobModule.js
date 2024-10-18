@@ -12,10 +12,8 @@ import type {TurboModule} from '../../../../Libraries/TurboModule/RCTExport';
 
 import * as TurboModuleRegistry from '../../../../Libraries/TurboModule/TurboModuleRegistry';
 
-export type Constants = {|BLOB_URI_SCHEME: ?string, BLOB_URI_HOST: ?string|};
-
 export interface Spec extends TurboModule {
-  +getConstants: () => Constants;
+  +getConstants: () => {|BLOB_URI_SCHEME: ?string, BLOB_URI_HOST: ?string|};
   +addNetworkingHandler: () => void;
   +addWebSocketHandler: (id: number) => void;
   +removeWebSocketHandler: (id: number) => void;
@@ -31,7 +29,7 @@ let NativeBlobModule = null;
 
 if (NativeModule != null) {
   NativeBlobModule = {
-    getConstants(): Constants {
+    getConstants(): {|BLOB_URI_SCHEME: ?string, BLOB_URI_HOST: ?string|} {
       if (constants == null) {
         constants = NativeModule.getConstants();
       }

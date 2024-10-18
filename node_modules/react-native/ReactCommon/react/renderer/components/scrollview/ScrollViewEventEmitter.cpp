@@ -11,7 +11,7 @@ namespace facebook::react {
 
 static jsi::Value scrollViewMetricsPayload(
     jsi::Runtime& runtime,
-    const ScrollViewEventEmitter::Metrics& scrollViewMetrics) {
+    const ScrollViewMetrics& scrollViewMetrics) {
   auto payload = jsi::Object(runtime);
 
   {
@@ -57,24 +57,15 @@ static jsi::Value scrollViewMetricsPayload(
   return payload;
 }
 
-void ScrollViewEventEmitter::onScroll(const Metrics& scrollViewMetrics) const {
+void ScrollViewEventEmitter::onScroll(
+    const ScrollViewMetrics& scrollViewMetrics) const {
   dispatchUniqueEvent("scroll", [scrollViewMetrics](jsi::Runtime& runtime) {
     return scrollViewMetricsPayload(runtime, scrollViewMetrics);
   });
 }
 
-void ScrollViewEventEmitter::experimental_onDiscreteScroll(
-    const Metrics& scrollViewMetrics) const {
-  dispatchEvent(
-      "scroll",
-      [scrollViewMetrics](jsi::Runtime& runtime) {
-        return scrollViewMetricsPayload(runtime, scrollViewMetrics);
-      },
-      RawEvent::Category::Discrete);
-}
-
 void ScrollViewEventEmitter::onScrollToTop(
-    const Metrics& scrollViewMetrics) const {
+    const ScrollViewMetrics& scrollViewMetrics) const {
   dispatchUniqueEvent(
       "scrollToTop", [scrollViewMetrics](jsi::Runtime& runtime) {
         return scrollViewMetricsPayload(runtime, scrollViewMetrics);
@@ -82,31 +73,35 @@ void ScrollViewEventEmitter::onScrollToTop(
 }
 
 void ScrollViewEventEmitter::onScrollBeginDrag(
-    const Metrics& scrollViewMetrics) const {
+    const ScrollViewMetrics& scrollViewMetrics) const {
   dispatchScrollViewEvent("scrollBeginDrag", scrollViewMetrics);
 }
 
 void ScrollViewEventEmitter::onScrollEndDrag(
-    const Metrics& scrollViewMetrics) const {
+    const ScrollViewMetrics& scrollViewMetrics) const {
   dispatchScrollViewEvent("scrollEndDrag", scrollViewMetrics);
 }
 
 void ScrollViewEventEmitter::onMomentumScrollBegin(
-    const Metrics& scrollViewMetrics) const {
+    const ScrollViewMetrics& scrollViewMetrics) const {
   dispatchScrollViewEvent("momentumScrollBegin", scrollViewMetrics);
 }
 
 void ScrollViewEventEmitter::onMomentumScrollEnd(
-    const Metrics& scrollViewMetrics) const {
+    const ScrollViewMetrics& scrollViewMetrics) const {
   dispatchScrollViewEvent("momentumScrollEnd", scrollViewMetrics);
 }
 
 void ScrollViewEventEmitter::dispatchScrollViewEvent(
     std::string name,
-    const Metrics& scrollViewMetrics) const {
-  dispatchEvent(std::move(name), [scrollViewMetrics](jsi::Runtime& runtime) {
-    return scrollViewMetricsPayload(runtime, scrollViewMetrics);
-  });
+    const ScrollViewMetrics& scrollViewMetrics,
+    EventPriority priority) const {
+  dispatchEvent(
+      std::move(name),
+      [scrollViewMetrics](jsi::Runtime& runtime) {
+        return scrollViewMetricsPayload(runtime, scrollViewMetrics);
+      },
+      priority);
 }
 
 } // namespace facebook::react

@@ -578,6 +578,27 @@ namespace facebook::react {
 
 namespace facebook::react {
   
+    static facebook::jsi::Value __hostFunction_NativeAnimationsDebugModuleSpecJSI_startRecordingFps(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "startRecordingFps", @selector(startRecordingFps), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativeAnimationsDebugModuleSpecJSI_stopRecordingFps(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "stopRecordingFps", @selector(stopRecordingFps:), args, count);
+    }
+
+  NativeAnimationsDebugModuleSpecJSI::NativeAnimationsDebugModuleSpecJSI(const ObjCTurboModule::InitParams &params)
+    : ObjCTurboModule(params) {
+      
+        methodMap_["startRecordingFps"] = MethodMetadata {0, __hostFunction_NativeAnimationsDebugModuleSpecJSI_startRecordingFps};
+        
+        
+        methodMap_["stopRecordingFps"] = MethodMetadata {1, __hostFunction_NativeAnimationsDebugModuleSpecJSI_stopRecordingFps};
+        
+  }
+} // namespace facebook::react
+
+namespace facebook::react {
+  
     static facebook::jsi::Value __hostFunction_NativeAppStateSpecJSI_getCurrentAppState(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "getCurrentAppState", @selector(getCurrentAppState:error:), args, count);
     }
@@ -841,10 +862,6 @@ namespace facebook::react {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "addMenuItem", @selector(addMenuItem:), args, count);
     }
 
-    static facebook::jsi::Value __hostFunction_NativeDevSettingsSpecJSI_openDebugger(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
-      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "openDebugger", @selector(openDebugger), args, count);
-    }
-
     static facebook::jsi::Value __hostFunction_NativeDevSettingsSpecJSI_addListener(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "addListener", @selector(addListener:), args, count);
     }
@@ -882,9 +899,6 @@ namespace facebook::react {
         
         
         methodMap_["addMenuItem"] = MethodMetadata {1, __hostFunction_NativeDevSettingsSpecJSI_addMenuItem};
-        
-        
-        methodMap_["openDebugger"] = MethodMetadata {0, __hostFunction_NativeDevSettingsSpecJSI_openDebugger};
         
         
         methodMap_["addListener"] = MethodMetadata {1, __hostFunction_NativeDevSettingsSpecJSI_addListener};

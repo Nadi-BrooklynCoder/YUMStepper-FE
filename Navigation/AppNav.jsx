@@ -18,6 +18,7 @@ import Map from '../Screens/Map';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Bottom Tab Navigator Component
 const BottomTabNav = () => {
     return (
         <Tab.Navigator
@@ -38,6 +39,7 @@ const BottomTabNav = () => {
     );
 };
 
+// App Navigation Component
 const AppNav = () => {
     const { isLoading, userToken } = useContext(AuthContext);
 
@@ -53,33 +55,32 @@ const AppNav = () => {
     return (
         <NavigationContainer>
             <Stack.Navigator
-        screenOptions={{
-        headerStyle: {
-            backgroundColor: '#9b1422',  // Set your custom color here
-        },
-        headerTintColor: 'antiquewhite',  // Set the color for the text and icons
-        headerTitleStyle: {
-            fontWeight: 'bold',  // Style the header title text
-        },
-    }}
->
-    {userToken ? (
-        // User is authenticated, show bottom tab navigator
-        <Stack.Screen
-            name="MainApp"
-            component={BottomTabNav}
-            options={{ headerShown: false }} // Hide the header for bottom tabs
-        />
-    ) : (
-        // User is not authenticated, show login/signup screens
-        <>
-            <Stack.Screen name="Home" component={Home} />
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="SignUp" component={SignUp} />
-        </>
-    )}
-</Stack.Navigator>
-
+                screenOptions={{
+                    headerStyle: {
+                        backgroundColor: '#9b1422', // Set your custom color here
+                    },
+                    headerTintColor: 'antiquewhite', // Set the color for the text and icons
+                    headerTitleStyle: {
+                        fontWeight: 'bold', // Style the header title text
+                    },
+                }}
+            >
+                {userToken ? (
+                    // User is authenticated, show bottom tab navigator
+                    <Stack.Screen
+                        name="MainApp"
+                        component={BottomTabNav}
+                        options={{ headerShown: false }} // Hide the header for bottom tabs
+                    />
+                ) : (
+                    // User is not authenticated, show login/signup screens
+                    <>
+                        <Stack.Screen name="Home" component={Home} />
+                        <Stack.Screen name="Login" component={Login} />
+                        <Stack.Screen name="SignUp" component={SignUp} />
+                    </>
+                )}
+            </Stack.Navigator>
         </NavigationContainer>
     );
 };

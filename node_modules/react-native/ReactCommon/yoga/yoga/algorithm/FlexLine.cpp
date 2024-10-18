@@ -27,7 +27,6 @@ FlexLine calculateFlexLine(
   float sizeConsumed = 0.0f;
   float totalFlexGrowFactors = 0.0f;
   float totalFlexShrinkScaledFactors = 0.0f;
-  size_t numberOfAutoMargins = 0;
   size_t endOfLineIndex = startOfLineIndex;
   size_t firstElementInLineIndex = startOfLineIndex;
 
@@ -35,8 +34,7 @@ FlexLine calculateFlexLine(
   const FlexDirection mainAxis = resolveDirection(
       node->style().flexDirection(), node->resolveDirection(ownerDirection));
   const bool isNodeFlexWrap = node->style().flexWrap() != Wrap::NoWrap;
-  const float gap =
-      node->style().computeGapForAxis(mainAxis, availableInnerMainDim);
+  const float gap = node->style().computeGapForAxis(mainAxis);
 
   // Add items to the current line until it's full or we run out of items.
   for (; endOfLineIndex < node->getChildren().size(); endOfLineIndex++) {
@@ -48,13 +46,6 @@ FlexLine calculateFlexLine(
         firstElementInLineIndex++;
       }
       continue;
-    }
-
-    if (child->style().flexStartMarginIsAuto(mainAxis, ownerDirection)) {
-      numberOfAutoMargins++;
-    }
-    if (child->style().flexEndMarginIsAuto(mainAxis, ownerDirection)) {
-      numberOfAutoMargins++;
     }
 
     const bool isFirstElementInLine =
@@ -78,7 +69,7 @@ FlexLine calculateFlexLine(
     if (sizeConsumedIncludingMinConstraint + flexBasisWithMinAndMaxConstraints +
                 childMarginMainAxis + childLeadingGapMainAxis >
             availableInnerMainDim &&
-        isNodeFlexWrap && !itemsInFlow.empty()) {
+        isNodeFlexWrap && itemsInFlow.size() > 0) {
       break;
     }
 
@@ -110,11 +101,10 @@ FlexLine calculateFlexLine(
   }
 
   return FlexLine{
-      .itemsInFlow = std::move(itemsInFlow),
-      .sizeConsumed = sizeConsumed,
-      .endOfLineIndex = endOfLineIndex,
-      .numberOfAutoMargins = numberOfAutoMargins,
-      .layout = FlexLineRunningLayout{
+      std::move(itemsInFlow),
+      sizeConsumed,
+      endOfLineIndex,
+      FlexLineRunningLayout{
           totalFlexGrowFactors,
           totalFlexShrinkScaledFactors,
       }};

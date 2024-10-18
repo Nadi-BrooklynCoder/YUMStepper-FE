@@ -29,7 +29,7 @@ variant_for_slice()
   "hermes.xcframework/xros-arm64")
     echo ""
     ;;
-  "hermes.xcframework/xros-arm64_x86_64-simulator")
+  "hermes.xcframework/xros-arm64-simulator")
     echo "simulator"
     ;;
   esac
@@ -50,8 +50,8 @@ archs_for_slice()
   "hermes.xcframework/xros-arm64")
     echo "arm64"
     ;;
-  "hermes.xcframework/xros-arm64_x86_64-simulator")
-    echo "arm64 x86_64"
+  "hermes.xcframework/xros-arm64-simulator")
+    echo "arm64"
     ;;
   esac
 }

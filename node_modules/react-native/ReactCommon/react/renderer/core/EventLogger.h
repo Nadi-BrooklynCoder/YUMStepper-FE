@@ -12,7 +12,6 @@
 namespace facebook::react {
 
 using EventTag = unsigned int;
-const EventTag EMPTY_EVENT_TAG = 0;
 
 /*
  * Interface for logging discrete events (such as pointerenter/leave),
@@ -40,5 +39,8 @@ class EventLogger {
    */
   virtual void onEventProcessingEnd(EventTag tag) = 0;
 };
+
+void setEventLogger(EventLogger* eventLogger);
+EventLogger* getEventLogger();
 
 } // namespace facebook::react

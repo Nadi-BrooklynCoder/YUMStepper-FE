@@ -19,8 +19,6 @@
 
 namespace facebook::react {
 
-class RuntimeScheduler;
-
 /*
  * Event Queue synchronized with given Event Beat and dispatching event
  * using given Event Pipe.
@@ -29,8 +27,8 @@ class EventQueue {
  public:
   EventQueue(
       EventQueueProcessor eventProcessor,
-      std::unique_ptr<EventBeat> eventBeat,
-      RuntimeScheduler& runtimeScheduler);
+      std::unique_ptr<EventBeat> eventBeat);
+  virtual ~EventQueue() = default;
 
   /*
    * Enqueues and (probably later) dispatch a given event.
@@ -51,18 +49,13 @@ class EventQueue {
    */
   void enqueueStateUpdate(StateUpdate&& stateUpdate) const;
 
-  /*
-   * Experimental API exposed to support EventEmitter::experimental_flushSync.
-   */
-  void experimental_flushSync() const;
-
  protected:
   /*
    * Called on any enqueue operation.
    * Override in subclasses to trigger beat `request` and/or beat `induce`.
    * Default implementation does nothing.
    */
-  void onEnqueue() const;
+  virtual void onEnqueue() const = 0;
   void onBeat(jsi::Runtime& runtime) const;
 
   void flushEvents(jsi::Runtime& runtime) const;
@@ -75,10 +68,7 @@ class EventQueue {
   mutable std::vector<RawEvent> eventQueue_;
   mutable std::vector<StateUpdate> stateUpdateQueue_;
   mutable std::mutex queueMutex_;
-
-  // TODO: T183075253
-  RuntimeScheduler* runtimeScheduler_;
-  mutable std::atomic_bool synchronousAccessRequested_{false};
+  mutable bool hasContinuousEventStarted_{false};
 };
 
 } // namespace facebook::react

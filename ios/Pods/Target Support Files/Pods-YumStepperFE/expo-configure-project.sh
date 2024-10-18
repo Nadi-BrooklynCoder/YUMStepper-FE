@@ -47,4 +47,4 @@ with_node \
   generate-modules-provider  \
   --target "/Users/nmatos/Desktop/Pursuit/Demo-Day/YUMStepper-FE/ios/Pods/Target Support Files/Pods-YumStepperFE/ExpoModulesProvider.swift" \
   --platform "apple" \
-  --packages "expo-asset" "expo-constants" "expo-dev-launcher" "expo-dev-menu" "expo-file-system" "expo-font" "expo-keep-awake" "expo-secure-store" "expo-system-ui"
+  --packages "expo-application" "expo-asset" "expo-constants" "expo-dev-launcher" "expo-dev-menu" "expo-file-system" "expo-font" "expo-keep-awake" "expo-secure-store" "expo-system-ui"

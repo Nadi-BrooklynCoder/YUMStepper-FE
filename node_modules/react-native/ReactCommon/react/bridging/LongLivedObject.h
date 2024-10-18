@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <jsi/jsi.h>
 #include <memory>
 #include <mutex>
 #include <unordered_set>
@@ -32,9 +31,8 @@ class LongLivedObject {
   virtual void allowRelease();
 
  protected:
-  explicit LongLivedObject(jsi::Runtime& runtime) : runtime_(runtime) {}
+  LongLivedObject() = default;
   virtual ~LongLivedObject() = default;
-  jsi::Runtime& runtime_;
 };
 
 /**
@@ -42,7 +40,7 @@ class LongLivedObject {
  */
 class LongLivedObjectCollection {
  public:
-  static LongLivedObjectCollection& get(jsi::Runtime& runtime);
+  static LongLivedObjectCollection& get();
 
   LongLivedObjectCollection() = default;
   LongLivedObjectCollection(const LongLivedObjectCollection&) = delete;

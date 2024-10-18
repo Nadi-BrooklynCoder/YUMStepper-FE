@@ -14,9 +14,7 @@ add_compile_options(
         -Wpedantic
         -DLOG_TAG=\"Fabric\")
 
-file(GLOB react_render_mounting_SRC CONFIGURE_DEPENDS 
-        *.cpp
-        stubs/*.cpp)
+file(GLOB react_render_mounting_SRC CONFIGURE_DEPENDS *.cpp)
 add_library(react_render_mounting STATIC ${react_render_mounting_SRC})
 
 target_include_directories(react_render_mounting PRIVATE .)

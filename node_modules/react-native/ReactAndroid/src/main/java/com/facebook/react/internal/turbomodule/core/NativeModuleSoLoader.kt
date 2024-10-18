@@ -9,13 +9,13 @@ package com.facebook.react.internal.turbomodule.core
 
 import com.facebook.soloader.SoLoader
 
-public class NativeModuleSoLoader {
-  public companion object {
+internal class NativeModuleSoLoader {
+  companion object {
     private var isSoLibraryLoaded = false
 
     @Synchronized
     @JvmStatic
-    public fun maybeLoadSoLibrary() {
+    fun maybeLoadSoLibrary() {
       if (!isSoLibraryLoaded) {
         SoLoader.loadLibrary("turbomodulejsijni")
         isSoLibraryLoaded = true

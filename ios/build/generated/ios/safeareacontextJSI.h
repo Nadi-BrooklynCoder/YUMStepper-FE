@@ -38,14 +38,11 @@ protected:
     : TurboModule(std::string{NativeSafeAreaContextCxxSpec::kModuleName}, jsInvoker),
       delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
 
-
 private:
   class Delegate : public NativeSafeAreaContextCxxSpecJSI {
   public:
     Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
-      NativeSafeAreaContextCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
-
-    }
+      NativeSafeAreaContextCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {}
 
     jsi::Object getConstants(jsi::Runtime &rt) override {
       static_assert(
@@ -57,7 +54,6 @@ private:
     }
 
   private:
-    friend class NativeSafeAreaContextCxxSpec;
     T *instance_;
   };
 

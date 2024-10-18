@@ -10,9 +10,7 @@ package com.facebook.react.modules.core;
 import android.view.Choreographer;
 
 public class ChoreographerCompat {
-  /**
-   * @deprecated Use Choreographer.FrameCallback instead
-   */
+  /** @deprecated Use Choreographer.FrameCallback instead */
   @Deprecated
   public abstract static class FrameCallback implements Choreographer.FrameCallback {}
 }

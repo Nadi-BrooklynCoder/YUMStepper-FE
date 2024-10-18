@@ -55,7 +55,7 @@ class JSExecutorFactory {
   virtual ~JSExecutorFactory() {}
 };
 
-class RN_EXPORT JSExecutor {
+class RN_EXPORT JSExecutor : public jsinspector_modern::RuntimeTargetDelegate {
  public:
   /**
    * Prepares the JS runtime for React Native by installing global variables.
@@ -130,7 +130,7 @@ class RN_EXPORT JSExecutor {
   virtual void handleMemoryPressure([[maybe_unused]] int pressureLevel) {}
 
   virtual void destroy() {}
-  virtual ~JSExecutor() = default;
+  virtual ~JSExecutor() override {}
 
   virtual void flush() {}
 
@@ -141,19 +141,16 @@ class RN_EXPORT JSExecutor {
   static double performanceNow();
 
   /**
-   * Get a reference to the \c RuntimeTargetDelegate owned (or implemented) by
-   * this executor. This reference must remain valid for the duration of the
-   * executor's lifetime.
+   * Create a RuntimeAgentDelegate that can be used to debug the JS VM instance.
    */
-  virtual jsinspector_modern::RuntimeTargetDelegate& getRuntimeTargetDelegate();
-
- private:
-  /**
-   * Initialized by \c getRuntimeTargetDelegate if not overridden, and then
-   * never changes.
-   */
-  std::optional<jsinspector_modern::FallbackRuntimeTargetDelegate>
-      runtimeTargetDelegate_;
+  virtual std::unique_ptr<jsinspector_modern::RuntimeAgentDelegate>
+  createAgentDelegate(
+      jsinspector_modern::FrontendChannel frontendChannel,
+      jsinspector_modern::SessionState& sessionState,
+      std::unique_ptr<jsinspector_modern::RuntimeAgentDelegate::ExportedState>
+          previouslyExportedState,
+      const jsinspector_modern::ExecutionContextDescription&
+          executionContextDescription) override;
 };
 
 } // namespace facebook::react

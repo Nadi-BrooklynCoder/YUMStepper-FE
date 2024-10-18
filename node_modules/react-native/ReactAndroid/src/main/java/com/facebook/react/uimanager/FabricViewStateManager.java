@@ -9,7 +9,6 @@ package com.facebook.react.uimanager;
 
 import androidx.annotation.Nullable;
 import com.facebook.common.logging.FLog;
-import com.facebook.infer.annotation.Nullsafe;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 
@@ -25,11 +24,9 @@ import com.facebook.react.bridge.WritableMap;
  * retrying the UpdateState call until it succeeds; or you call setState again; or the View layer is
  * updated with a newer StateWrapper.
  */
-@Nullsafe(Nullsafe.Mode.LOCAL)
 @Deprecated(
     since =
-        "Deprecated class since v0.73.0, please use com.facebook.react.uimanager.StateWrapper"
-            + " instead.",
+        "Deprecated class since v0.73.0, please use com.facebook.react.uimanager.StateWrapper instead.",
     forRemoval = true)
 public class FabricViewStateManager {
   private static final String TAG = "FabricViewStateManager";

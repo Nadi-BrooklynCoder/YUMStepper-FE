@@ -54,76 +54,36 @@ void Instance::initializeBridge(
     std::shared_ptr<JSExecutorFactory> jsef,
     std::shared_ptr<MessageQueueThread> jsQueue,
     std::shared_ptr<ModuleRegistry> moduleRegistry,
-    jsinspector_modern::HostTarget* parentInspectorTarget) {
+    jsinspector_modern::PageTarget* parentInspectorTarget) {
   callback_ = std::move(callback);
   moduleRegistry_ = std::move(moduleRegistry);
   parentInspectorTarget_ = parentInspectorTarget;
+  jsQueue->runOnQueueSync(
+      [this, &jsef, jsQueue, parentInspectorTarget]() mutable {
+        nativeToJsBridge_ = std::make_shared<NativeToJsBridge>(
+            jsef.get(), moduleRegistry_, jsQueue, callback_);
 
-  jsQueue->runOnQueueSync([this, &jsef, jsQueue]() mutable {
-    nativeToJsBridge_ = std::make_shared<NativeToJsBridge>(
-        jsef.get(), moduleRegistry_, jsQueue, callback_);
+        nativeToJsBridge_->initializeRuntime();
 
-    // If a parent inspector HostTarget is provided, perform inspector
-    // initialization synchronously.
-    if (parentInspectorTarget_ != nullptr) {
-      auto inspectorExecutor = parentInspectorTarget_->executorFromThis();
-      std::mutex inspectorInitializedMutex;
-      std::condition_variable inspectorInitializedCv;
-      bool inspectorInitialized = false;
-
-      // Schedule work on the inspector thread. NOTE: We expect this callback
-      // to always execute, given the invariant that `initializeBridge` (this
-      // method) completes before `unregisterFromInspector` is called.
-      // - On iOS, instance creation and invalidation both run on the main
-      //   queue (`RCTCxxBridge::start,invalidate` use `RCTAssertMainQueue`).
-      // - On Android, `ReactContext` must be initialized with a constructed
-      //   `CatalystInstance` (in which `Instance::initializeBridge` has
-      //   completed) before `destroy` can be called.
-      inspectorExecutor([this,
-                         &inspectorInitialized,
-                         &inspectorInitializedMutex,
-                         &inspectorInitializedCv](
-                            jsinspector_modern::HostTarget& hostTarget) {
-        // NOTE: By passing *this, we strongly assume the Instance will still
-        // be alive by the time this executes.
-        // - On iOS, instance creation is done synchronously
-        //   (`RCTCxxBridge::_initializeBridgeLocked`).
-        // - On Android, we explicitly wait for instance creation before
-        //   destruction (`ReactInstanceManager::mReactContextLock`).
-        inspectorTarget_ = &hostTarget.registerInstance(*this);
-        RuntimeExecutor runtimeExecutorIfJsi = getRuntimeExecutor();
-        runtimeInspectorTarget_ = &inspectorTarget_->registerRuntime(
-            nativeToJsBridge_->getInspectorTargetDelegate(),
-            runtimeExecutorIfJsi ? runtimeExecutorIfJsi : [](auto) {});
-
-        // Signal that initialization is complete
-        {
-          std::lock_guard lock(inspectorInitializedMutex);
-          inspectorInitialized = true;
+        if (parentInspectorTarget) {
+          inspectorTarget_ = &parentInspectorTarget->registerInstance(*this);
+          RuntimeExecutor runtimeExecutorIfJsi = getRuntimeExecutor();
+          runtimeInspectorTarget_ = &inspectorTarget_->registerRuntime(
+              nativeToJsBridge_->getInspectorTargetDelegate(),
+              runtimeExecutorIfJsi ? runtimeExecutorIfJsi : [](auto) {});
         }
-        inspectorInitializedCv.notify_one();
+
+        /**
+         * After NativeToJsBridge is created, the jsi::Runtime should exist.
+         * Also, the JS message queue thread exists. So, it's safe to
+         * schedule all queued up js Calls.
+         */
+        jsCallInvoker_->setNativeToJsBridgeAndFlushCalls(nativeToJsBridge_);
+
+        std::scoped_lock lock(m_syncMutex);
+        m_syncReady = true;
+        m_syncCV.notify_all();
       });
-
-      // Wait for the initialization work to complete
-      {
-        std::unique_lock lock(inspectorInitializedMutex);
-        inspectorInitializedCv.wait(
-            lock, [&inspectorInitialized] { return inspectorInitialized; });
-      }
-    }
-
-    // Initialize the JavaScript runtime after we've initialized the inspector
-    nativeToJsBridge_->initializeRuntime();
-
-    // After NativeToJsBridge is created, the jsi::Runtime should exist. Also,
-    // the JS message queue thread exists. So, it's safe to schedule all queued
-    // up JS calls.
-    jsCallInvoker_->setNativeToJsBridgeAndFlushCalls(nativeToJsBridge_);
-
-    std::scoped_lock lock(m_syncMutex);
-    m_syncReady = true;
-    m_syncCV.notify_all();
-  });
 
   CHECK(nativeToJsBridge_);
 }
@@ -319,13 +279,14 @@ void Instance::JSCallInvoker::setNativeToJsBridgeAndFlushCalls(
   }
 }
 
-void Instance::JSCallInvoker::invokeSync(CallFunc&& /*work*/) {
+void Instance::JSCallInvoker::invokeSync(std::function<void()>&& work) {
   // TODO: Replace JS Callinvoker with RuntimeExecutor.
   throw std::runtime_error(
       "Synchronous native -> JS calls are currently not supported.");
 }
 
-void Instance::JSCallInvoker::invokeAsync(CallFunc&& work) noexcept {
+void Instance::JSCallInvoker::invokeAsync(
+    std::function<void()>&& work) noexcept {
   std::scoped_lock guard(m_mutex);
 
   /**
@@ -350,12 +311,12 @@ void Instance::JSCallInvoker::invokeAsync(CallFunc&& work) noexcept {
   scheduleAsync(std::move(work));
 }
 
-void Instance::JSCallInvoker::scheduleAsync(CallFunc&& work) noexcept {
+void Instance::JSCallInvoker::scheduleAsync(
+    std::function<void()>&& work) noexcept {
   if (auto strongNativeToJsBridge = m_nativeToJsBridge.lock()) {
     strongNativeToJsBridge->runOnExecutorQueue(
         [work = std::move(work)](JSExecutor* executor) {
-          auto* runtime = (jsi::Runtime*)executor->getJavaScriptContext();
-          work(*runtime);
+          work();
           executor->flush();
         });
   }

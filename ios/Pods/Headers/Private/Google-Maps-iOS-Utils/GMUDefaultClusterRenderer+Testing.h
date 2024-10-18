@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Clustering/View/GMUDefaultClusterRenderer+Testing.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUDefaultClusterRenderer+Testing.h

@@ -10,9 +10,7 @@ package com.facebook.react;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import androidx.annotation.Nullable;
@@ -33,12 +31,8 @@ public class ReactActivityDelegate {
 
   private @Nullable PermissionListener mPermissionListener;
   private @Nullable Callback mPermissionsCallback;
-  private @Nullable ReactDelegate mReactDelegate;
+  private ReactDelegate mReactDelegate;
 
-  /**
-   * Prefer using ReactActivity when possible, as it hooks up all Activity lifecycle methods by
-   * default. It also implements DefaultHardwareBackBtnHandler, which ReactDelegate requires.
-   */
   @Deprecated
   public ReactActivityDelegate(@Nullable Activity activity, @Nullable String mainComponentName) {
     mActivity = activity;
@@ -62,16 +56,21 @@ public class ReactActivityDelegate {
   }
 
   protected @Nullable Bundle composeLaunchOptions() {
-    return getLaunchOptions();
+    Bundle composedLaunchOptions = getLaunchOptions();
+    if (isFabricEnabled()) {
+      if (composedLaunchOptions == null) {
+        composedLaunchOptions = new Bundle();
+      }
+    }
+    return composedLaunchOptions;
   }
 
-  /**
-   * Override to customize ReactRootView creation.
-   *
-   * <p>Not used on bridgeless
-   */
   protected ReactRootView createRootView() {
-    return null;
+    return new ReactRootView(getContext());
+  }
+
+  protected ReactRootView createRootView(Bundle initialProps) {
+    return new ReactRootView(getContext());
   }
 
   /**
@@ -101,12 +100,9 @@ public class ReactActivityDelegate {
     return mMainComponentName;
   }
 
-  public void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState) {
     String mainComponentName = getMainComponentName();
     final Bundle launchOptions = composeLaunchOptions();
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isWideColorGamutEnabled()) {
-      mActivity.getWindow().setColorMode(ActivityInfo.COLOR_MODE_WIDE_COLOR_GAMUT);
-    }
     if (ReactFeatureFlags.enableBridgelessArchitecture) {
       mReactDelegate =
           new ReactDelegate(getPlainActivity(), getReactHost(), mainComponentName, launchOptions);
@@ -120,11 +116,7 @@ public class ReactActivityDelegate {
               isFabricEnabled()) {
             @Override
             protected ReactRootView createRootView() {
-              ReactRootView rootView = ReactActivityDelegate.this.createRootView();
-              if (rootView == null) {
-                rootView = super.createRootView();
-              }
-              return rootView;
+              return ReactActivityDelegate.this.createRootView(launchOptions);
             }
           };
     }
@@ -138,11 +130,11 @@ public class ReactActivityDelegate {
     getPlainActivity().setContentView(mReactDelegate.getReactRootView());
   }
 
-  public void onPause() {
+  protected void onPause() {
     mReactDelegate.onHostPause();
   }
 
-  public void onResume() {
+  protected void onResume() {
     mReactDelegate.onHostResume();
 
     if (mPermissionsCallback != null) {
@@ -151,7 +143,7 @@ public class ReactActivityDelegate {
     }
   }
 
-  public void onDestroy() {
+  protected void onDestroy() {
     mReactDelegate.onHostDestroy();
   }
 
@@ -196,11 +188,14 @@ public class ReactActivityDelegate {
   public void onRequestPermissionsResult(
       final int requestCode, final String[] permissions, final int[] grantResults) {
     mPermissionsCallback =
-        args -> {
-          if (mPermissionListener != null
-              && mPermissionListener.onRequestPermissionsResult(
-                  requestCode, permissions, grantResults)) {
-            mPermissionListener = null;
+        new Callback() {
+          @Override
+          public void invoke(Object... args) {
+            if (mPermissionListener != null
+                && mPermissionListener.onRequestPermissionsResult(
+                    requestCode, permissions, grantResults)) {
+              mPermissionListener = null;
+            }
           }
         };
   }
@@ -221,14 +216,5 @@ public class ReactActivityDelegate {
    */
   protected boolean isFabricEnabled() {
     return ReactFeatureFlags.enableFabricRenderer;
-  }
-
-  /**
-   * Override this method if you wish to selectively toggle wide color gamut for a specific surface.
-   *
-   * @return true if wide gamut is enabled for this Activity, false otherwise.
-   */
-  protected boolean isWideColorGamutEnabled() {
-    return false;
   }
 }

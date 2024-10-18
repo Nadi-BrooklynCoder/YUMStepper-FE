@@ -192,8 +192,6 @@ public abstract class YogaNode implements YogaProps {
 
   public abstract void setGap(YogaGutter gutter, float gapLength);
 
-  public abstract void setGapPercent(YogaGutter gutter, float gapLength);
-
   public abstract float getLayoutX();
 
   public abstract float getLayoutY();

@@ -8,12 +8,10 @@
 package com.facebook.react.runtime;
 
 import androidx.annotation.Nullable;
-import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Nullsafe;
 import com.facebook.react.TurboReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.common.ClassFinder;
 import com.facebook.react.devsupport.LogBoxModule;
 import com.facebook.react.devsupport.interfaces.DevSupportManager;
 import com.facebook.react.module.annotations.ReactModule;
@@ -76,16 +74,38 @@ class CoreReactPackage extends TurboReactPackage {
 
   @Override
   public ReactModuleInfoProvider getReactModuleInfoProvider() {
-    if (!ClassFinder.canLoadClassesFromAnnotationProcessors()) {
-      return fallbackForMissingClass();
-    }
     try {
       Class<?> reactModuleInfoProviderClass =
-          ClassFinder.findClass(CoreReactPackage.class.getName() + "$$ReactModuleInfoProvider");
-      return (ReactModuleInfoProvider)
-          Assertions.assertNotNull(reactModuleInfoProviderClass).newInstance();
+          Class.forName(CoreReactPackage.class.getName() + "$$ReactModuleInfoProvider");
+      return (ReactModuleInfoProvider) reactModuleInfoProviderClass.newInstance();
     } catch (ClassNotFoundException e) {
-      return fallbackForMissingClass();
+      // In OSS case, the annotation processor does not run. We fall back on creating this byhand
+      Class<? extends NativeModule>[] moduleList =
+          new Class[] {
+            AndroidInfoModule.class,
+            DeviceInfoModule.class,
+            SourceCodeModule.class,
+            DevSettingsModule.class,
+            DeviceEventManagerModule.class,
+            LogBoxModule.class,
+            ExceptionsManagerModule.class,
+          };
+      final Map<String, ReactModuleInfo> reactModuleInfoMap = new HashMap<>();
+      for (Class<? extends NativeModule> moduleClass : moduleList) {
+        ReactModule reactModule = moduleClass.getAnnotation(ReactModule.class);
+        if (reactModule != null) {
+          reactModuleInfoMap.put(
+              reactModule.name(),
+              new ReactModuleInfo(
+                  reactModule.name(),
+                  moduleClass.getName(),
+                  reactModule.canOverrideExistingModule(),
+                  reactModule.needsEagerInit(),
+                  reactModule.isCxxModule(),
+                  ReactModuleInfo.classIsTurboModule(moduleClass)));
+        }
+      }
+      return () -> reactModuleInfoMap;
     } catch (InstantiationException e) {
       throw new RuntimeException(
           "No ReactModuleInfoProvider for "
@@ -99,35 +119,5 @@ class CoreReactPackage extends TurboReactPackage {
               + "$$ReactModuleInfoProvider",
           e);
     }
-  }
-
-  private ReactModuleInfoProvider fallbackForMissingClass() {
-    // In OSS case, the annotation processor does not run. We fall back on creating this byhand
-    Class<? extends NativeModule>[] moduleList =
-        new Class[] {
-          AndroidInfoModule.class,
-          DeviceInfoModule.class,
-          SourceCodeModule.class,
-          DevSettingsModule.class,
-          DeviceEventManagerModule.class,
-          LogBoxModule.class,
-          ExceptionsManagerModule.class,
-        };
-    final Map<String, ReactModuleInfo> reactModuleInfoMap = new HashMap<>();
-    for (Class<? extends NativeModule> moduleClass : moduleList) {
-      ReactModule reactModule = moduleClass.getAnnotation(ReactModule.class);
-      if (reactModule != null) {
-        reactModuleInfoMap.put(
-            reactModule.name(),
-            new ReactModuleInfo(
-                reactModule.name(),
-                moduleClass.getName(),
-                reactModule.canOverrideExistingModule(),
-                reactModule.needsEagerInit(),
-                reactModule.isCxxModule(),
-                ReactModuleInfo.classIsTurboModule(moduleClass)));
-      }
-    }
-    return () -> reactModuleInfoMap;
   }
 }

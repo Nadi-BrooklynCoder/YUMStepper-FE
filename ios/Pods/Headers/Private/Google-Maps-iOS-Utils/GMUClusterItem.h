@@ -1,1 +1,1 @@
-../../../Google-Maps-iOS-Utils/src/Clustering/GMUClusterItem.h
+../../../Google-Maps-iOS-Utils/Sources/GoogleMapsUtilsObjC/include/GMUClusterItem.h

@@ -1,4 +1,4 @@
-import { StyleSheet, Image } from "react-native";
+import { StyleSheet, Image, Platform } from "react-native";
 import { Marker } from "react-native-maps";
 import React, { useContext } from "react";
 import axios from 'axios';
@@ -15,6 +15,22 @@ const RestaurantMarker = ({ restaurant, setSideModalVisible }) => {
   const { setSelectedRestaurant, selectedRestaurant } = useContext(AuthContext);
 
   const onMarkerPress = async () => {
+    if(Platform.OS === 'web') {
+      setSelectedRestaurant({
+        id: getValue(restaurant?.id),
+        name: getValue(restaurant?.name),
+        latitude: getValue(restaurant?.latitude),
+        longitude: getValue(restaurant?.longitude),
+        address: getValue(restaurant?.formatted_address, getValue(restaurant?.address)),
+        cuisine_type: getValue(restaurant?.cuisine_type, 'Not specified'),
+        rating: getValue(restaurant?.rating, 'N/A'),
+        menu_url: getValue(restaurant?.menu_url, 'Not available'),
+        opening_hours: restaurant?.opening_hours ? restaurant.opening_hours: [{ open: 'N/A', close: 'N/A'}],
+        open_now: restaurant.open_now ? 'Yes' : 'No',
+      });
+      setSideModalVisible(true);
+      return;
+    }
     console.log(`[RestaurantMarker:onMarkerPress] Marker pressed:`, restaurant);
   
     // Prevent selecting the same restaurant again while navigating
@@ -54,8 +70,7 @@ const RestaurantMarker = ({ restaurant, setSideModalVisible }) => {
     }
   };
   
-
-  // Confirm valid coordinates before rendering the Marker
+// Confirm valid coordinates before rendering the Marker
   const latitude = parseFloat(restaurant.latitude);
   const longitude = parseFloat(restaurant.longitude);
 

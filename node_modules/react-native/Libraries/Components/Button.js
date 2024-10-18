@@ -280,13 +280,7 @@ type ButtonProps = $ReadOnly<{|
   ```
  */
 
-const Touchable: typeof TouchableNativeFeedback | typeof TouchableOpacity =
-  Platform.OS === 'android' ? TouchableNativeFeedback : TouchableOpacity;
-
-const Button: React.AbstractComponent<
-  ButtonProps,
-  React.ElementRef<typeof Touchable>,
-> = React.forwardRef((props: ButtonProps, ref) => {
+const Button: React.AbstractComponent<ButtonProps> = (props: ButtonProps) => {
   const {
     accessibilityLabel,
     accessibilityState,
@@ -351,6 +345,8 @@ const Button: React.AbstractComponent<
   );
   const formattedTitle =
     Platform.OS === 'android' ? title.toUpperCase() : title;
+  const Touchable =
+    Platform.OS === 'android' ? TouchableNativeFeedback : TouchableOpacity;
 
   // If `no` is specified for `importantForAccessibility`, it will be changed to `no-hide-descendants` because the text inside should not be focused.
   const _importantForAccessibility =
@@ -378,8 +374,7 @@ const Button: React.AbstractComponent<
       testID={testID}
       disabled={disabled}
       onPress={onPress}
-      touchSoundDisabled={touchSoundDisabled}
-      ref={ref}>
+      touchSoundDisabled={touchSoundDisabled}>
       <View style={buttonStyles}>
         <Text style={textStyles} disabled={disabled}>
           {formattedTitle}
@@ -387,7 +382,7 @@ const Button: React.AbstractComponent<
       </View>
     </Touchable>
   );
-});
+};
 
 Button.displayName = 'Button';
 

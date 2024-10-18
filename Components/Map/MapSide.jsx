@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, Linking, Platform } from 'react-native';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { AuthContext } from '../../Context/AuthContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const formatTime = (time) => {
-    if (!time) return 'Unknown';
-    const hour = parseInt(time.substring(0, 2), 10);
-    const minute = time.substring(2);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const formattedHour = hour % 12 || 12;
-    return `${formattedHour}:${minute} ${ampm}`;
-};
+// const formatTime = (time) => {
+//     if (!time) return 'Unknown';
+//     const hour = parseInt(time.substring(0, 2), 10);
+//     const minute = time.substring(2);
+//     const ampm = hour >= 12 ? 'PM' : 'AM';
+//     const formattedHour = hour % 12 || 12;
+//     return `${formattedHour}:${minute} ${ampm}`;
+// };
 
 const MapSide = ({ setSideModalVisible }) => {
     const { selectedRestaurant, setSelectedRestaurant, calculateSteps, getDirectionsFromGoogleMaps, directionSteps } = useContext(AuthContext);
@@ -24,13 +24,18 @@ const MapSide = ({ setSideModalVisible }) => {
         Animated.timing(slideAnim, {
             toValue: screenWidth,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
         }).start();
         setSideModalVisible(false);
     };
 
     const getNewDirections = async () => {
+
+        if(Platform.OS !== 'web') {
         await getDirectionsFromGoogleMaps();
+        } else {
+            console.log('Directions feature is not available on the web')
+        }
         closeModal();
     };
     
@@ -79,14 +84,14 @@ useEffect(() => {
         Animated.timing(slideAnim, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
         }).start();
         fetchRestaurantDetails();
     } else {
         Animated.timing(slideAnim, {
             toValue: screenWidth,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
         }).start();
     }
 }, [selectedRestaurant]);

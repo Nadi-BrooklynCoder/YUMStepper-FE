@@ -12,12 +12,8 @@ import type {HostComponent} from '../Renderer/shims/ReactNativeTypes';
 import type ReactFabricHostComponent from './ReactFabricPublicInstance/ReactFabricHostComponent';
 import type {Element, ElementRef, ElementType} from 'react';
 
-import {
-  onCaughtError,
-  onRecoverableError,
-  onUncaughtError,
-} from '../Core/ErrorHandlers';
 import {type RootTag} from './RootTag';
+
 export function renderElement({
   element,
   rootTag,
@@ -35,23 +31,9 @@ export function renderElement({
       rootTag,
       null,
       useConcurrentRoot,
-      {
-        onCaughtError,
-        onUncaughtError,
-        onRecoverableError,
-      },
     );
   } else {
-    require('../Renderer/shims/ReactNative').render(
-      element,
-      rootTag,
-      undefined,
-      {
-        onCaughtError,
-        onUncaughtError,
-        onRecoverableError,
-      },
-    );
+    require('../Renderer/shims/ReactNative').render(element, rootTag);
   }
 }
 

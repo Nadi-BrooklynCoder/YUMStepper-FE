@@ -1,31 +1,51 @@
-import React, { useEffect, useState, useRef, useContext } from "react";
-import { Marker, PROVIDER_GOOGLE, AnimatedRegion, Polyline } from "react-native-maps";
-import ForwardedMapView from "../Map/ForwardedMapView";
-import { StyleSheet, Animated, Linking } from "react-native";
+import React, { useEffect, useState, useRef, useContext, forwardRef } from "react";
+import { StyleSheet, Animated, Linking, Image, Platform, View, Text } from "react-native";
 import * as Location from "expo-location";
 import { AuthContext } from "../../Context/AuthContext";
+import foodIcon from "../../assets/food-icon.png"; // Import the same icon
 import yumLogo from "../../assets/yummm.png";
+import ForwardedMapView from './ForwardedMapView';
+
+// Conditionally require modules that are not available on web
+let MapView;
+let Marker;
+let AnimatedRegion;
+let PROVIDER_GOOGLE;
+let Polyline;
+
+if (Platform.OS !== 'web') {
+  MapView = require('react-native-maps').default;
+  Marker = require('react-native-maps').Marker;
+  AnimatedRegion = require('react-native-maps').AnimatedRegion;
+  PROVIDER_GOOGLE = require('react-native-maps').PROVIDER_GOOGLE;
+  Polyline = require('react-native-maps').Polyline;
+} 
 
 // COMPONENTS
 import RestaurantMarker from "./RestaurantMarker";
 
 const MapComponent = ({ setSideModalVisible }) => {
-  const { setUserLocation, userLocation, directions, nearbyPlaces, handleGetDirections, selectedRestaurant, setSelectedRestaurant, userId } = useContext(AuthContext);
+  const { setUserLocation, userLocation, directions, nearbyPlaces, selectedRestaurant, setSelectedRestaurant, userId } = useContext(AuthContext);
 
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const mapViewRef = useRef(null);
   const [heading, setHeading] = useState(0);
+  const [directionsActive, setDirectionsActive] = useState(false);
 
-  const animatedRegion = useRef( // USER LOCATION
+  const animatedRegion = useRef(
     new AnimatedRegion({
-      latitude: 40.743175215962026, //Initial latitude Pursuit
-      longitude: -73.94192180308748, // Initial longitude Pursuit
+      latitude: 40.743175215962026,
+      longitude: -73.94192180308748,
       latitudeDelta: 0.0922,
       longitudeDelta: 0.0421,
     })
   ).current;
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
     let locationSubscription = null;
 
     const watchUserLocation = async () => {
@@ -43,17 +63,15 @@ const MapComponent = ({ setSideModalVisible }) => {
           console.warn("Background permission denied.");
         }
 
-        // Watch user's position and heading
         locationSubscription = await Location.watchPositionAsync(
           {
-            accuracy: Location.Accuracy.Balanced, // Optimized accuracy for better battery usage
-            timeInterval: 2000, // Adjusted to 2 seconds to save battery
-            distanceInterval: 5, // Update every 5 meters
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 2000,
+            distanceInterval: 5,
           },
           (location) => {
             const { latitude, longitude, heading } = location.coords;
 
-            // Update the animated region (for smooth movement)
             animatedRegion
               .timing({
                 latitude,
@@ -63,7 +81,6 @@ const MapComponent = ({ setSideModalVisible }) => {
               })
               .start();
 
-            // Update the current location and heading
             setUserLocation({
               latitude,
               longitude,
@@ -77,7 +94,6 @@ const MapComponent = ({ setSideModalVisible }) => {
       }
     };
 
-    // Start the pulse animation for the logo marker
     const startPulseAnimation = () => {
       Animated.loop(
         Animated.sequence([
@@ -98,7 +114,6 @@ const MapComponent = ({ setSideModalVisible }) => {
     watchUserLocation();
     startPulseAnimation();
 
-    // Cleanup function to remove the location watcher
     return () => {
       if (locationSubscription) {
         locationSubscription.remove();
@@ -107,6 +122,10 @@ const MapComponent = ({ setSideModalVisible }) => {
   }, [userId]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      return; // Skip updating directions on the web
+    }
+
     const updateMapAndDirections = async () => {
       if (mapViewRef.current) {
         mapViewRef.current.animateToRegion(
@@ -120,24 +139,30 @@ const MapComponent = ({ setSideModalVisible }) => {
         );
       }
 
-      // Update Polyline as the user moves. Selected Restaurant will be an object with the current restaurant selected for travel.
-      if (selectedRestaurant.id) {
-        // await getDirectionsFromGoogleMaps();
-        console.log("Selected Restaurant Data: ", selectedRestaurant); // Logging selected restaurant data, including Yelp details
+      if (selectedRestaurant.id && directions.length > 0) {
+        setDirectionsActive(true);
+      } else {
+        setDirectionsActive(false);
       }
     };
 
     updateMapAndDirections();
-  }, [userLocation]);
+  }, [userLocation, directions]);
 
-  // Log the nearbyPlaces to see the structure
   useEffect(() => {
     console.log("Nearby Places:", nearbyPlaces);
   }, [nearbyPlaces]);
 
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.webFallbackContainer}>
+        <Text>Map is not available for the web version at this time.</Text>
+      </View>
+    );
+  }
+
   return (
     <ForwardedMapView
-      ref={mapViewRef}
       provider={PROVIDER_GOOGLE}
       style={styles.map}
       initialRegion={{
@@ -157,8 +182,8 @@ const MapComponent = ({ setSideModalVisible }) => {
               styles.logo,
               {
                 transform: [
-                  { scale: pulseAnimation }, // Apply pulse animation to the logo
-                  { rotate: `${heading}deg` }, // Rotate based on the heading
+                  { scale: pulseAnimation },
+                  { rotate: `${heading}deg` },
                 ],
               },
             ]}
@@ -167,22 +192,34 @@ const MapComponent = ({ setSideModalVisible }) => {
         </Marker.Animated>
       )}
 
-      {/* Marker for each nearby place */}
-      {nearbyPlaces?.map((restaurant, index) => (
-        <RestaurantMarker
-          restaurant={restaurant}
-          key={index}
-          setSideModalVisible={setSideModalVisible}
-        />
-      ))}
+      {/* Render Restaurant Markers only if directions are not active */}
+      {!directionsActive &&
+        nearbyPlaces?.map((restaurant, index) => (
+          <RestaurantMarker
+            restaurant={restaurant}
+            key={index}
+            setSideModalVisible={setSideModalVisible}
+          />
+        ))}
 
       {/* Directions Polyline */}
       {directions.length > 0 && (
-        <Polyline
-          coordinates={directions}
-          strokeColor="#007AFF"
-          strokeWidth={4}
-        />
+        <>
+          <Polyline
+            coordinates={directions}
+            strokeColor="#007AFF"
+            strokeWidth={4}
+          />
+          {/* End Marker for directions */}
+          <Marker
+            coordinate={{
+              latitude: directions[directions.length - 1].latitude,
+              longitude: directions[directions.length - 1].longitude,
+            }}
+          >
+            <Image source={foodIcon} style={styles.markerImage} resizeMode="contain" />
+          </Marker>
+        </>
       )}
     </ForwardedMapView>
   );
@@ -196,6 +233,10 @@ const styles = StyleSheet.create({
   logo: {
     width: 50,
     height: 50,
+  },
+  markerImage: {
+    width: 40,
+    height: 40,
   },
   closeButton: {
     position: "absolute",

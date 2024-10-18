@@ -105,7 +105,6 @@ function accumulateDifferences(
   staticObject: {...},
 ): void {
   for (const nativeKey in nativeObject) {
-    // $FlowFixMe[invalid-computed-prop]
     const nativeValue = nativeObject[nativeKey];
 
     if (!staticObject.hasOwnProperty(nativeKey)) {
@@ -117,7 +116,6 @@ function accumulateDifferences(
       continue;
     }
 
-    // $FlowFixMe[invalid-computed-prop]
     const staticValue = staticObject[nativeKey];
 
     const nativeValueIfObject = ifObject(nativeValue);
@@ -149,7 +147,6 @@ function accumulateDifferences(
   for (const staticKey in staticObject) {
     if (
       !nativeObject.hasOwnProperty(staticKey) &&
-      // $FlowFixMe[invalid-computed-prop]
       !isIgnored(staticObject[staticKey])
     ) {
       differences.push({

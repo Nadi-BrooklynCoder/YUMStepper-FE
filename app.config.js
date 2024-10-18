@@ -6,10 +6,10 @@ module.exports = ({ config }) => ({
   name: 'YumStepper-FE',
   slug: 'YumStepper-FE-New',
   version: '1.0.0',
+  owner: 'nad1191',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  owner: 'nad1191',
   splash: {
     image: './assets/splash.png',
     resizeMode: 'contain',
@@ -25,7 +25,8 @@ module.exports = ({ config }) => ({
     infoPlist: {
       NSLocationWhenInUseUsageDescription: 'We need your location to show nearby restaurants, walking directions, and enhance your experience.',
       NSLocationAlwaysUsageDescription: 'We use your location to provide directions and show nearby places, even when the app is in the background.',
-      NSLocationAlwaysAndWhenInUseUsageDescription: 'Allow YumStepper-FE to access your location to provide the best experience, even when running in the background.'
+      NSLocationAlwaysAndWhenInUseUsageDescription: 'Allow YumStepper-FE to access your location to provide the best experience, even when running in the background.',
+      UIBackgroundModes: ['location', 'fetch', 'processing'],
     },
   },
   android: {
@@ -41,6 +42,14 @@ module.exports = ({ config }) => ({
   },
   web: {
     favicon: './assets/favicon.png',
+    // Additional web-specific settings can go here
+    config: {
+      googleMapsApiKey: process.env.GOOGLE_API_KEY,
+    },
+    name: 'YumStepper Web', // Optional: You can specify a different name for the web version.
+    display: 'standalone', // This setting ensures the web app looks like a standalone app.
+    backgroundColor: '#ffffff', // Background color for web.
+    orientation: 'portrait', // Setting the orientation specifically for web.
   },
   plugins: [
     withReactNativeMaps,
@@ -51,7 +60,7 @@ module.exports = ({ config }) => ({
     apiBaseUrl: process.env.API_BASE_URL,
     googleApiKey: process.env.GOOGLE_API_KEY,
     eas: {
-      projectId: '2c51e589-b778-4f1d-bb3c-92962add2555',
+      projectId: '7544a13a-d5de-4846-be20-36cbea9108ff',
     },
   },
   assetBundlePatterns: [

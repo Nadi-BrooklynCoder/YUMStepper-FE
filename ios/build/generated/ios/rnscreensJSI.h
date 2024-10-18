@@ -38,19 +38,15 @@ protected:
     : TurboModule(std::string{NativeScreensModuleCxxSpec::kModuleName}, jsInvoker),
       delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
 
-
 private:
   class Delegate : public NativeScreensModuleCxxSpecJSI {
   public:
     Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
-      NativeScreensModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
-
-    }
+      NativeScreensModuleCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {}
 
     
 
   private:
-    friend class NativeScreensModuleCxxSpec;
     T *instance_;
   };
 

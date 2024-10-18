@@ -6,6 +6,7 @@
  */
 
 #include "JsErrorHandler.h"
+#include <react/renderer/mapbuffer/MapBufferBuilder.h>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -13,7 +14,9 @@
 
 namespace facebook::react {
 
-static JsErrorHandler::ParsedError
+using facebook::react::JSErrorHandlerKey;
+
+static MapBuffer
 parseErrorStack(const jsi::JSError& error, bool isFatal, bool isHermes) {
   /**
    * This parses the different stack traces and puts them into one format
@@ -40,72 +43,63 @@ parseErrorStack(const jsi::JSError& error, bool isFatal, bool isHermes) {
   std::string line;
   std::stringstream strStream(error.getStack());
 
-  std::vector<JsErrorHandler::ParsedError::StackFrame> frames;
+  auto errorObj = MapBufferBuilder();
+  std::vector<MapBuffer> frames;
 
   while (std::getline(strStream, line, '\n')) {
+    auto frame = MapBufferBuilder();
     auto searchResults = std::smatch{};
 
     if (isHermes) {
       if (std::regex_search(line, searchResults, REGEX_HERMES)) {
         std::string str2 = std::string(searchResults[2]);
         if (str2.compare("native")) {
-          frames.push_back({
-              .fileName = std::string(searchResults[4]),
-              .methodName = std::string(searchResults[1]),
-              .lineNumber = std::stoi(searchResults[5]),
-              .columnNumber = std::stoi(searchResults[6]),
-          });
+          frame.putString(kFrameFileName, std::string(searchResults[4]));
+          frame.putString(kFrameMethodName, std::string(searchResults[1]));
+          frame.putInt(kFrameLineNumber, std::stoi(searchResults[5]));
+          frame.putInt(kFrameColumnNumber, std::stoi(searchResults[6]));
+          frames.push_back(frame.build());
         }
       }
     } else {
       if (std::regex_search(line, searchResults, REGEX_GECKO)) {
-        frames.push_back({
-            .fileName = std::string(searchResults[3]),
-            .methodName = std::string(searchResults[1]),
-            .lineNumber = std::stoi(searchResults[4]),
-            .columnNumber = std::stoi(searchResults[5]),
-        });
+        frame.putString(kFrameFileName, std::string(searchResults[3]));
+        frame.putString(kFrameMethodName, std::string(searchResults[1]));
+        frame.putInt(kFrameLineNumber, std::stoi(searchResults[4]));
+        frame.putInt(kFrameColumnNumber, std::stoi(searchResults[5]));
       } else if (
           std::regex_search(line, searchResults, REGEX_CHROME) ||
           std::regex_search(line, searchResults, REGEX_NODE)) {
-        frames.push_back({
-            .fileName = std::string(searchResults[2]),
-            .methodName = std::string(searchResults[1]),
-            .lineNumber = std::stoi(searchResults[3]),
-            .columnNumber = std::stoi(searchResults[4]),
-        });
+        frame.putString(kFrameFileName, std::string(searchResults[2]));
+        frame.putString(kFrameMethodName, std::string(searchResults[1]));
+        frame.putInt(kFrameLineNumber, std::stoi(searchResults[3]));
+        frame.putInt(kFrameColumnNumber, std::stoi(searchResults[4]));
       } else {
         continue;
       }
+      frames.push_back(frame.build());
     }
   }
-
-  return {
-      .frames = std::move(frames),
-      .message = "EarlyJsError: " + error.getMessage(),
-      .exceptionId = 0,
-      .isFatal = isFatal,
-  };
+  errorObj.putMapBufferList(kAllStackFrames, std::move(frames));
+  errorObj.putString(kErrorMessage, "EarlyJsError: " + error.getMessage());
+  // TODO: If needed, can increment exceptionId by 1 each time
+  errorObj.putInt(kExceptionId, 0);
+  errorObj.putBool(kIsFatal, isFatal);
+  return errorObj.build();
 }
 
-JsErrorHandler::JsErrorHandler(JsErrorHandler::OnJsError onJsError)
-    : _onJsError(std::move(onJsError)),
-      _hasHandledFatalError(false){
-
-      };
+JsErrorHandler::JsErrorHandler(
+    JsErrorHandler::JsErrorHandlingFunc jsErrorHandlingFunc) {
+  this->_jsErrorHandlingFunc = jsErrorHandlingFunc;
+};
 
 JsErrorHandler::~JsErrorHandler() {}
 
-void JsErrorHandler::handleFatalError(const jsi::JSError& error) {
+void JsErrorHandler::handleJsError(const jsi::JSError& error, bool isFatal) {
   // TODO: Current error parsing works and is stable. Can investigate using
   // REGEX_HERMES to get additional Hermes data, though it requires JS setup.
-  _hasHandledFatalError = true;
-  ParsedError parsedError = parseErrorStack(error, true, false);
-  _onJsError(parsedError);
-}
-
-bool JsErrorHandler::hasHandledFatalError() {
-  return _hasHandledFatalError;
+  MapBuffer errorMap = parseErrorStack(error, isFatal, false);
+  _jsErrorHandlingFunc(std::move(errorMap));
 }
 
 } // namespace facebook::react

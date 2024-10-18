@@ -101,7 +101,7 @@ class RawProps final {
    */
   void iterateOverValues(
       const std::function<
-          void(RawPropsPropNameHash, const char*, const RawValue&)>& fn) const;
+          void(RawPropsPropNameHash, const char*, RawValue const&)>& fn) const;
 
  private:
   friend class RawPropsParser;

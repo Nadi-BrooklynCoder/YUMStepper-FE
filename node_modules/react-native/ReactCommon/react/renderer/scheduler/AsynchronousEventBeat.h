@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#pragma once
-
 #include <ReactCommon/RuntimeExecutor.h>
 #include <react/renderer/core/EventBeat.h>
 #include <react/utils/RunLoopObserver.h>
