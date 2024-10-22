@@ -25,7 +25,7 @@ if (Platform.OS !== 'web') {
 import RestaurantMarker from "./RestaurantMarker";
 
 const MapComponent = ({ setSideModalVisible }) => {
-  const { setUserLocation, userLocation, directions, nearbyPlaces, selectedRestaurant, setSelectedRestaurant, userId } = useContext(AuthContext);
+  const { setUserLocation, userLocation, directions, nearbyPlaces, selectedRestaurant, setSelectedRestaurant, userId, restaurants } = useContext(AuthContext);
 
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const mapViewRef = useRef(null);
@@ -200,7 +200,15 @@ const MapComponent = ({ setSideModalVisible }) => {
             key={index}
             setSideModalVisible={setSideModalVisible}
           />
-        ))}
+        )) &&
+        restaurants?.map((restaurant, idx) => (
+          <RestaurantMarker
+            restaurant={restaurant}
+            key={idx}
+            setSideModalVisible={setSideModalVisible}
+          />
+        ))
+      }
 
       {/* Directions Polyline */}
       {directions.length > 0 && (

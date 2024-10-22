@@ -223,20 +223,22 @@ export const AuthProvider = ({ children }) => {
         if (Platform.OS === 'web') return;
 
         try {
-            const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`, {
-                params: {
-                    latitude: userLocation.latitude,
-                    longitude: userLocation.longitude,
-                    radius: 1500, // Example radius in meters
-                    type: 'restaurant',
-                },
-                // Removed 'Content-Type' and 'Accept' headers
-            });
-            if (res.data && res.data.length > 0) {
-                setNearbyPlaces(res.data);
-                console.log("Nearby Places fetched:", res.data);
-            } else {
-                console.log("No restaurants found.");
+            if(userLocation?.latitude) {
+                const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`, {
+                    params: {
+                        latitude: userLocation.latitude,
+                        longitude: userLocation.longitude,
+                        radius: 1500, // Example radius in meters
+                        type: 'restaurant',
+                    },
+                    // Removed 'Content-Type' and 'Accept' headers
+                });
+                if (res.data && res.data.length > 0) {
+                    setNearbyPlaces(res.data);
+                    console.log("Nearby Places fetched:", res.data);
+                } else {
+                    console.log("No restaurants found.");
+                }
             }
         } catch (err) {
             handleApiError(err, "Error fetching restaurants");
@@ -570,6 +572,7 @@ export const AuthProvider = ({ children }) => {
                 selectedReward,
                 setSelectedReward,
                 calculateSteps,
+                setRestaurants,
                 heading, // Optional: Expose heading if needed
             }}
         >

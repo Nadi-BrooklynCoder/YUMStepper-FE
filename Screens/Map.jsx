@@ -27,6 +27,7 @@ const Map = ({ route }) => {
     user,
     userId,
     fetchNearByPlaces,
+    setRestaurants
   } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
@@ -63,9 +64,18 @@ const Map = ({ route }) => {
     }
   }
 
-  useEffect(() => {
+  useEffect(async () => {
     if (userLocation && userLocation.latitude) {
-      fetchNearByPlaces(); // Fetch nearby places when user location updates
+      try {
+        const fetchRestaurants = async () => {
+          const restaurantsRes = await axios.get(`${API_BASE_URL}/restaurants`)
+          setRestaurants(restaurantsRes.data)
+        }
+        fetchRestaurants()
+        fetchNearByPlaces(); // Fetch nearby places when user location updates
+      } catch (err) {
+        console.error(err)
+      }
     }
   }, [userLocation]);
 

@@ -45,6 +45,6 @@ with_node \
   --no-warnings \
   --eval "require(require.resolve('expo-modules-autolinking', { paths: [require.resolve('expo/package.json')] }))(process.argv.slice(1))" \
   generate-modules-provider  \
-  --target "/Users/nmatos/Desktop/Pursuit/Demo-Day/YUMStepper-FE/ios/Pods/Target Support Files/Pods-YumStepperFE/ExpoModulesProvider.swift" \
+  --target "/Users/larrylamouth/Pursuit/YUMstepper/YUMStepper-FE/ios/Pods/Target Support Files/Pods-YumStepperFE/ExpoModulesProvider.swift" \
   --platform "apple" \
   --packages "expo-application" "expo-asset" "expo-constants" "expo-dev-launcher" "expo-dev-menu" "expo-file-system" "expo-font" "expo-keep-awake" "expo-secure-store" "expo-system-ui"

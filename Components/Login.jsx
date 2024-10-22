@@ -7,6 +7,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { AuthContext } from '../Context/AuthContext';
 
+
 const LoginComponent = () => {
     const { login } = useContext(AuthContext);
     const navigation = useNavigation();
@@ -20,17 +21,18 @@ const LoginComponent = () => {
     });
 
     const handleLogin = async (values) => {
-        console.log(values);
         const loginData = {
             username: values.username.trim(),
-            password: values.password,
+            password_hash: values.password,
         };
+        console.log(loginData);
 
         setIsLoading(true);
         setErrorMessage(null);
         Keyboard.dismiss();
 
         try {
+            console.log(API_BASE_URL)
             const res = await axios.post(`${API_BASE_URL}/users/login`, loginData);
             const { token, user } = res.data;
 
