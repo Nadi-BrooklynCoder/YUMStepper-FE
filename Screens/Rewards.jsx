@@ -1,17 +1,19 @@
-import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
 import RewardCard from '../Components/Rewards/RewardCard';
 import { useFonts } from 'expo-font';
 import AppLoading from 'expo-app-loading';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
-
 import RewardSideModal from '../Components/Rewards/RewardSideModal';
+import { AuthContext } from '../Context/AuthContext';
 
 const Rewards = () => {
+    const { userId } = useContext(AuthContext);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedReward, setSelectedReward] = useState(null);
-    const [rewards, setRewards] = useState([]);
+    const [userRewards, setUserRewards] = useState([]);
+    const [allRewards, setAllRewards] = useState([]);
 
     const [fontsLoaded] = useFonts({
         Itim: require('../assets/fonts/Itim-Regular.ttf'),
@@ -21,15 +23,22 @@ const Rewards = () => {
     useEffect(() => {
         const fetchRewards = async () => {
             try {
-                const response = await axios.get(`${API_BASE_URL}/rewards`);
-                setRewards(response.data);
+                // Fetch user rewards
+                const userResponse = await axios.get(`${API_BASE_URL}/users/${userId}/rewards`);
+                setUserRewards(userResponse.data);
+
+                // Fetch all rewards from the restaurant
+                const allResponse = await axios.get(`${API_BASE_URL}/rewards`); // Adjust the endpoint as necessary
+                // Filter out user rewards
+                const filteredRewards = allResponse.data.filter(reward => 
+                    !userResponse.data.some(userReward => userReward.id === reward.id)
+                );
+                setAllRewards(filteredRewards);
             } catch (err) {
                 console.error("Error fetching rewards:", err);
             }
         };
         fetchRewards();
-    
-        // Return undefined or nothing; if you return a cleanup function, make sure it is a proper function.
     }, []);
 
     if (!fontsLoaded) {
@@ -46,17 +55,37 @@ const Rewards = () => {
         setModalVisible(false);
     };
 
+    const renderRewardCard = (item) => (
+        <TouchableOpacity onPress={() => handleRewardPress(item)}>
+            <RewardCard reward={item} />
+        </TouchableOpacity>
+    );
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Your Rewards</Text>
+
+            {/* User Rewards Section */}
+            {userRewards.length > 0 ? (
+                <FlatList
+                    data={userRewards}
+                    renderItem={({ item }) => renderRewardCard(item)}
+                    keyExtractor={(item) => item.id.toString()}
+                    style={styles.userRewardsList}
+                />
+            ) : (
+                <Text style={styles.noRewardsText}>You have no rewards yet!</Text>
+            )}
+
+            {/* Divider for Restaurant Rewards */}
+            <Text style={styles.divider}>Restaurant Rewards</Text>
+
+            {/* Restaurant Rewards Section */}
             <FlatList
-                data={rewards}
-                renderItem={({ item }) => (
-                    <TouchableOpacity onPress={() => handleRewardPress(item)}>
-                        <RewardCard reward={item} />
-                    </TouchableOpacity>
-                )}
+                data={allRewards}
+                renderItem={({ item }) => renderRewardCard(item)}
                 keyExtractor={(item) => item.id.toString()}
+                style={styles.restaurantRewardsList}
             />
 
             {selectedReward && (
@@ -85,6 +114,25 @@ const styles = StyleSheet.create({
         color: '#A41623',
         textAlign: 'center',
         marginBottom: 20,
+    },
+    noRewardsText: {
+        textAlign: 'center',
+        color: '#A41623',
+        marginBottom: 20,
+    },
+    divider: {
+        fontSize: 20,
+        fontFamily: 'Itim',
+        color: '#A41623',
+        textAlign: 'center',
+        marginVertical: 20,
+        fontWeight: 'bold',
+    },
+    userRewardsList: {
+        marginBottom: 20,
+    },
+    restaurantRewardsList: {
+        marginTop: 20,
     },
 });
 

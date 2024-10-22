@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { AuthContext } from '../../Context/AuthContext';
 
+import RewardsPopup from '../Rewards/RewardsPopup';
+
 const { width: screenWidth } = Dimensions.get('window');
 
 // const formatTime = (time) => {
@@ -18,6 +20,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const MapSide = ({ setSideModalVisible }) => {
     const { selectedRestaurant, setSelectedRestaurant, calculateSteps, getDirectionsFromGoogleMaps, directionSteps } = useContext(AuthContext);
     const [restaurantDetails, setRestaurantDetails] = useState({});
+    const [showRewards, setShowRewards] = useState(false);
     const slideAnim = useRef(new Animated.Value(screenWidth)).current;
 
     const closeModal = () => {
@@ -32,7 +35,7 @@ const MapSide = ({ setSideModalVisible }) => {
     const getNewDirections = async () => {
 
         if(Platform.OS !== 'web') {
-        await getDirectionsFromGoogleMaps();
+            await getDirectionsFromGoogleMaps();
         } else {
             console.log('Directions feature is not available on the web')
         }
@@ -41,60 +44,60 @@ const MapSide = ({ setSideModalVisible }) => {
     
     
        // In MapSide Component
-useEffect(() => {
-    const fetchRestaurantDetails = async () => {
-        if (selectedRestaurant?.id && selectedRestaurant.id !== 'N/A') {
-            try {
-                const response = await axios.get(`${API_BASE_URL}/restaurants/details/${selectedRestaurant.id}`);
-                if (response.data && response.data.data) {
-                    const details = response.data.data;
-                    // Format and set state
-                    setRestaurantDetails({
-                        id: details.id, // Ensure ID is always set properly without fallback
-                        name: details.name || 'Not Available',
-                        address: details.address || 'Not Available',
-                        latitude: details.latitude || selectedRestaurant.latitude,
-                        longitude: details.longitude || selectedRestaurant.longitude,
-                        open_now: details.open_now || 'No', // 'Yes' or 'No'
-                        opening_hours: details.opening_hours?.length > 0
-                            ? details.opening_hours
-                            : ['Unknown'],
-                        rating: details.rating || 'Not Available',
-                        cuisine_type: details.cuisine_type || 'Not specified',
-                        menu_url: details.menu_url || 'Not available',
-                    });
-                    
-                    calculateSteps();
-                } else {
-                    console.error("[MapSide:fetchRestaurantDetails] Unexpected response structure:", response.data);
+    useEffect(() => {
+        const fetchRestaurantDetails = async () => {
+            if (selectedRestaurant?.id && selectedRestaurant.id !== 'N/A') {
+                try {
+                    const response = await axios.get(`${API_BASE_URL}/restaurants/details/${selectedRestaurant.id}`);
+                    if (response.data && response.data.data) {
+                        const details = response.data.data;
+                        // Format and set state
+                        setRestaurantDetails({
+                            id: details.id, // Ensure ID is always set properly without fallback
+                            name: details.name || 'Not Available',
+                            address: details.address || 'Not Available',
+                            latitude: details.latitude || selectedRestaurant.latitude,
+                            longitude: details.longitude || selectedRestaurant.longitude,
+                            open_now: details.open_now || 'No', // 'Yes' or 'No'
+                            opening_hours: details.opening_hours?.length > 0
+                                ? details.opening_hours
+                                : ['Unknown'],
+                            rating: details.rating || 'Not Available',
+                            cuisine_type: details.cuisine_type || 'Not specified',
+                            menu_url: details.menu_url || 'Not available',
+                        });
+                        
+                        calculateSteps();
+                    } else {
+                        console.error("[MapSide:fetchRestaurantDetails] Unexpected response structure:", response.data);
+                    }
+                } catch (error) {
+                    if (error.response && error.response.status === 404) {
+                        console.error(`[MapSide:fetchRestaurantDetails] Restaurant ID ${selectedRestaurant.id} not found.`, error);
+                    } else {
+                        console.error("[MapSide:fetchRestaurantDetails] Error fetching restaurant details:", error);
+                    }
                 }
-            } catch (error) {
-                if (error.response && error.response.status === 404) {
-                    console.error(`[MapSide:fetchRestaurantDetails] Restaurant ID ${selectedRestaurant.id} not found.`, error);
-                } else {
-                    console.error("[MapSide:fetchRestaurantDetails] Error fetching restaurant details:", error);
-                }
+            } else {
+                console.warn('[MapSide:fetchRestaurantDetails] Invalid selectedRestaurant ID:', selectedRestaurant?.id);
             }
-        } else {
-            console.warn('[MapSide:fetchRestaurantDetails] Invalid selectedRestaurant ID:', selectedRestaurant?.id);
-        }
-    };
+        };
 
-    if (selectedRestaurant?.id && selectedRestaurant.id !== 'N/A') {
-        Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: Platform.OS !== 'web',
-        }).start();
-        fetchRestaurantDetails();
-    } else {
-        Animated.timing(slideAnim, {
-            toValue: screenWidth,
-            duration: 300,
-            useNativeDriver: Platform.OS !== 'web',
-        }).start();
-    }
-}, [selectedRestaurant]);
+        if (selectedRestaurant?.id && selectedRestaurant.id !== 'N/A') {
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: Platform.OS !== 'web',
+            }).start();
+            fetchRestaurantDetails();
+        } else {
+            Animated.timing(slideAnim, {
+                toValue: screenWidth,
+                duration: 300,
+                useNativeDriver: Platform.OS !== 'web',
+            }).start();
+        }
+    }, [selectedRestaurant]);
 
     
     
@@ -121,15 +124,15 @@ useEffect(() => {
                 </View>
 
                 {restaurantDetails.opening_hours && restaurantDetails.opening_hours.length > 0 && (
-    <View style={styles.infoContainer}>
-        <Text style={styles.label}>Opening Hours:</Text>
-        {restaurantDetails.opening_hours.map((hours, index) => (
-            <Text key={index} style={styles.value}>
-                {hours}
-            </Text>
-        ))}
-    </View>
-)}
+                    <View style={styles.infoContainer}>
+                        <Text style={styles.label}>Opening Hours:</Text>
+                        {restaurantDetails.opening_hours.map((hours, index) => (
+                            <Text key={index} style={styles.value}>
+                                {hours}
+                            </Text>
+                        ))}
+                    </View>
+                )}              
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Rating:</Text>
@@ -160,6 +163,12 @@ useEffect(() => {
                 <TouchableOpacity onPress={() => { closeModal(); setSelectedRestaurant({}); }} style={styles.closeButton}>
                     <Text style={styles.closeButtonText}>Close</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => setShowRewards(!showRewards)} style={styles.getDirectionsButton}>
+                    <Text style={styles.getDirectionsButtonText}>Go to this Restaurant</Text>
+                </TouchableOpacity>
+
+                {showRewards && <RewardsPopup showRewards={showRewards} setShowRewards={setShowRewards}/>}
             </View>
         </Animated.View>
     );
