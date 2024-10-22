@@ -45,7 +45,7 @@
     "react-native": "0.74.5",
     "react-native-animatable": "1.4.0",
     "react-native-background-fetch": "^4.2.5",
-    "react-native-gesture-handler": "^2.20.0",
+    "react-native-gesture-handler": "^2.20.1",
     "react-native-google-maps-directions": "2.1.1",
     "react-native-health": "^1.19.0",
     "react-native-maps": "^1.18.0",

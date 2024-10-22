@@ -1,22 +1,34 @@
+// RewardSideModal.jsx
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Animated } from 'react-native';
-import React, { useContext, useState, useRef, useEffect } from 'react';
+import React, { useContext, useState, useRef } from 'react';
 import { AuthContext } from '../../Context/AuthContext';
 import { API_BASE_URL } from '@env';
 import axios from 'axios';
 
-const RewardSideModal = ({ setModalVisible }) => {
-    const { selectedReward: reward, user, userId, isNearRestaurant } = useContext(AuthContext);
+const RewardSideModal = ({ setModalVisible }) => { // Removed 'reward' prop
+    const { selectedReward, user, userId, isNearRestaurant, setSelectedReward } = useContext(AuthContext);
     const [showMessage, setShowMessage] = useState(false); // Track pop-up visibility
     const fadeAnim = useRef(new Animated.Value(0)).current; // Initial fade value
 
     const handleRedemption = async () => {
+        if (!selectedReward || !user) {
+            console.error("Missing reward or user information.");
+            return;
+        }
         try {
-            const updatedUser = { ...user, points_earned: user.points_earned - reward.points_required };
-            await axios.put(`${API_BASE_URL}/users/${userId}`, updatedUser);
+            // Update user's points
+            const updatedUser = { ...user, points_earned: user.points_earned - selectedReward.points_required };
+            await axios.put(`${API_BASE_URL}/users/${userId}`, updatedUser, {
+                headers: {
+                    Authorization: `Bearer ${userToken}`, // Ensure userToken is available
+                },
+            });
             setModalVisible(false);
+            setSelectedReward({}); // Clear selected reward
             triggerSuccessMessage(); // Show success message after redemption
         } catch (err) {
             console.error('Error redeeming reward:', err);
+            Alert.alert("Redemption Failed", "There was an error redeeming your reward. Please try again.");
         }
     };
 
@@ -37,6 +49,10 @@ const RewardSideModal = ({ setModalVisible }) => {
         });
     };
 
+    if (!selectedReward) {
+        return null; // Or render a fallback UI/message
+    }
+
     return (
         <Modal
             animationType="slide"
@@ -45,20 +61,23 @@ const RewardSideModal = ({ setModalVisible }) => {
         >
             <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
-                    <Text style={styles.rewardDetail}>{reward.details}</Text>
-                    <Text style={styles.expiration}>Expires on: {reward.expiration_date}</Text>
+                    <Text style={styles.rewardDetail}>{selectedReward.details || 'Reward Details'}</Text>
+                    <Text style={styles.expiration}>Expires on: {selectedReward.expiration_date ? new Date(selectedReward.expiration_date).toLocaleDateString() : 'N/A'}</Text>
 
                     <TouchableOpacity
-                        style={styles.useButton}
-                        disabled={!isNearRestaurant}
+                        style={[styles.useButton, (!isNearRestaurant || selectedReward.points_required > user?.points_earned) && styles.disabledButton]}
+                        disabled={!isNearRestaurant || selectedReward.points_required > user?.points_earned}
                         onPress={handleRedemption}
                     >
-                        <Text style={styles.useButtonText}>Use Now</Text>
+                        <Text style={styles.useButtonText}>Redeem Now</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.saveButton}
-                        onPress={() => setModalVisible(false)}
+                        onPress={() => {
+                            setModalVisible(false);
+                            setSelectedReward({});
+                        }}
                     >
                         <Text style={styles.saveButtonText}>Close</Text>
                     </TouchableOpacity>
@@ -92,10 +111,12 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontFamily: 'Itim',
         marginBottom: 10,
+        color: '#02243D',
     },
     expiration: {
         marginBottom: 20,
         fontFamily: 'Open-Sans',
+        color: '#212529',
     },
     useButton: {
         backgroundColor: '#A41623',
@@ -108,6 +129,9 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
         fontFamily: 'Open-Sans',
+    },
+    disabledButton: {
+        backgroundColor: '#A9A9A9', // Greyed out color
     },
     saveButton: {
         backgroundColor: '#FFA500',
