@@ -1,5 +1,3 @@
-// AuthContext.js
-
 import React, { createContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDistance } from 'geolib';
@@ -7,25 +5,13 @@ import polyline from '@mapbox/polyline';
 import { API_BASE_URL } from '@env';
 import axios from "axios";
 import { debounce } from 'lodash';
-import { Platform, Alert } from 'react-native'; // Added Alert for user feedback
+import { Platform, Alert } from 'react-native';
 
-// modules that are not available on web
+// Modules that are not available on web
 import AppleHealthKit from 'react-native-health';
 import BackgroundFetch from 'react-native-background-fetch';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
-
-//trying to figure out how to do web
-// if (Platform.OS !== 'web') {
-//     AppleHealthKit = require('react-native-health').default;
-//     BackgroundFetch = require('react-native-background-fetch').default;
-//     Location = require('expo-location'); // Correctly require without .default
-//     Notifications = require('expo-notifications'); // Correctly require without .default
-
-//     // Debugging Logs
-//     console.log("Location module:", Location);
-//     console.log("Notifications module:", Notifications);
-// }
 
 export const AuthContext = createContext();
 
@@ -45,10 +31,10 @@ export const AuthProvider = ({ children }) => {
     const [isNearRestaurant, setIsNearRestaurant] = useState(false);
     const [selectedReward, setSelectedReward] = useState({});
     const [lastNotifiedStepCount, setLastNotifiedStepCount] = useState(0);
-    
     const [heading, setHeading] = useState(0); 
 
     const hasFetchedUser = useRef(false); // To prevent multiple fetches
+
 
     // Utility function for error handling
     const handleApiError = (error, customMessage) => {
@@ -88,7 +74,7 @@ export const AuthProvider = ({ children }) => {
         if (userId && userToken && !hasFetchedUser.current) {
             fetchUserData(userId, userToken);
         } else {
-            if (!userId || !userToken) { // Corrected condition
+            if (!userId || !userToken) {
                 console.log("userId or userToken is not available, skipping fetchUser");
             }
         }
@@ -102,70 +88,77 @@ export const AuthProvider = ({ children }) => {
     }, [userId, userToken]);
 
     // Login Function
-    const login = async (token, userId, navigation) => {
-        if (!userId || !token) {
-            console.error("Invalid userId or token during login");
-            return;
+const login = async (token, userId, navigation) => {
+    if (!userId || !token) {
+        console.error("Invalid userId or token during login");
+        return;
+    }
+
+    try {
+        // Store token and userId in AsyncStorage for mobile or localStorage for web
+        if (Platform.OS !== 'web') {
+            await AsyncStorage.setItem('userToken', token);
+            await AsyncStorage.setItem('userId', userId.toString());
+        } else {
+            localStorage.setItem('userToken', token);
+            localStorage.setItem('userId', userId.toString());
         }
 
-        try {
-            if (Platform.OS !== 'web') {
-                await AsyncStorage.setItem('userToken', token);
-                await AsyncStorage.setItem('userId', userId.toString());
-            } else {
-                localStorage.setItem('userToken', token);
-                localStorage.setItem('userId', userId.toString());
-            }
-            console.log('Saving User Token and ID:', { userId, token });
-            
-            setUserToken(token);
-            setUserId(userId);
+        // Log success
+        console.log('User Token and ID saved:', { userId, token });
 
-            if (navigation) {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Profile' }],
-                });
-            }
-        } catch (e) {
-            console.error('Failed during login:', e);
+        // Update state
+        setUserToken(token);
+        setUserId(userId);
+
+        // Navigate to Profile after login (optional)
+        if (navigation) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Profile' }], // Navigates to Profile screen
+            });
         }
-    };
+    } catch (e) {
+        console.error('Error during login:', e);
+    }
+};
 
-    // Logout Function
-    const logout = async (navigation) => {
-        try {
-            if (Platform.OS !== 'web'){
-                await AsyncStorage.removeItem('userToken');
-                await AsyncStorage.removeItem('userId');
-            } else {
-                localStorage.removeItem('userToken');
-                localStorage.removeItem('userId');
-            }
-
-            // Clear state variables
-            setUserToken(null);
-            setUserId(null);
-            setUserLocation({ latitude: null, longitude: null });
-            setSelectedRestaurant({});
-            setDirections([]);
-            setIsLoading(false);
-            setUser({});
-            setUserSteps({ step_count: 0, date: '' }); // Reset userSteps
-
-            console.log('Logout successful. Cleared storage and context state.');
-
-            // Navigate to Home after everything is cleared
-            if (navigation) {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' }],
-                });
-            }
-        } catch (e) {
-            console.error('Failed to clear storage during logout:', e);
+// Logout Function
+const logout = async (navigation) => {
+    try {
+        // Remove token and userId from AsyncStorage for mobile or localStorage for web
+        if (Platform.OS !== 'web') {
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('userId');
+        } else {
+            localStorage.removeItem('userToken');
+            localStorage.removeItem('userId');
         }
-    };
+
+        // Clear state variables related to the user and app
+        setUserToken(null);
+        setUserId(null);
+        setUserLocation({ latitude: null, longitude: null });
+        setSelectedRestaurant({});
+        setDirections([]);
+        setUser({}); // Reset user data
+        setUserSteps({ step_count: 0, date: '' }); // Reset step count
+        setIsLoading(false); // Ensure loading is reset
+
+        console.log('Logout successful. Cleared all user data and state.');
+
+        // Navigate to Home screen after logout (optional)
+        if (navigation) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }], // Navigates to Home screen
+            });
+        }
+    } catch (e) {
+        console.error('Error during logout:', e);
+    }
+};
+
 
     // Check Login Status
     const checkLoginStatus = async () => {
@@ -201,7 +194,6 @@ export const AuthProvider = ({ children }) => {
         if (Platform.OS !== 'web') {
             fetchNearByPlaces();
         }
-        // Removed initializeHealthKit from here
     }, []);
 
     // Effect: Initialize HealthKit when userId and userToken are available
@@ -216,6 +208,10 @@ export const AuthProvider = ({ children }) => {
         if (userLocation.latitude && userLocation.longitude) {
             debouncedFetchNearByPlaces();
         }
+
+        return () => {
+            debouncedFetchNearByPlaces.cancel(); // Cleanup debounced function
+        };
     }, [userLocation, debouncedFetchNearByPlaces]);
 
     // Fetch Nearby Places with debouncing to minimize API calls
@@ -231,7 +227,6 @@ export const AuthProvider = ({ children }) => {
                         radius: 1500, // Example radius in meters
                         type: 'restaurant',
                     },
-                    // Removed 'Content-Type' and 'Accept' headers
                 });
                 if (res.data && res.data.length > 0) {
                     setNearbyPlaces(res.data);
@@ -268,8 +263,7 @@ export const AuthProvider = ({ children }) => {
                         originLng: userLocation.longitude,
                         destLat: selectedRestaurant.latitude,
                         destLng: selectedRestaurant.longitude,
-                    },
-                    // Removed 'Content-Type' and 'Accept' headers
+                    }
                 }
             );
 
@@ -289,7 +283,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // Effect: Watch User Location
+    // Watch User Location
     useEffect(() => {
         if (Platform.OS === 'web') {
             return;
@@ -335,6 +329,8 @@ export const AuthProvider = ({ children }) => {
                         console.log("User location updated:", { latitude, longitude, heading: locationHeading });
                     }
                 );
+
+                console.log("Location Subscription:", locationSubscription);
             } catch (error) {
                 console.error("Error watching user location:", error);
             }
@@ -343,11 +339,14 @@ export const AuthProvider = ({ children }) => {
         subscribeToLocation();
 
         return () => {
-            if (locationSubscription) {
+            if (locationSubscription && typeof locationSubscription.remove === 'function') {
+                console.log("Removing location subscription");
                 locationSubscription.remove();
+            } else {
+                console.warn("No valid location subscription to remove");
             }
         };
-    }, [userId]); // Removed userToken from dependencies as it might not be necessary
+    }, [userId]);
 
     // HealthKit Initialization and Step Tracking Functions
     const initializeHealthKit = () => {
@@ -402,6 +401,9 @@ export const AuthProvider = ({ children }) => {
                 step_count: stepsToday,
                 date: new Date().toLocaleDateString(), // Format the date as needed
             });
+
+            triggerNotification(stepsToday); // Trigger notification if milestone reached
+            syncStepsToBackend(stepsToday); // Sync steps to backend
         });
     };
     
@@ -573,7 +575,9 @@ export const AuthProvider = ({ children }) => {
                 setSelectedReward,
                 calculateSteps,
                 setRestaurants,
-                heading, // Optional: Expose heading if needed
+                heading,
+                triggerNotification,
+                syncStepsToBackend // Optional: Expose heading if needed
             }}
         >
             {children}

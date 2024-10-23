@@ -81,6 +81,8 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
             fetchRewards();
         } 
     }, [selectedRestaurant]);
+
+    // Function to handle redeeming a reward
     
 
     return (
@@ -124,17 +126,17 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', 
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Dark background with opacity
         justifyContent: 'center',
         alignItems: 'center',
     },
     popupContainer: {
         width: '85%',
-        maxHeight: screenHeight * 0.7, 
+        maxHeight: screenHeight * 0.7, // Popup height limited to 70% of the screen
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 20,
-        elevation: 10, 
+        elevation: 10, // Shadow for Android
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,

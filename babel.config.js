@@ -11,7 +11,7 @@ module.exports = function(api) {
           allowUndefined: true,
         },
       ],
-      'react-native-reanimated/plugin' // Add this plugin if you are using Reanimated
+      'react-native-reanimated/plugin' 
     ],
   };
 };
