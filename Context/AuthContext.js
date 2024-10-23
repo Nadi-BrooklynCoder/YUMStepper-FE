@@ -88,77 +88,78 @@ export const AuthProvider = ({ children }) => {
     }, [userId, userToken]);
 
     // Login Function
-const login = async (token, userId, navigation) => {
-    if (!userId || !token) {
-        console.error("Invalid userId or token during login");
-        return;
-    }
-
-    try {
-        // Store token and userId in AsyncStorage for mobile or localStorage for web
-        if (Platform.OS !== 'web') {
-            await AsyncStorage.setItem('userToken', token);
-            await AsyncStorage.setItem('userId', userId.toString());
-        } else {
-            localStorage.setItem('userToken', token);
-            localStorage.setItem('userId', userId.toString());
+    const login = async (token, userId, navigation) => {
+        if (!userId || !token) {
+            console.error("Invalid userId or token during login");
+            return;
         }
-
-        // Log success
-        console.log('User Token and ID saved:', { userId, token });
-
-        // Update state
-        setUserToken(token);
-        setUserId(userId);
-
-        // Navigate to Profile after login (optional)
-        if (navigation) {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Profile' }], // Navigates to Profile screen
-            });
+    
+        try {
+            // Store token and userId in AsyncStorage for mobile or localStorage for web
+            if (Platform.OS !== 'web') {
+                await AsyncStorage.setItem('userToken', token);
+                await AsyncStorage.setItem('userId', userId.toString());
+            } else {
+                localStorage.setItem('userToken', token);
+                localStorage.setItem('userId', userId.toString());
+            }
+    
+            // Log success
+            console.log('User Token and ID saved:', { userId, token });
+    
+            // Update state
+            setUserToken(token);
+            setUserId(userId);
+    
+            // Navigate to Profile after login (optional)
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Profile' }], // Navigates to Profile screen
+                });
+            }
+        } catch (e) {
+            console.error('Error during login:', e);
         }
-    } catch (e) {
-        console.error('Error during login:', e);
-    }
-};
-
-// Logout Function
-const logout = async (navigation) => {
-    try {
-        // Remove token and userId from AsyncStorage for mobile or localStorage for web
-        if (Platform.OS !== 'web') {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('userId');
-        } else {
-            localStorage.removeItem('userToken');
-            localStorage.removeItem('userId');
+    };
+    
+    // Logout Function
+    const logout = async (navigation) => {
+        try {
+            // Remove token and userId from AsyncStorage for mobile or localStorage for web
+            if (Platform.OS !== 'web') {
+                await AsyncStorage.removeItem('userToken');
+                await AsyncStorage.removeItem('userId');
+            } else {
+                localStorage.removeItem('userToken');
+                localStorage.removeItem('userId');
+            }
+    
+            // Clear state variables related to the user and app
+            setUserToken(null);
+            setUserId(null);
+            setUserLocation({ latitude: null, longitude: null });
+            setSelectedRestaurant({});
+            setDirections([]);
+            setUser({}); // Reset user data
+            setUserSteps({ step_count: 0, date: '' }); // Reset step count
+            setIsLoading(false); // Ensure loading is reset
+    
+            console.log('Logout successful. Cleared all user data and state.');
+    
+            // Navigate to Home screen after logout (optional)
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }], // Navigates to Home screen
+                });
+            }
+        } catch (e) {
+            console.error('Error during logout:', e);
         }
+    };
 
-        // Clear state variables related to the user and app
-        setUserToken(null);
-        setUserId(null);
-        setUserLocation({ latitude: null, longitude: null });
-        setSelectedRestaurant({});
-        setDirections([]);
-        setUser({}); // Reset user data
-        setUserSteps({ step_count: 0, date: '' }); // Reset step count
-        setIsLoading(false); // Ensure loading is reset
-
-        console.log('Logout successful. Cleared all user data and state.');
-
-        // Navigate to Home screen after logout (optional)
-        if (navigation) {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Home' }], // Navigates to Home screen
-            });
-        }
-    } catch (e) {
-        console.error('Error during logout:', e);
-    }
-};
-
+      
 
     // Check Login Status
     const checkLoginStatus = async () => {
