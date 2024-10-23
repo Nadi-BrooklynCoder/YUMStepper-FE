@@ -60,6 +60,10 @@
     <string>We use your location to provide directions and show nearby places, even when the app is in the background.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>We need your location to show nearby restaurants, walking directions, and enhance your experience.</string>
+    <key>NSHealthShareUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to read your health data to track your steps and provide rewards.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to write your health data for better step tracking and rewards.</string>
     <key>UIBackgroundModes</key>
     <array>
       <string>location</string>

@@ -30,12 +30,9 @@ const SignUpForm = () => {
             console.log('Backend Response:', response.data);
             
             const { token, newUser } = response.data;
-
+    
             if (newUser && newUser.id && token) {
-                // Update the context with token and userId
                 await login(token, newUser.id, navigation);
-                
-                // Notify user of successful registration
                 Alert.alert('Success', 'User registered successfully!');
             } else {
                 throw new Error("User registration failed");
@@ -47,6 +44,8 @@ const SignUpForm = () => {
             
             if (error.response && error.response.data && error.response.data.error) {
                 errorMessage = error.response.data.error;
+            } else if (error.message.includes('Username or email already exists')) {
+                errorMessage = 'Username or email already exists. Please choose another.';
             } else if (error.message) {
                 errorMessage = error.message;
             }
@@ -56,6 +55,7 @@ const SignUpForm = () => {
             setIsLoading(false);
         }
     };
+    
     
     return (
         <View style={styles.container}>
