@@ -1,6 +1,6 @@
 {
   "name": "React-utils",
-  "version": "0.74.5",
+  "version": "0.74.6",
   "summary": "-",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.74.5"
+    "tag": "v0.74.6"
   },
   "source_files": "**/*.{cpp,h,mm}",
   "compiler_flags": "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -DFOLLY_HAVE_CLOCK_GETTIME=1 -Wno-comma -Wno-shorten-64-to-32",
@@ -26,7 +26,7 @@
       "2024.01.01.00"
     ],
     "React-jsi": [
-      "0.74.5"
+      "0.74.6"
     ],
     "glog": [
 

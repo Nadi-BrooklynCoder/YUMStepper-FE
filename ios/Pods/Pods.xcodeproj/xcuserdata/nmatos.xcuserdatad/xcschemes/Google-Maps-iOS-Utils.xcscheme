@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A5EEC7C2AA5BC7C67CFA2C7578AB62C7"
-               BuildableName = "Google-Maps-iOS-Utils"
+               BuildableName = "libGoogle-Maps-iOS-Utils.a"
                BlueprintName = "Google-Maps-iOS-Utils"
                ReferencedContainer = "container:Pods.xcodeproj">
             </BuildableReference>

@@ -499,6 +499,26 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>lottie-ios-LottiePrivacyInfo.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>lottie-ios.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>lottie-react-native-Lottie_React_Native_Privacy.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>lottie-react-native.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>react-native-google-maps-GoogleMapsPrivacy.xcscheme</key>
 		<dict>
 			<key>isShown</key>

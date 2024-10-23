@@ -1,10 +1,10 @@
-// ForwardMapView.ios.js
+// ForwardedMapView.js
 
 import React, { forwardRef } from 'react';
 import MapView from 'react-native-maps';
 
-const ForwardMapView = forwardRef((props, ref) => {
-    return <MapView ref={ref} {...props} />;
-});
+const ForwardedMapView = forwardRef((props, ref) => (
+    <MapView {...props} ref={ref} />
+));
 
-export default ForwardMapView;
+export default ForwardedMapView;

@@ -7,7 +7,7 @@ import { AuthContext } from '../Context/AuthContext';
 // SCREENS
 import Login from '../Screens/Login';
 import Home from '../Screens/Home';
-import Profile from '../Screens/Profile';
+import Profile from '../Screens/ProfileSlider';
 import SignUp from '../Screens/SignUp';
 import Rewards from '../Screens/Rewards';
 import Map from '../Screens/Map';

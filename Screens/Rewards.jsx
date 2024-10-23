@@ -9,7 +9,7 @@ import RewardSideModal from '../Components/Rewards/RewardSideModal';
 import { AuthContext } from '../Context/AuthContext';
 
 const Rewards = () => {
-    const { userId } = useContext(AuthContext);
+    const { userId, userToken } = useContext(AuthContext); // Ensure token is available
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedReward, setSelectedReward] = useState(null);
     const [userRewards, setUserRewards] = useState([]);
@@ -21,15 +21,21 @@ const Rewards = () => {
     });
 
     useEffect(() => {
+        if (!userId || !userToken) {
+            console.log("User is logged out or token is invalid, skipping reward fetch.");
+            return; // Prevent API call if userId or userToken is null
+        }
+    
         const fetchRewards = async () => {
             try {
-                // Fetch user rewards
-                const userResponse = await axios.get(`${API_BASE_URL}/users/${userId}/rewards`);
+                const userResponse = await axios.get(`${API_BASE_URL}/users/${userId}/rewards`, {
+                    headers: {
+                        Authorization: `Bearer ${userToken}`, // Add the token in the Authorization header
+                    },
+                });
                 setUserRewards(userResponse.data);
-
-                // Fetch all rewards from the restaurant
-                const allResponse = await axios.get(`${API_BASE_URL}/rewards`); // Adjust the endpoint as necessary
-                // Filter out user rewards
+    
+                const allResponse = await axios.get(`${API_BASE_URL}/rewards`);
                 const filteredRewards = allResponse.data.filter(reward => 
                     !userResponse.data.some(userReward => userReward.id === reward.id)
                 );
@@ -39,7 +45,8 @@ const Rewards = () => {
             }
         };
         fetchRewards();
-    }, []);
+    }, [userId, userToken]); // Ensure the effect depends on both userId and userToken
+    
 
     if (!fontsLoaded) {
         return <AppLoading />;
@@ -107,6 +114,10 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFECD4',
         padding: 20,
+    },
+    headerContainer: {
+        marginTop: 60,
+        marginBottom: 20,
     },
     title: {
         fontSize: 24,
