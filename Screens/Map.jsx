@@ -1,3 +1,4 @@
+// Map.js
 import React, { useContext, useState, useRef, useEffect } from "react";
 import {
   View,
@@ -27,7 +28,9 @@ const Map = ({ route }) => {
     user,
     userId,
     fetchNearByPlaces,
+    setRestaurants
   } = useContext(AuthContext);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
   const [sideModalVisible, setSideModalVisible] = useState(false);
@@ -52,27 +55,44 @@ const Map = ({ route }) => {
     }
   };
 
+  // Function to handle check-in
   const handleCheckIn = async () => {
     if(isNearRestaurant) {
       try {
-        await axios.put(`${API_BASE_URL}/users/${userId}`, {...user, points_earned: user.points_earned += 25}) // ADD POINTS AT CHECK IN
+        // Update points earned
+        await axios.put(`${API_BASE_URL}/users/${userId}`, {
+          ...user,
+          points_earned: user.points_earned + 25
+        });
         navigation.navigate("Rewards");
       } catch (err) {
-        console.error(err)
+        console.error(err);
       }
     }
   }
 
+  // Fetch restaurants and nearby places when user location updates
   useEffect(() => {
-    if (userLocation && userLocation.latitude) {
-      fetchNearByPlaces(); // Fetch nearby places when user location updates
-    }
+    const fetchData = async () => {
+      if (userLocation && userLocation.latitude) {
+        try {
+          const restaurantsRes = await axios.get(`${API_BASE_URL}/restaurants`);
+          setRestaurants(restaurantsRes.data);
+          fetchNearByPlaces(); // Fetch nearby places when user location updates
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+    fetchData();
   }, [userLocation]);
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Map Search Bar */}
-      <SearchMap setSearchQuery={handleSearch} searchQuery={searchQuery} />
+      {/* Search Bar Container */}
+      <View style={styles.searchContainer}>
+        <SearchMap setSearchQuery={handleSearch} searchQuery={searchQuery} />
+      </View>
 
       {/* The actual map component */}
       <MapComponent
@@ -150,16 +170,23 @@ const Map = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  searchContainer: {
+    position: 'absolute',
+    top: 150, // Increased to lower the search bar
+    left: 10,
+    right: 10,
+    zIndex: 2, // Higher zIndex to ensure it's above other components
+  },
   popup: {
     position: "absolute",
-    top: 60,
+    top: 220, // Adjust if needed based on search bar position
     left: 10,
     right: 10,
     backgroundColor: "#fff",
     borderRadius: 5,
     maxHeight: 200,
     elevation: 5,
-    zIndex: 1,
+    zIndex: 1, // Lower than searchContainer
   },
   itemText: {
     padding: 10,
@@ -170,6 +197,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
+    zIndex: 1,
   },
   stopButton: {
     backgroundColor: "#ff3333",
@@ -184,13 +212,15 @@ const styles = StyleSheet.create({
   },
   checkInButtonContainer: {
     position: "absolute",
-    top: 120,
+    top: 180, // Adjust as needed based on search bar position
     right: 150,
+    zIndex: 1,
   },
   checkInButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
+    backgroundColor: "#0BCF07", // Default color; will change based on proximity
   },
   checkInButtonText: {
     color: "#fff",
@@ -200,4 +230,3 @@ const styles = StyleSheet.create({
 });
 
 export default Map;
-

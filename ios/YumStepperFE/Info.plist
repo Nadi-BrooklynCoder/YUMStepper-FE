@@ -39,6 +39,8 @@
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>GMSApiKey</key>
+    <string>AIzaSyCkM7_f9B3C16ES9XJQ78NWB5OlasBj8pQ</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSRequiresIPhoneOS</key>
@@ -51,11 +53,7 @@
       <true/>
     </dict>
     <key>NSFaceIDUsageDescription</key>
-    <string>Allow YUMStepper-FE to access your Face ID biometric data.</string>
-    <key>NSHealthShareUsageDescription</key>
-    <string>We need access to HealthKit to track steps.</string>
-    <key>NSHealthUpdateUsageDescription</key>
-    <string>We need to update HealthKit data.</string>
+    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Allow YumStepper-FE to access your location to provide the best experience, even when running in the background.</string>
     <key>NSLocationAlwaysUsageDescription</key>
@@ -64,11 +62,9 @@
     <string>We need your location to show nearby restaurants, walking directions, and enhance your experience.</string>
     <key>UIBackgroundModes</key>
     <array>
+      <string>location</string>
       <string>fetch</string>
       <string>processing</string>
-      <string>remote-notification</string>
-      <string>location</string>
-      <string>nearby-interaction</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>

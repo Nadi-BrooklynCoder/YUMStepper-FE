@@ -70,7 +70,7 @@ const RestaurantMarker = ({ restaurant, setSideModalVisible }) => {
     }
   };
   
-// Confirm valid coordinates before rendering the Marker
+  // Confirm valid coordinates before rendering the Marker
   const latitude = parseFloat(restaurant.latitude);
   const longitude = parseFloat(restaurant.longitude);
 

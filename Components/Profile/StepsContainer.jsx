@@ -1,31 +1,62 @@
 // StepsContainer.js
 
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import React, { useContext, useEffect } from 'react';
 import { AuthContext } from '../../Context/AuthContext';
 import StepsCard from './StepsCard';
 
-const StepsContainer = ({ displayType }) => {
-  const { userSteps, stepsToPoints } = useContext(AuthContext);
+const StepsContainer = () => {
+    const { userSteps, stepsToPoints } = useContext(AuthContext);
 
-  useEffect(() => {
-    console.log("User Steps in Context:", userSteps);
-}, [userSteps]);
-console.log("StepsContainer received userSteps:", userSteps);
+    useEffect(() => {
+        console.log("StepsContainer received userSteps:", userSteps);
+    }, [userSteps]);
 
-
-  return (
-    <View>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginVertical: 10 }}>
-        {displayType === 'steps' ? 'Steps:' : 'Points:'}
-      </Text>
-      <StepsCard
-        step={userSteps}
-        displayType={displayType}
-        stepsToPoints={stepsToPoints}
-      />
-    </View>
-  );
+    return (
+        <View style={styles.container}>
+            {userSteps ? (
+                // Check if userSteps is an array
+                Array.isArray(userSteps) ? (
+                    userSteps.length > 0 ? (
+                        userSteps.map((step) => (
+                            <StepsCard key={step.id} step={step} />
+                        ))
+                    ) : (
+                        <Text style={styles.noStepsText}>No steps data available.</Text>
+                    )
+                ) : (
+                    // If userSteps is an object
+                    <StepsCard step={userSteps} />
+                )
+            ) : (
+                <Text style={styles.noStepsText}>No steps data available.</Text>
+            )}
+        </View>
+    );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        marginTop: 20,
+        padding: 10,
+        borderRadius: 1000,
+        height: 300,
+        width: 300,
+        borderWidth: 25,
+        borderColor: '#A41623',
+        justifyContent: 'center',
+        alignContent: 'center',
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginVertical: 10,
+    },
+    noStepsText: {
+        fontSize: 16,
+        color: '#666',
+        marginTop: 5,
+    },
+});
 
 export default StepsContainer;
