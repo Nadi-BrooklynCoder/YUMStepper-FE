@@ -31,6 +31,7 @@ const MapComponent = ({ setSideModalVisible }) => {
   const mapViewRef = useRef(null);
   const [heading, setHeading] = useState(0);
   const [directionsActive, setDirectionsActive] = useState(false);
+  console.log(restaurants)
 
   const animatedRegion = useRef(
     new AnimatedRegion({
@@ -111,7 +112,7 @@ const MapComponent = ({ setSideModalVisible }) => {
       ).start();
     };
 
-    watchUserLocation();
+    // watchUserLocation();
     startPulseAnimation();
 
     return () => {
@@ -193,7 +194,7 @@ const MapComponent = ({ setSideModalVisible }) => {
       )}
 
       {/* Render Restaurant Markers only if directions are not active */}
-      {!directionsActive &&
+      {!directionsActive && 
         nearbyPlaces?.map((restaurant, index) => (
           <RestaurantMarker
             restaurant={restaurant}

@@ -27,7 +27,8 @@ const Map = ({ route }) => {
     user,
     userId,
     fetchNearByPlaces,
-    setRestaurants
+    setRestaurants,
+    nearbyPlaces
   } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
@@ -77,7 +78,7 @@ const Map = ({ route }) => {
         console.error(err)
       }
     }
-  }, [userLocation]);
+  }, [nearbyPlaces]);
 
   return (
     <View style={{ flex: 1 }}>

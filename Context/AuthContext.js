@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
             console.log('Fetching user with ID:', currentUserId);
             const response = await axios.get(`${API_BASE_URL}/users/${currentUserId}`, {
                 headers: {
-                    Authorization: `Bearer ${currentUserToken}`, // Retained Authorization header
+                    Authorization: `${currentUserToken}`, // Retained Authorization header
                 },
             });
             setUser(response.data);
@@ -422,7 +422,7 @@ export const AuthProvider = ({ children }) => {
                 },
                 {
                     headers: {
-                        Authorization: `Bearer ${userToken}`, // Retained Authorization header for step syncing
+                        Authorization: `${userToken}`, // Retained Authorization header for step syncing
                     },
                 }
             );

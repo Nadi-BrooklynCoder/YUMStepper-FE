@@ -27,12 +27,10 @@ const Rewards = () => {
                 const userResponse = await axios.get(`${API_BASE_URL}/users/${userId}/rewards`);
                 setUserRewards(userResponse.data);
 
-                // Fetch all rewards from the restaurant
-                const allResponse = await axios.get(`${API_BASE_URL}/rewards`); // Adjust the endpoint as necessary
-                // Filter out user rewards
-                const filteredRewards = allResponse.data.filter(reward => 
-                    !userResponse.data.some(userReward => userReward.id === reward.id)
-                );
+                const allResponse = await axios.get(`${API_BASE_URL}/rewards`);
+
+                const filteredRewards = allResponse.data.filter(reward => !userResponse.data.some(userReward => userReward.id === reward.id));
+
                 setAllRewards(filteredRewards);
             } catch (err) {
                 console.error("Error fetching rewards:", err);
