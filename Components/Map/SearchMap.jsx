@@ -1,15 +1,24 @@
-// SearchMap.js
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
+import { debounce } from 'lodash';
 
 const SearchMap = ({ setSearchQuery, searchQuery }) => {
+  // Debounced function to handle search input changes
+  const handleSearchChange = useCallback(
+    debounce((text) => {
+      setSearchQuery(text);
+    }, 300), // Adjust the debounce time as needed
+    []
+  );
+
   return (
     <View style={styles.container}>
       <TextInput
         placeholder="Search for restaurants..."
         value={searchQuery}
-        onChangeText={setSearchQuery}
+        onChangeText={handleSearchChange}
         style={styles.input}
+        accessibilityLabel="Search for restaurants"
       />
     </View>
   );
@@ -17,7 +26,6 @@ const SearchMap = ({ setSearchQuery, searchQuery }) => {
 
 const styles = StyleSheet.create({
   container: {
-    // No absolute positioning; let the parent handle it
     backgroundColor: '#fff',
     borderRadius: 5,
     paddingHorizontal: 10,

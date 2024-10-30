@@ -109,6 +109,11 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>ExpoSpeech.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>ExpoSystemUI-ExpoSystemUI_privacy.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -145,6 +150,11 @@
 			<false/>
 		</dict>
 		<key>RCT-Folly.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RCTCallDetection.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -444,6 +454,11 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>SwiftAudioEx.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>Yoga.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -545,6 +560,11 @@
 			<false/>
 		</dict>
 		<key>react-native-safe-area-context.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>react-native-track-player.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>

@@ -156,13 +156,13 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         alignItems: 'flex-start',
         paddingHorizontal: 20,
-        textAlign: 'center',
     },
     userInfoText: {
         fontSize: 18,
         marginBottom: 5,
         color: '#A41623',
         fontFamily: 'Itim',
+        textAlign: 'center',
     },
     sliderContainer: {
         marginTop: 20,

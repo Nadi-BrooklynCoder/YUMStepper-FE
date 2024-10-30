@@ -13,6 +13,7 @@ import ExpoFileSystem
 import ExpoFont
 import ExpoKeepAwake
 import ExpoSecureStore
+import ExpoSpeech
 import ExpoSystemUI
 #if EXPO_CONFIGURATION_DEBUG
 import EXDevLauncher
@@ -31,6 +32,7 @@ public class ExpoModulesProvider: ModulesProvider {
       FontLoaderModule.self,
       KeepAwakeModule.self,
       SecureStoreModule.self,
+      SpeechModule.self,
       ExpoSystemUIModule.self,
       DevLauncherInternal.self,
       DevLauncherAuth.self,
@@ -49,6 +51,7 @@ public class ExpoModulesProvider: ModulesProvider {
       FontLoaderModule.self,
       KeepAwakeModule.self,
       SecureStoreModule.self,
+      SpeechModule.self,
       ExpoSystemUIModule.self
     ]
     #endif

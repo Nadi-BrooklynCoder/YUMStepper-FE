@@ -7,7 +7,8 @@ import {
     Animated, 
     Dimensions, 
     Linking, 
-    Platform 
+    Platform, 
+    Alert 
 } from 'react-native';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
@@ -19,13 +20,14 @@ const { width: screenWidth } = Dimensions.get('window');
 
 const MapSide = ({ setSideModalVisible }) => {
     const { 
-        selectedRestaurant, 
-        setSelectedRestaurant, 
-        calculateSteps, 
-        getDirectionsFromGoogleMaps, 
+        selectedRestaurant,
+        calculateSteps,  
         directionSteps, 
         selectedReward, 
-        setSelectedReward 
+        setSelectedReward,
+        applyRestaurantBonus,
+        syncStepsToBackend,
+        getDirectionsFromGoogleMaps
     } = useContext(AuthContext);
     
     const [restaurantDetails, setRestaurantDetails] = useState({});
@@ -39,19 +41,22 @@ const MapSide = ({ setSideModalVisible }) => {
             useNativeDriver: Platform.OS !== 'web',
         }).start(() => {
             setSideModalVisible(false);
-            setSelectedRestaurant({});
         });
     };
 
     const getNewDirections = async () => {
-        if (Platform.OS !== 'web') {
+        try {
             await getDirectionsFromGoogleMaps();
-        } else {
-            console.log('Directions feature is not available on the web');
+            Alert.alert(`Start walking to ${selectedRestaurant?.name} and check in to boost your points!`);
+        } catch (error) {
+            console.error("Error initiating directions:", error);
+            Alert.alert("Error", "Unable to start directions. Please try again.");
+        } finally {
+            closeModal();
         }
-        closeModal();
     };
     
+
     useEffect(() => {
         const fetchRestaurantDetails = async () => {
             if (selectedRestaurant?.id && selectedRestaurant.id !== 'N/A') {
@@ -65,7 +70,7 @@ const MapSide = ({ setSideModalVisible }) => {
                             address: details.address || 'Not Available',
                             latitude: details.latitude || selectedRestaurant.latitude,
                             longitude: details.longitude || selectedRestaurant.longitude,
-                            open_now: details.open_now || 'No',
+                            open_now: details.open_now ? 'Yes' : 'No',
                             opening_hours: details.opening_hours?.length > 0
                                 ? details.opening_hours
                                 : ['Unknown'],
@@ -105,6 +110,15 @@ const MapSide = ({ setSideModalVisible }) => {
         }
     }, [selectedRestaurant, calculateSteps]);
 
+    useEffect(() => {
+        if (selectedRestaurant?.latitude && selectedRestaurant?.longitude && directionSteps > 0) {
+            const distance = calculateSteps();
+            const { totalPoints, bonusPoints } = applyRestaurantBonus(directionSteps, distance);
+            syncStepsToBackend(directionSteps, totalPoints + bonusPoints);
+        }
+    }, [directionSteps, selectedRestaurant, calculateSteps, applyRestaurantBonus, syncStepsToBackend]);
+    
+
     return (
         <Animated.View style={[styles.sideModal, { transform: [{ translateX: slideAnim }] }]}>
             <View style={styles.modalContent}>
@@ -125,16 +139,20 @@ const MapSide = ({ setSideModalVisible }) => {
                     <Text style={styles.value}>{restaurantDetails.open_now}</Text>
                 </View>
 
-                {restaurantDetails.opening_hours && restaurantDetails.opening_hours.length > 0 && (
-                    <View style={styles.infoContainer}>
-                        <Text style={styles.label}>Opening Hours:</Text>
-                        {restaurantDetails.opening_hours.map((hours, index) => (
+                <View style={styles.infoContainer}>
+                    <Text style={styles.label}>Opening Hours:</Text>
+                    {Array.isArray(restaurantDetails.opening_hours) && restaurantDetails.opening_hours.length > 0 ? (
+                        restaurantDetails.opening_hours.map((hour, index) => (
                             <Text key={index} style={styles.value}>
-                                {hours}
+                                {typeof hour === 'object' && hour !== null
+                                    ? `Day ${index + 1}: Open at ${hour.open || 'Unknown'}, Close at ${hour.close || 'Unknown'}`
+                                    : hour}
                             </Text>
-                        ))}
-                    </View>
-                )}              
+                        ))
+                    ) : (
+                        <Text style={styles.value}>No opening hours available.</Text>
+                    )}
+                </View>
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Rating:</Text>
@@ -144,9 +162,17 @@ const MapSide = ({ setSideModalVisible }) => {
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Menu URL:</Text>
                     <Text
-                        style={[styles.value, { color: restaurantDetails.menu_url !== 'Not available' ? 'blue' : 'grey', textDecorationLine: restaurantDetails.menu_url !== 'Not available' ? 'underline' : 'none' }]}
+                        style={[
+                            styles.value, 
+                            { 
+                                color: restaurantDetails.menu_url !== 'Not available' ? 'blue' : 'grey', 
+                                textDecorationLine: restaurantDetails.menu_url !== 'Not available' ? 'underline' : 'none' 
+                            }
+                        ]}
                         onPress={() =>
-                            restaurantDetails.menu_url !== 'Not available' ? Linking.openURL(restaurantDetails.menu_url) : null
+                            restaurantDetails.menu_url !== 'Not available' 
+                                ? Linking.openURL(restaurantDetails.menu_url).catch(err => console.error("Couldn't load page", err))
+                                : null
                         }
                     >
                         {restaurantDetails.menu_url}
@@ -195,10 +221,7 @@ const styles = StyleSheet.create({
         borderLeftWidth: 1,
         borderLeftColor: '#ccc',
         shadowColor: '#000',
-        shadowOffset: {
-            width: -2,
-            height: 0,
-        },
+        shadowOffset: { width: -2, height: 0 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,

@@ -16,55 +16,55 @@ import RewardItem from './RewardItem'; // Import the RewardItem component
 const { height: screenHeight } = Dimensions.get('window');
 
 const RewardsPopup = ({ showRewards, setShowRewards }) => {
-    const { selectedRestaurant } = useContext(AuthContext);
+    const { selectedRestaurant, user } = useContext(AuthContext); // Get `user` from AuthContext
     const [rewards, setRewards] = useState([]);
     const mockRewards = [
         {
-          id: 1,
-          date_generated: "2024-10-01T08:30:00Z",
-          details: "Get 10% off on your next order.",
-          expiration_date: "2024-12-31T23:59:59Z",
-          user_id: 101,
-          restaurant_id: 1,
-          points_required: 100,
-        },
-        {
-          id: 2,
-          date_generated: "2024-09-15T14:20:00Z",
-          details: "Free dessert with any main course.",
-          expiration_date: "2024-11-30T23:59:59Z",
-          user_id: 102,
-          restaurant_id: 1,
-          points_required: 50,
-        },
-        {
-          id: 3,
-          date_generated: "2024-10-10T10:45:00Z",
-          details: "20% off on your next meal.",
-          expiration_date: "2025-01-15T23:59:59Z",
-          user_id: 103,
-          restaurant_id: 2,
-          points_required: 200,
-        },
-        {
-          id: 4,
-          date_generated: "2024-09-25T16:00:00Z",
-          details: "Get a free coffee with every breakfast order.",
-          expiration_date: "2024-11-01T23:59:59Z",
-          user_id: 101,
-          restaurant_id: 3,
-          points_required: 30,
-        },
-        {
-          id: 5,
-          date_generated: "2024-08-20T09:15:00Z",
-          details: "Double loyalty points on all purchases today!",
-          expiration_date: "2024-10-31T23:59:59Z",
-          user_id: 104,
-          restaurant_id: 2,
-          points_required: 0,
-        },
-    ];
+            id: 1,
+            date_generated: "2024-10-01T08:30:00Z",
+            details: "Get 10% off on your next order.",
+            expiration_date: "2024-12-31T23:59:59Z",
+            user_id: 101,
+            restaurant_id: 1,
+            points_required: 100,
+          },
+          {
+            id: 2,
+            date_generated: "2024-09-15T14:20:00Z",
+            details: "Free dessert with any main course.",
+            expiration_date: "2024-11-30T23:59:59Z",
+            user_id: 102,
+            restaurant_id: 1,
+            points_required: 50,
+          },
+          {
+            id: 3,
+            date_generated: "2024-10-10T10:45:00Z",
+            details: "20% off on your next meal.",
+            expiration_date: "2025-01-15T23:59:59Z",
+            user_id: 103,
+            restaurant_id: 2,
+            points_required: 200,
+          },
+          {
+            id: 4,
+            date_generated: "2024-09-25T16:00:00Z",
+            details: "Get a free coffee with every breakfast order.",
+            expiration_date: "2024-11-01T23:59:59Z",
+            user_id: 101,
+            restaurant_id: 3,
+            points_required: 30,
+          },
+          {
+            id: 5,
+            date_generated: "2024-08-20T09:15:00Z",
+            details: "Double loyalty points on all purchases today!",
+            expiration_date: "2024-10-31T23:59:59Z",
+            user_id: 104,
+            restaurant_id: 2,
+            points_required: 0,
+          },
+      ];
 
     useEffect(() => {
         const fetchRewards = async () => {
@@ -82,8 +82,11 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
         } 
     }, [selectedRestaurant]);
 
-    // Function to handle redeeming a reward
-    
+    // Helper Function to check if reward is redeemable
+    const isRedeemable = (reward) => user?.points_earned >= reward.points_required;
+
+    // Helper Function to check if reward is expired
+    const isExpired = (reward) => new Date(reward.expiration_date) < new Date();
 
     return (
         <Modal
@@ -99,11 +102,13 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
                             Rewards at {selectedRestaurant?.name}
                         </Text>
 
-                        {mockRewards.length > 0 ? ( // REPLACE WITH ACTUAL REWARDS 
+                        {mockRewards.length > 0 ? ( // Replace with actual rewards
                             mockRewards.map((reward) => (
                                 <RewardItem 
                                     key={reward.id} 
                                     reward={reward} 
+                                    isRedeemable={isRedeemable(reward)}
+                                    isExpired={isExpired(reward)}
                                 />
                             ))
                         ) : (
@@ -126,17 +131,17 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Dark background with opacity
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     popupContainer: {
         width: '85%',
-        maxHeight: screenHeight * 0.7, // Popup height limited to 70% of the screen
+        maxHeight: screenHeight * 0.7,
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 20,
-        elevation: 10, // Shadow for Android
+        elevation: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,

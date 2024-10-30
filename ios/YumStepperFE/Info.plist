@@ -69,6 +69,8 @@
       <string>location</string>
       <string>fetch</string>
       <string>processing</string>
+      <string>audion</string>
+      <string>fetch</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>

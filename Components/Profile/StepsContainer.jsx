@@ -1,5 +1,3 @@
-// StepsContainer.js
-
 import { View, Text, StyleSheet } from 'react-native';
 import React, { useContext, useEffect } from 'react';
 import { AuthContext } from '../../Context/AuthContext';
@@ -39,13 +37,13 @@ const styles = StyleSheet.create({
     container: {
         marginTop: 20,
         padding: 10,
-        borderRadius: 1000,
+        borderRadius: 150, // Ensure the circular style fits your design
         height: 300,
         width: 300,
         borderWidth: 25,
         borderColor: '#A41623',
         justifyContent: 'center',
-        alignContent: 'center',
+        alignItems: 'center', // Fixed alignment typo
     },
     title: {
         fontSize: 18,
@@ -56,6 +54,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         marginTop: 5,
+        textAlign: 'center', // Ensure text is centered
     },
 });
 

@@ -1,5 +1,5 @@
 import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useMemo } from 'react';
 import RewardCard from '../Components/Rewards/RewardCard';
 import { useFonts } from 'expo-font';
 import AppLoading from 'expo-app-loading';
@@ -9,11 +9,13 @@ import RewardSideModal from '../Components/Rewards/RewardSideModal';
 import { AuthContext } from '../Context/AuthContext';
 
 const Rewards = () => {
-    const { userId, userToken } = useContext(AuthContext); // Ensure token is available
+    const { userId, userToken } = useContext(AuthContext);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedReward, setSelectedReward] = useState(null);
     const [userRewards, setUserRewards] = useState([]);
     const [allRewards, setAllRewards] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
 
     const [fontsLoaded] = useFonts({
         Itim: require('../assets/fonts/Itim-Regular.ttf'),
@@ -21,32 +23,45 @@ const Rewards = () => {
     });
 
     useEffect(() => {
-        if (!userId || !userToken) {
-            console.log("User is logged out or token is invalid, skipping reward fetch.");
-            return; // Prevent API call if userId or userToken is null
-        }
-    
+        if (!userId || !userToken) return;
+
         const fetchRewards = async () => {
             try {
-                const userResponse = await axios.get(`${API_BASE_URL}/users/${userId}/rewards`, {
+                //combining both requests to minimize server hits
+                const [userResponse, allResponse] = await Promise.all([
+                    axios.get(`${API_BASE_URL}/users/${userId}/rewards`, {
                     headers: {
-                        Authorization: `Bearer ${userToken}`, // Add the token in the Authorization header
+                        Authorization: `Bearer ${userToken}`,
                     },
-                });
-                setUserRewards(userResponse.data);
-    
-                const allResponse = await axios.get(`${API_BASE_URL}/rewards`);
-                const filteredRewards = allResponse.data.filter(reward => 
-                    !userResponse.data.some(userReward => userReward.id === reward.id)
-                );
-                setAllRewards(filteredRewards);
+                }),
+                axios.get(`${API_BASE_URL}/rewards`)
+            ]);
+
+            setUserRewards(userResponse.data);
+            setAllRewards(allResponse.data);
+
             } catch (err) {
                 console.error("Error fetching rewards:", err);
             }
         };
         fetchRewards();
-    }, [userId, userToken]); // Ensure the effect depends on both userId and userToken
-    
+    }, [userId, userToken]);
+
+    if (isLoading) {
+        return <Text style={styles.loadingText}>Loading rewards...</Text>;
+    }
+
+    //use useMemo to filter and sort rewards, preventing unnecessary computations
+    const availableRewards = useMemo(() => {
+        return allRewards.filter(reward => !userRewards.some(userReward => userReward.id === reward.id)).sort((a, b) => {
+            const expirationA = new Date(a.expiration_date);
+            const expirationB = new Date(b.expiration_date);
+            const nameA = a.restaurant_name.toLowerCase()
+            const nameB = b.restaurant_name.toLowerCase()
+
+            return expirationA - expirationB || nameA.localeCompare(nameB);
+        })
+    }, [userRewards, allRewards])
 
     if (!fontsLoaded) {
         return <AppLoading />;
@@ -72,7 +87,6 @@ const Rewards = () => {
         <View style={styles.container}>
             <Text style={styles.title}>Your Rewards</Text>
 
-            {/* User Rewards Section */}
             {userRewards.length > 0 ? (
                 <FlatList
                     data={userRewards}
@@ -84,16 +98,27 @@ const Rewards = () => {
                 <Text style={styles.noRewardsText}>You have no rewards yet!</Text>
             )}
 
-            {/* Divider for Restaurant Rewards */}
             <Text style={styles.divider}>Restaurant Rewards</Text>
 
-            {/* Restaurant Rewards Section */}
             <FlatList
-                data={allRewards}
+                data={userRewards}
                 renderItem={({ item }) => renderRewardCard(item)}
                 keyExtractor={(item) => item.id.toString()}
+                initialNumToRender={5}
+                maxToRenderPerBatch={10}
                 style={styles.restaurantRewardsList}
             />
+
+            <FlatList
+                data={availableRewards}
+                renderItem={({ item }) => renderRewardCard(item)}
+                keyExtractor={(item) => item.id.toString()}
+                initialNumToRender={5}
+                maxToRenderPerBatch={10}
+                style={styles.restaurantRewardsList}
+            />
+
+            
 
             {selectedReward && (
                 <Modal
@@ -114,10 +139,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFECD4',
         padding: 20,
-    },
-    headerContainer: {
-        marginTop: 60,
-        marginBottom: 20,
     },
     title: {
         fontSize: 24,
@@ -145,6 +166,13 @@ const styles = StyleSheet.create({
     restaurantRewardsList: {
         marginTop: 20,
     },
+    loadingText: {
+        textAlign: 'center',
+        color: '#A41623',
+        fontSize: 18,
+        marginTop: 20,
+    }
+    
 });
 
 export default Rewards;

@@ -10,7 +10,7 @@ import Home from '../Screens/Home';
 import Profile from '../Screens/ProfileSlider';
 import SignUp from '../Screens/SignUp';
 import Rewards from '../Screens/Rewards';
-import Map from '../Screens/Map';
+import CustomMap from '../Screens/CustomMap';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,12 +31,12 @@ const BottomTabNav = () => {
     >
       <Tab.Screen name="Profile" component={Profile} />
       <Tab.Screen name="Rewards" component={Rewards} />
-      <Tab.Screen name="Map" component={Map} />
+      <Tab.Screen name="Map" component={CustomMap} />
     </Tab.Navigator>
   );
 };
 
-// App Navigation Component
+// Main App Navigation Component
 const AppNav = () => {
   const { userToken } = useContext(AuthContext);
 
@@ -45,23 +45,23 @@ const AppNav = () => {
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#9b1422', // Set your custom color here
+            backgroundColor: '#9b1422',
           },
-          headerTintColor: 'antiquewhite', // Set the color for the text and icons
+          headerTintColor: 'antiquewhite',
           headerTitleStyle: {
-            fontWeight: 'bold', // Style the header title text
+            fontWeight: 'bold',
           },
         }}
       >
         {userToken ? (
-          // User is authenticated, show bottom tab navigator
+          // Main application flow
           <Stack.Screen
             name="MainApp"
             component={BottomTabNav}
-            options={{ headerShown: false }} // Hide the header for bottom tabs
+            options={{ headerShown: false }}
           />
         ) : (
-          // User is not authenticated, show login/signup screens
+          // Authentication flow
           <>
             <Stack.Screen name="Home" component={Home} />
             <Stack.Screen name="Login" component={Login} />

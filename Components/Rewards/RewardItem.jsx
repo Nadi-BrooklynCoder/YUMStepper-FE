@@ -5,24 +5,68 @@ import { API_BASE_URL } from '@env';
 import { AuthContext } from '../../Context/AuthContext'; // Adjust the path as needed
 
 const RewardItem = ({ reward }) => {
-    const { userId } = useContext(AuthContext);
+    const { userId, user, userToken } = useContext(AuthContext); // Extract user from AuthContext
     const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+
+    const hasEnoughPoints = user?.points_earned >= reward.points_required; // Check user's points
 
     const handleRedeem = async () => {
+        if (!hasEnoughPoints) {
+            setErrorMessage('Not enough points to redeem this reward');
+            return;
+        }
+    
         try {
-            const response = await axios.put(`${API_BASE_URL}/users/${userId}/rewards/${reward.id}/redeem`);
-            console.log('Redeemed Reward:', response.data);
+            const response = await axios.put(
+                `${API_BASE_URL}/users/${userId}/rewards/${reward.id}/redeem`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${userToken}`,
+                    },
+                }
+            );
+    
+            // Optionally update user points from response
+            // setUser(response.data.updatedUser);
+    
             setSuccessMessage('Reward redeemed successfully!');
-
-            // Optionally, clear the message after a few seconds
+            setErrorMessage('');
+    
             setTimeout(() => {
                 setSuccessMessage('');
-            }, 3000); // Clear the message after 3 seconds
+            }, 3000);
         } catch (error) {
             console.error('Error redeeming reward:', error);
-            // Handle the error (e.g., show a notification to the user)
+            setErrorMessage('Error redeeming reward. Please try again.');
         }
     };
+    
+    const handleSaveForLater = async () => {
+        try {
+            await axios.post(
+                `${API_BASE_URL}/users/${userId}/rewards`,
+                { reward_id: reward.id },
+                {
+                    headers: {
+                        Authorization: `Bearer ${userToken}`,
+                    },
+                }
+            );
+    
+            setSuccessMessage('Reward saved for later!');
+            setErrorMessage('');
+    
+            setTimeout(() => {
+                setSuccessMessage('');
+            }, 3000);
+        } catch (err) {
+            console.error('Error saving reward:', err);
+            setErrorMessage('Error saving reward. Please try again.');
+        }
+    };
+    
 
     return (
         <View style={styles.rewardItem}>
@@ -34,14 +78,26 @@ const RewardItem = ({ reward }) => {
                 Points Required: {reward.points_required}
             </Text>
             <TouchableOpacity 
-                style={styles.redeemButton} 
+                style={[styles.redeemButton, !hasEnoughPoints && styles.disabledButton]} 
                 onPress={handleRedeem}
+                disabled={!hasEnoughPoints}
             >
                 <Text style={styles.redeemButtonText}>Redeem Now</Text>
             </TouchableOpacity>
-            {successMessage.length ? (
+
+            <TouchableOpacity 
+                style={styles.saveButton}
+                onPress={handleSaveForLater}
+            >
+                <Text style={styles.saveButtonText}>Save for later</Text>
+            </TouchableOpacity>
+
+            {successMessage.length > 0 && (
                 <Text style={styles.successMessage}>{successMessage}</Text>
-            ) : null}
+            )}
+            {errorMessage.length > 0 && (
+                <Text style={styles.errorMessage}>{errorMessage}</Text>
+            )}
         </View>
     );
 };
@@ -83,9 +139,31 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
     },
+    saveButton: {
+        marginTop: 10,
+        alignSelf: 'center',
+        backgroundColor: '#FFA500',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    saveButtonText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    disabledButton: {
+        backgroundColor: '#A9A9A9',
+    },
     successMessage: {
         marginTop: 10,
         color: 'green',
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    errorMessage: {
+        marginTop: 10,
+        color: 'red',
         fontSize: 14,
         fontWeight: '500',
         textAlign: 'center',
