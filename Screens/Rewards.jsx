@@ -1,5 +1,7 @@
-import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+// Rewards.js
+
 import React, { useContext, useEffect, useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Modal } from 'react-native';
 import RewardCard from '../Components/Rewards/RewardCard';
 import { useFonts } from 'expo-font';
 import AppLoading from 'expo-app-loading';
@@ -9,13 +11,10 @@ import RewardSideModal from '../Components/Rewards/RewardSideModal';
 import { AuthContext } from '../Context/AuthContext';
 
 const Rewards = () => {
-    const { userId, userToken } = useContext(AuthContext);
+    const { userId, userToken, setUserRewards, userRewards, selectReward, selectedReward, fetchUserPoints, userPoints } = useContext(AuthContext);
     const [modalVisible, setModalVisible] = useState(false);
-    const [selectedReward, setSelectedReward] = useState(null);
-    const [userRewards, setUserRewards] = useState([]);
     const [allRewards, setAllRewards] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-
 
     const [fontsLoaded] = useFonts({
         Itim: require('../assets/fonts/Itim-Regular.ttf'),
@@ -27,109 +26,120 @@ const Rewards = () => {
 
         const fetchRewards = async () => {
             try {
-                //combining both requests to minimize server hits
                 const [userResponse, allResponse] = await Promise.all([
-                    axios.get(`${API_BASE_URL}/users/${userId}/rewards`, {
-                    headers: {
-                        Authorization: `Bearer ${userToken}`,
-                    },
-                }),
-                axios.get(`${API_BASE_URL}/rewards`)
-            ]);
+                    axios.get(`${API_BASE_URL}/users/${userId}/userRewards`, {
+                        headers: {
+                            Authorization: `Bearer ${userToken}`,
+                        },
+                    }),
+                    axios.get(`${API_BASE_URL}/rewards`),
+                ]);
 
-            setUserRewards(userResponse.data);
-            setAllRewards(allResponse.data);
+                setUserRewards(userResponse.data);
+                setAllRewards(allResponse.data);
+                setIsLoading(false);
 
+                // **Fetch User Points After Fetching Rewards**
+                await fetchUserPoints();
             } catch (err) {
                 console.error("Error fetching rewards:", err);
+                setIsLoading(false);
             }
         };
         fetchRewards();
-    }, [userId, userToken]);
+    }, [userId, userToken, setUserRewards, fetchUserPoints]);
 
-    if (isLoading) {
-        return <Text style={styles.loadingText}>Loading rewards...</Text>;
-    }
+    const organizeRewardsByRestaurant = (userRewards) => {
+        return userRewards.reduce((grouped, reward) => {
+            const restaurantName = reward.restaurant_name || "Unknown Restaurant";
+            if (!grouped[restaurantName]) {
+                grouped[restaurantName] = [];
+            }
+            grouped[restaurantName].push(reward);
+            return grouped;
+        }, {});
+    };
 
-    //use useMemo to filter and sort rewards, preventing unnecessary computations
-    const availableRewards = useMemo(() => {
-        return allRewards.filter(reward => !userRewards.some(userReward => userReward.id === reward.id)).sort((a, b) => {
-            const expirationA = new Date(a.expiration_date);
-            const expirationB = new Date(b.expiration_date);
-            const nameA = a.restaurant_name.toLowerCase()
-            const nameB = b.restaurant_name.toLowerCase()
+    const groupedRewards = useMemo(() => organizeRewardsByRestaurant(userRewards), [userRewards]);
 
-            return expirationA - expirationB || nameA.localeCompare(nameB);
-        })
-    }, [userRewards, allRewards])
+    const handleDeleteReward = async (rewardId) => {
+        try {
+            await axios.delete(
+                `${API_BASE_URL}/users/${userId}/userRewards/${rewardId}`,  // Updated path
+                {
+                    headers: {
+                        Authorization: `Bearer ${userToken}`,
+                    },
+                }
+            );
+            
+            setUserRewards(userRewards.filter(reward => reward.id !== rewardId));
+
+            // **Update User Points After Deletion**
+            await fetchUserPoints();
+        } catch (error) {
+            console.error("Error deleting reward:", error);
+        }
+    };
+
+    const openRewardModal = (reward) => {
+        selectReward(reward);
+        setModalVisible(true);
+    };
+
+    const closeModal = () => {
+        selectReward(null);
+        setModalVisible(false);
+    };
+
+    const renderGroupedRewards = () => {
+        return Object.entries(groupedRewards).map(([restaurantName, rewards]) => (
+            <View key={restaurantName} style={styles.restaurantSection}>
+                <Text style={styles.restaurantTitle}>{restaurantName}</Text>
+                {rewards.map((reward) => (
+                    <RewardCard 
+                        key={reward.id} 
+                        reward={reward} 
+                        openRewardModal={() => openRewardModal(reward)}
+                    />
+                ))}
+            </View>
+        ));
+    };
 
     if (!fontsLoaded) {
         return <AppLoading />;
     }
 
-    const handleRewardPress = (reward) => {
-        setSelectedReward(reward);
-        setModalVisible(true);
-    };
-
-    const closeModal = () => {
-        setSelectedReward(null);
-        setModalVisible(false);
-    };
-
-    const renderRewardCard = (item) => (
-        <TouchableOpacity onPress={() => handleRewardPress(item)}>
-            <RewardCard reward={item} />
-        </TouchableOpacity>
-    );
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading rewards...</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Your Rewards</Text>
-
+            <Text style={styles.title}>Your Saved Rewards</Text>
             {userRewards.length > 0 ? (
-                <FlatList
-                    data={userRewards}
-                    renderItem={({ item }) => renderRewardCard(item)}
-                    keyExtractor={(item) => item.id.toString()}
-                    style={styles.userRewardsList}
-                />
+                <ScrollView>
+                    {renderGroupedRewards()}
+                </ScrollView>
             ) : (
-                <Text style={styles.noRewardsText}>You have no rewards yet!</Text>
+                <Text style={styles.noRewardsText}>You have no saved rewards yet!</Text>
             )}
 
-            <Text style={styles.divider}>Restaurant Rewards</Text>
-
-            <FlatList
-                data={userRewards}
-                renderItem={({ item }) => renderRewardCard(item)}
-                keyExtractor={(item) => item.id.toString()}
-                initialNumToRender={5}
-                maxToRenderPerBatch={10}
-                style={styles.restaurantRewardsList}
-            />
-
-            <FlatList
-                data={availableRewards}
-                renderItem={({ item }) => renderRewardCard(item)}
-                keyExtractor={(item) => item.id.toString()}
-                initialNumToRender={5}
-                maxToRenderPerBatch={10}
-                style={styles.restaurantRewardsList}
-            />
-
-            
-
-            {selectedReward && (
-                <Modal
-                    visible={modalVisible}
-                    transparent={true}
-                    animationType="slide"
-                    onRequestClose={closeModal}
-                >
-                    <RewardSideModal reward={selectedReward} setModalVisible={setModalVisible} />
-                </Modal>
-            )}
+            <Modal
+                visible={modalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={closeModal}
+            >
+                {selectedReward && selectedReward.id && (
+                    <RewardSideModal setModalVisible={setModalVisible} handleDeleteReward={handleDeleteReward} />
+                )}
+            </Modal>
         </View>
     );
 };
@@ -152,27 +162,25 @@ const styles = StyleSheet.create({
         color: '#A41623',
         marginBottom: 20,
     },
-    divider: {
-        fontSize: 20,
-        fontFamily: 'Itim',
-        color: '#A41623',
-        textAlign: 'center',
-        marginVertical: 20,
-        fontWeight: 'bold',
-    },
-    userRewardsList: {
+    restaurantSection: {
         marginBottom: 20,
     },
-    restaurantRewardsList: {
-        marginTop: 20,
+    restaurantTitle: {
+        fontSize: 14,
+        fontFamily: 'Open-Sans',
+        color: '#A41623',
+        fontWeight: 'bold',
+        marginVertical: 10,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     loadingText: {
-        textAlign: 'center',
-        color: '#A41623',
         fontSize: 18,
-        marginTop: 20,
+        color: '#A41623',
     }
-    
 });
 
 export default Rewards;

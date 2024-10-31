@@ -11,6 +11,7 @@ import {
     Alert 
 } from 'react-native';
 import axios from 'axios';
+import { getDistance } from 'geolib';
 import { API_BASE_URL } from '@env';
 import { AuthContext } from '../../Context/AuthContext';
 import RewardsPopup from '../Rewards/RewardsPopup';
@@ -21,17 +22,15 @@ const { width: screenWidth } = Dimensions.get('window');
 const MapSide = ({ setSideModalVisible }) => {
     const { 
         selectedRestaurant,
-        calculateSteps,  
-        directionSteps, 
         selectedReward, 
-        setSelectedReward,
-        applyRestaurantBonus,
-        syncStepsToBackend,
+        selectReward,
+        userLocation, // Ensure `userLocation` is available in AuthContext
         getDirectionsFromGoogleMaps
     } = useContext(AuthContext);
-    
+
     const [restaurantDetails, setRestaurantDetails] = useState({});
     const [showRewards, setShowRewards] = useState(false);
+    const [approxSteps, setApproxSteps] = useState(null); // Define approxSteps as state
     const slideAnim = useRef(new Animated.Value(screenWidth)).current;
 
     const closeModal = () => {
@@ -55,7 +54,18 @@ const MapSide = ({ setSideModalVisible }) => {
             closeModal();
         }
     };
-    
+
+    const calculateApproxSteps = () => {
+        if (userLocation && selectedRestaurant?.latitude && selectedRestaurant?.longitude) {
+            const distance = getDistance(
+                { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
+            );
+            const stepLength = 0.7; // Average step length in meters
+            const steps = Math.round(distance / stepLength);
+            setApproxSteps(steps); // Set the calculated steps
+        }
+    };
 
     useEffect(() => {
         const fetchRestaurantDetails = async () => {
@@ -78,19 +88,13 @@ const MapSide = ({ setSideModalVisible }) => {
                             cuisine_type: details.cuisine_type || 'Not specified',
                             menu_url: details.menu_url || 'Not available',
                         });
-                        calculateSteps();
+                        calculateApproxSteps(); // Calculate steps after fetching details
                     } else {
                         console.error("[MapSide:fetchRestaurantDetails] Unexpected response structure:", response.data);
                     }
                 } catch (error) {
-                    if (error.response?.status === 404) {
-                        console.error(`[MapSide:fetchRestaurantDetails] Restaurant ID ${selectedRestaurant.id} not found.`, error);
-                    } else {
-                        console.error("[MapSide:fetchRestaurantDetails] Error fetching restaurant details:", error);
-                    }
+                    console.error("[MapSide:fetchRestaurantDetails] Error fetching restaurant details:", error);
                 }
-            } else {
-                console.warn('[MapSide:fetchRestaurantDetails] Invalid selectedRestaurant ID:', selectedRestaurant?.id);
             }
         };
 
@@ -101,23 +105,12 @@ const MapSide = ({ setSideModalVisible }) => {
                 useNativeDriver: Platform.OS !== 'web',
             }).start();
             fetchRestaurantDetails();
-        } else {
-            Animated.timing(slideAnim, {
-                toValue: screenWidth,
-                duration: 300,
-                useNativeDriver: Platform.OS !== 'web',
-            }).start();
         }
-    }, [selectedRestaurant, calculateSteps]);
+    }, [selectedRestaurant]);
 
     useEffect(() => {
-        if (selectedRestaurant?.latitude && selectedRestaurant?.longitude && directionSteps > 0) {
-            const distance = calculateSteps();
-            const { totalPoints, bonusPoints } = applyRestaurantBonus(directionSteps, distance);
-            syncStepsToBackend(directionSteps, totalPoints + bonusPoints);
-        }
-    }, [directionSteps, selectedRestaurant, calculateSteps, applyRestaurantBonus, syncStepsToBackend]);
-    
+        calculateApproxSteps(); // Recalculate steps if user location or restaurant changes
+    }, [userLocation, selectedRestaurant]);
 
     return (
         <Animated.View style={[styles.sideModal, { transform: [{ translateX: slideAnim }] }]}>
@@ -181,7 +174,7 @@ const MapSide = ({ setSideModalVisible }) => {
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.label}>Approx Steps:</Text>
-                    <Text style={styles.value}>{directionSteps || 'N/A'}</Text>
+                    <Text style={styles.value}>{approxSteps !== null ? approxSteps : 'N/A'}</Text>
                 </View>
 
                 <TouchableOpacity onPress={getNewDirections} style={styles.getDirectionsButton}>
@@ -203,7 +196,9 @@ const MapSide = ({ setSideModalVisible }) => {
 
             {selectedReward?.id && (
                 <RewardSideModal 
-                    setModalVisible={() => setSelectedReward({})}
+                    selectedReward={selectedReward}
+                    selectReward={selectReward}
+                    setModalVisible={() => selectReward(null)}
                 />
             )}
         </Animated.View>

@@ -1,16 +1,18 @@
+// PointsContainer.js
+
 import { View, Text, StyleSheet } from 'react-native';
 import React, { useContext, useEffect } from 'react';
 import { AuthContext } from '../../Context/AuthContext';
 
 const PointsContainer = () => {
-    const { userPoints } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
 
     useEffect(() => {
-        console.log("PointsContainer received userPoints:", userPoints);
-    }, [userPoints]);
+        console.log("PointsContainer received user.points_earned:", user.points_earned);
+    }, [user.points_earned]);
 
-    // Provide a fallback value of 0 for userPoints if it's undefined or null
-    const points = userPoints ?? 0;
+    // Provide a fallback value of 0 for points if it's undefined or null
+    const points = user.points_earned ?? 0;
 
     return (
         <View style={styles.container}>

@@ -1,77 +1,28 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    Modal, 
-    ScrollView, 
-    TouchableOpacity, 
-    Dimensions 
-} from 'react-native';
+// RewardsPopup.js
+
+import React, { useContext, useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Image, Dimensions } from 'react-native';
 import { AuthContext } from '../../Context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
-import RewardItem from './RewardItem'; // Import the RewardItem component
+import RewardItem from './RewardItem';
 
-const { height: screenHeight } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get('window'); // Added line
 
 const RewardsPopup = ({ showRewards, setShowRewards }) => {
-    const { selectedRestaurant, user } = useContext(AuthContext); // Get `user` from AuthContext
+    const { userId, userToken, selectedRestaurant, setUserRewards, fetchUserPoints, user } = useContext(AuthContext);
     const [rewards, setRewards] = useState([]);
-    const mockRewards = [
-        {
-            id: 1,
-            date_generated: "2024-10-01T08:30:00Z",
-            details: "Get 10% off on your next order.",
-            expiration_date: "2024-12-31T23:59:59Z",
-            user_id: 101,
-            restaurant_id: 1,
-            points_required: 100,
-          },
-          {
-            id: 2,
-            date_generated: "2024-09-15T14:20:00Z",
-            details: "Free dessert with any main course.",
-            expiration_date: "2024-11-30T23:59:59Z",
-            user_id: 102,
-            restaurant_id: 1,
-            points_required: 50,
-          },
-          {
-            id: 3,
-            date_generated: "2024-10-10T10:45:00Z",
-            details: "20% off on your next meal.",
-            expiration_date: "2025-01-15T23:59:59Z",
-            user_id: 103,
-            restaurant_id: 2,
-            points_required: 200,
-          },
-          {
-            id: 4,
-            date_generated: "2024-09-25T16:00:00Z",
-            details: "Get a free coffee with every breakfast order.",
-            expiration_date: "2024-11-01T23:59:59Z",
-            user_id: 101,
-            restaurant_id: 3,
-            points_required: 30,
-          },
-          {
-            id: 5,
-            date_generated: "2024-08-20T09:15:00Z",
-            details: "Double loyalty points on all purchases today!",
-            expiration_date: "2024-10-31T23:59:59Z",
-            user_id: 104,
-            restaurant_id: 2,
-            points_required: 0,
-          },
-      ];
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         const fetchRewards = async () => {
             try {
                 const response = await axios.get(`${API_BASE_URL}/rewards`);
-                const restaurantsRewards = response.data.filter(reward => reward.restaurant_id === selectedRestaurant.id);
-                setRewards(restaurantsRewards); 
+                const restaurantRewards = response.data.filter(
+                    reward => reward.restaurant_id === selectedRestaurant.id
+                );
+                setRewards(restaurantRewards);
             } catch (error) {
                 console.error('Failed to fetch rewards:', error);
             }
@@ -79,14 +30,52 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
 
         if (selectedRestaurant) {
             fetchRewards();
-        } 
+        }
     }, [selectedRestaurant]);
 
-    // Helper Function to check if reward is redeemable
-    const isRedeemable = (reward) => user?.points_earned >= reward.points_required;
+    const handleSaveForLater = useCallback(async (reward) => {
+        if (!reward || !userId) return;
+        console.log("Attempting to save reward:", reward);
 
-    // Helper Function to check if reward is expired
-    const isExpired = (reward) => new Date(reward.expiration_date) < new Date();
+        try {
+            console.log("User Token:", userToken);
+
+            // Make the API call to save the specific reward
+            await axios.post(
+                `${API_BASE_URL}/users/${userId}/userRewards`,
+                { reward_id: reward.id },
+                {
+                    headers: {
+                        Authorization: `Bearer ${userToken}`,
+                    },
+                }
+            );
+
+            // Update only the saved reward in the rewards list, setting `saved: true`
+            setRewards((prevRewards) =>
+                prevRewards.map((r) =>
+                    r.id === reward.id ? { ...r, saved: true } : r
+                )
+            );
+
+            console.log("User Token:", userToken);
+
+            // Update user rewards list
+            const userRewardsResponse = await axios.get(`${API_BASE_URL}/users/${userId}/userRewards`, {
+                headers: {
+                    Authorization: `Bearer ${userToken}`,
+                },
+            });
+            setUserRewards(userRewardsResponse.data);
+            await fetchUserPoints(); // Fetch updated points immediately
+            setSuccessMessage("Reward saved for later!");
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err) {
+            console.error('Error saving reward:', err);
+            setErrorMessage("Error saving reward. Please try again.");
+            setTimeout(() => setErrorMessage(''), 3000);
+        }
+    }, [userId, userToken, setUserRewards, fetchUserPoints]);
 
     return (
         <Modal
@@ -97,31 +86,31 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
         >
             <View style={styles.overlay}>
                 <View style={styles.popupContainer}>
-                    <ScrollView contentContainerStyle={styles.scrollContent}>
-                        <Text style={styles.header}>
-                            Rewards at {selectedRestaurant?.name}
-                        </Text>
+                    <Text style={styles.header}>
+                        Rewards at {selectedRestaurant?.name}
+                    </Text>
 
-                        {mockRewards.length > 0 ? ( // Replace with actual rewards
-                            mockRewards.map((reward) => (
-                                <RewardItem 
-                                    key={reward.id} 
-                                    reward={reward} 
-                                    isRedeemable={isRedeemable(reward)}
-                                    isExpired={isExpired(reward)}
-                                />
-                            ))
-                        ) : (
-                            <Text style={styles.noRewardsText}>No rewards available.</Text>
-                        )}
+                    {rewards.length > 0 ? (
+                        rewards.map((reward) => (
+                            <RewardItem
+                                key={reward.id}
+                                reward={reward}
+                                handleSaveForLater={() => handleSaveForLater(reward)}
+                            />
+                        ))
+                    ) : (
+                        <Text style={styles.noRewardsText}>No rewards available.</Text>
+                    )}
 
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setShowRewards(false)}
-                        >
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </ScrollView>
+                    {successMessage ? <Text style={styles.successMessage}>{successMessage}</Text> : null}
+                    {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
+
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={() => setShowRewards(false)}
+                    >
+                        <Text style={styles.closeButtonText}>Close</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         </Modal>
@@ -137,7 +126,7 @@ const styles = StyleSheet.create({
     },
     popupContainer: {
         width: '85%',
-        maxHeight: screenHeight * 0.7,
+        maxHeight: screenHeight * 0.7, // Now defined
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 20,
@@ -161,6 +150,16 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 16,
         color: '#212529',
+    },
+    successMessage: {
+        color: 'green',
+        textAlign: 'center',
+        marginVertical: 10,
+    },
+    errorMessage: {
+        color: 'red',
+        textAlign: 'center',
+        marginVertical: 10,
     },
     closeButton: {
         marginTop: 20,

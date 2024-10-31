@@ -1,19 +1,26 @@
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Animated } from 'react-native';
-import React, { useContext, useState, useRef } from 'react';
+// RewardSideModal.js
+
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Image } from 'react-native';
 import { AuthContext } from '../../Context/AuthContext';
-import { API_BASE_URL } from '@env';
 import axios from 'axios';
+import { API_BASE_URL } from '@env';
 
-const RewardSideModal = ({ setModalVisible }) => {
-    const { selectedReward, user, userId, userToken,setSelectedReward } = useContext(AuthContext);
+const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
+    const { userId, userToken, selectReward, selectedReward, fetchUserPoints } = useContext(AuthContext);
+    const [qrCodeUrl, setQrCodeUrl] = useState(null);
     const [showMessage, setShowMessage] = useState(false);
-    const fadeAnim = useRef(new Animated.Value(0)).current;
 
+    // Handle reward redemption
     const handleRedemption = async () => {
-        if (!selectedReward || !user) return;
+        const rewardId = selectedReward?.reward_id || selectedReward?.id;
+        if (!rewardId || !userId) {
+            console.warn("Selected reward or userId is missing");
+            return;
+        }
         try {
             const response = await axios.put(
-                `${API_BASE_URL}/users/${userId}/rewards/${selectedReward.id}/redeem`,
+                `${API_BASE_URL}/users/${userId}/userRewards/${rewardId}/redeem`,
                 {},
                 {
                     headers: {
@@ -21,81 +28,75 @@ const RewardSideModal = ({ setModalVisible }) => {
                     },
                 }
             );
-            // Optionally update user points from response
-            // setUser(response.data.updatedUser);
-            setModalVisible(false);
-            setSelectedReward({});
-            triggerSuccessMessage();
+
+            const { qr_code_url } = response.data;
+            
+            if (qr_code_url) {
+                setQrCodeUrl(qr_code_url);
+                setShowMessage("QR code generated successfully!");
+            } else {
+                setShowMessage("Redemption successful but no QR code generated.");
+            }
+
+            // Refresh user points after redemption
+            await fetchUserPoints();
         } catch (err) {
-            console.error('Error redeeming reward:', err);
+            console.error("Error redeeming reward:", err);
+            setShowMessage("Error redeeming reward. Please try again.");
         }
     };
-    
-    
 
-    const handleSaveForLater = async () => {
-        if (!selectedReward || !user) return;
-        try {
-            await axios.post(
-                `${API_BASE_URL}/users/${userId}/rewards`,
-                { reward_id: selectedReward.id },
-                {
-                    headers: {
-                        Authorization: `Bearer ${userToken}`,
-                    },
-                }
-            );
-            setModalVisible(false);
-            setSelectedReward({});
-            triggerSuccessMessage("Reward saved for later!");
-        } catch (err) {
-            console.error('Error saving reward:', err);
+    useEffect(() => {
+        console.log("SelectedReward state:", selectedReward); // Log entire object
+        if (selectedReward?.id) {
+            console.log("Confirmed selectedReward ID:", selectedReward.id);
+        } else if (selectedReward && !selectedReward.id) {
+            console.warn("Selected reward exists but has no ID:", selectedReward);
+        } else {
+            console.warn("No valid selectedReward set.");
         }
-    };
-    
-
-    const triggerSuccessMessage = (message = 'Successfully redeemed reward!') => {
-        setShowMessage(true);
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-        }).start(() => {
-            setTimeout(() => {
-                Animated.timing(fadeAnim, {
-                    toValue: 0,
-                    duration: 500,
-                    useNativeDriver: true,
-                }).start(() => setShowMessage(false));
-            }, 5000);
-        });
-    };
-
-    if (!selectedReward) return null;
+    }, [selectedReward]);
 
     return (
         <Modal animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
             <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
-                    <Text style={styles.rewardDetail}>{selectedReward.details || 'Reward Details'}</Text>
-                    <Text style={styles.expiration}>
-                        Expires on: {selectedReward.expiration_date ? new Date(selectedReward.expiration_date).toLocaleDateString() : 'N/A'}
-                    </Text>
-                    <TouchableOpacity style={styles.useButton} onPress={handleRedemption}>
-                        <Text style={styles.useButtonText}>Redeem Now</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveButton} onPress={handleSaveForLater}>
-                        <Text style={styles.saveButtonText}>Save for Later</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                    {selectedReward ? (
+                        <>
+                            <Text style={styles.rewardDetail}>{selectedReward.details || 'Reward Details'}</Text>
+                            <Text style={styles.expiration}>
+                                Expires on: {selectedReward.expiration_date ? new Date(selectedReward.expiration_date).toLocaleDateString() : 'N/A'}
+                            </Text>
+                            <TouchableOpacity style={styles.useButton} onPress={handleRedemption}>
+                                <Text style={styles.useButtonText}>Redeem Now</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.deleteButton}
+                                onPress={() => {
+                                    handleDeleteReward(selectedReward.id);
+                                    selectReward(null); // Clear selection after deletion
+                                }}
+                            >
+                                <Text style={styles.deleteButtonText}>Delete Reward</Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : (
+                        <Text style={styles.noRewardText}>No reward selected</Text>
+                    )}
+                    {showMessage && <Text style={styles.message}>{showMessage}</Text>}
+                    <TouchableOpacity 
+                        style={styles.closeButton} 
+                        onPress={() => {
+                            setModalVisible(false);
+                            selectReward(null); // Clear selectedReward when closing modal
+                        }}
+                    >
                         <Text style={styles.closeButtonText}>Close</Text>
                     </TouchableOpacity>
+                    {qrCodeUrl && (
+                        <Image source={{ uri: qrCodeUrl }} style={styles.qrCode} />
+                    )}
                 </View>
-                {showMessage && (
-                    <Animated.View style={[styles.popupContainer, { opacity: fadeAnim }]}>
-                        <Text style={styles.popupText}>Successfully saved reward for later!</Text>
-                    </Animated.View>
-                )}
             </View>
         </Modal>
     );
@@ -108,12 +109,13 @@ const styles = StyleSheet.create({
     expiration: { marginBottom: 20 },
     useButton: { backgroundColor: '#A41623', padding: 10, borderRadius: 5, marginBottom: 10 },
     useButtonText: { color: '#fff' },
-    saveButton: { backgroundColor: '#FFA500', padding: 10, borderRadius: 5 },
-    saveButtonText: { color: '#fff' },
+    deleteButton: { backgroundColor: '#FF3B30', padding: 10, borderRadius: 5, marginBottom: 10 },
+    deleteButtonText: { color: '#fff' },
     closeButton: { backgroundColor: '#A41623', padding: 10, borderRadius: 5, marginTop: 10 },
     closeButtonText: { color: '#fff' },
-    popupContainer: { position: 'absolute', bottom: 50, backgroundColor: '#4BB543', padding: 10, borderRadius: 5 },
-    popupText: { color: '#fff' },
+    qrCode: { width: 100, height: 100, marginTop: 20 },
+    noRewardText: { fontSize: 16, color: '#A41623', textAlign: 'center', marginBottom: 20 },
+    message: { fontSize: 14, color: '#4CAF50', marginTop: 10 },
 });
 
 export default RewardSideModal;

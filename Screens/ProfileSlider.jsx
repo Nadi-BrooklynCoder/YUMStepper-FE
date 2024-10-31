@@ -1,5 +1,6 @@
-//profileslider
-import React, { useState, useContext, useEffect, useRef } from 'react';
+// ProfileSlider.js
+
+import React, { useContext, useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet, Dimensions, PanResponder, Pressable } from 'react-native';
 import StepsContainer from '../Components/Profile/StepsContainer';
 import PointsContainer from '../Components/Profile/PointsContainer';
@@ -7,15 +8,13 @@ import CheckinContainer from '../Components/Profile/CheckinContainer';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../Context/AuthContext';
 
-const { width } = Dimensions.get('window');
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const ProfileSlider = () => {
-    const { userToken, userId, logout, user, userPoints } = useContext(AuthContext);
-    const [index, setIndex] = useState(0);
+    const { userToken, userId, logout, user } = useContext(AuthContext);
+    const [index, setIndex] = React.useState(0);
     const slideAnim = useRef(new Animated.Value(0)).current; // Initialize the animation reference
     const navigation = useNavigation();
-    const [points, setPoints] = useState(userPoints);
 
     // PanResponder setup for detecting swipes
     const panResponder = useRef(
@@ -43,10 +42,6 @@ const ProfileSlider = () => {
         })
     ).current;
 
-    useEffect(() => {
-        setPoints(userPoints); // Update the local state with userPoints
-    }, [userPoints]);
-
     const handleSlide = (newIndex) => {
         setIndex(newIndex);
         Animated.spring(slideAnim, {
@@ -69,7 +64,7 @@ const ProfileSlider = () => {
                     <StepsContainer />
                 </View>
                 <View style={styles.screen}>
-                    <PointsContainer userPoints={points} key={`points-${points}`} />
+                    <PointsContainer key={`points-${user.points_earned}`} />
                 </View>
             </Animated.View>
         );

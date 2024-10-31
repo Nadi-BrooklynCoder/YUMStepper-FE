@@ -1,19 +1,21 @@
-// Updated RestaurantMarker.js
-
-import React, { useMemo, useRef } from "react";
+// RestaurantMarker.js
+import React, { useMemo, useRef, useContext } from "react";
 import { StyleSheet, Image, View, Text } from "react-native";
 import { Marker } from "react-native-maps";
 import { getDistance } from 'geolib';
+import { AuthContext } from '../../Context/AuthContext';
 
 // Import the custom marker icon
 const foodIcon = require("../../assets/food-icon.png");
 
 const RestaurantMarker = ({ restaurant, userLocation, setSideModalVisible, selectRestaurant }) => {
+  const { calculateCheckInPoints } = useContext(AuthContext); // Get function from context
+  
   const latitude = parseFloat(restaurant.latitude);
   const longitude = parseFloat(restaurant.longitude);
-  const prevDistanceRef = useRef(null); // add to track prev distance
+  const prevDistanceRef = useRef(null); // Track previous distance
 
-  if(!latitude || !longitude) { 
+  if (!latitude || !longitude) { 
     console.warn("Invalid restaurant coordinates", restaurant);
     return null;
   }
@@ -22,23 +24,21 @@ const RestaurantMarker = ({ restaurant, userLocation, setSideModalVisible, selec
   const pointsForDistance = useMemo(() => {
       if (!userLocation || !userLocation.latitude || !userLocation.longitude) return 0;
 
+      // Calculate distance from user to restaurant
       const distance = getDistance(
           { latitude: userLocation.latitude, longitude: userLocation.longitude },
           { latitude, longitude }
       );
 
-      if(prevDistanceRef.current === null || Math.abs(prevDistanceRef.current - distance) > 50) {
+      // Log distance change if it differs significantly
+      if (prevDistanceRef.current === null || Math.abs(prevDistanceRef.current - distance) > 50) {
         prevDistanceRef.current = distance;
-        console.log(`Distance to restaurant: ${distance}`);
+        console.log(`Distance to restaurant: ${distance} meters`);
       }
 
-      if (distance > 6436) return 50; // > 4 miles
-      if (distance > 3218) return 35; // 2-4 miles
-      if (distance > 1609) return 25; // 1-2 miles
-      if (distance > 805) return 15; // 0.5-1 mile
-      if (distance <= 805) return 10; // < 0.5 mil
-      return 0;
-  }, [userLocation, restaurant]);
+      // Calculate potential points based on distance (display-only)
+      return calculateCheckInPoints(distance).totalPoints;
+  }, [userLocation, restaurant, calculateCheckInPoints]);
 
   // Render `null` if coordinates are invalid, without early return
   const isValidLocation = userLocation && userLocation.latitude && userLocation.longitude;
@@ -62,7 +62,6 @@ const RestaurantMarker = ({ restaurant, userLocation, setSideModalVisible, selec
       </Marker>
   ) : null;
 };
-
 
 const styles = StyleSheet.create({
   markerImage: {

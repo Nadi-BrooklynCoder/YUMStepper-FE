@@ -68,7 +68,6 @@ const CustomMap = ({ route }) => {
   // Function to handle check-in
   const handleCheckIn = async () => {
     if (!isNearRestaurant || hasCheckedInToday) return; // Prevent check-in if not near the restaurant or already checked in
-    c
 
     const checkInData = {
       restaurant_id: selectedRestaurant?.id,

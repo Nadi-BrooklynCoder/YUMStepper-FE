@@ -1,55 +1,60 @@
-import React, { createContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
+// AuthProvider.js
+
+import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
+import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDistance } from 'geolib';
-import { API_BASE_URL } from '@env';
 import axios from "axios";
 import { debounce } from 'lodash';
-import { Platform, Alert } from 'react-native';
+import { getDistance } from 'geolib';
+import { API_BASE_URL } from '@env';
 import * as Speech from 'expo-speech';
-
+import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 
 // Modules that are not available on web
 import AppleHealthKit from 'react-native-health';
 import BackgroundFetch from 'react-native-background-fetch';
-import * as Location from 'expo-location';
-import * as Notifications from 'expo-notifications';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    // State Variables
+    // **State Variables**
     const [isLoading, setIsLoading] = useState(true);
     const [userToken, setUserToken] = useState(null);
     const [userId, setUserId] = useState(null);
-    const [user, setUser] = useState({});
-    // const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
+    const [user, setUser] = useState({
+        points_earned: 0, // Initialize points_earned
+    });
     const [userLocation, setUserLocation] = useState({
         latitude: 40.73061,  // Default coordinates (e.g., NYC)
         longitude: -73.935242
     });
     const [directions, setDirections] = useState([]);
     const [userSteps, setUserSteps] = useState({ step_count: 0, date: '' });
-    const [directionSteps, setDirectionSteps] = useState(0);
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-    const [restaurants, setRestaurants] = useState([]);
     const [nearbyPlaces, setNearbyPlaces] = useState([]);
     const [isNearRestaurant, setIsNearRestaurant] = useState(false);
-    const [selectedReward, setSelectedReward] = useState({});
+    const [selectedReward, setSelectedReward] = useState(null);
     const [lastNotifiedStepCount, setLastNotifiedStepCount] = useState(0);
     const [heading, setHeading] = useState(0); 
     const [directionsText, setDirectionsText] = useState("");
     const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
-    const [userPoints, setUserPoints] = useState(0);
+    const [userRewards, setUserRewards] = useState([]);
+    const [restaurants, setRestaurants] = useState([]);
+    
+    // **Added State Variables for Redemption**
+    const [qrCodeUrl, setQrCodeUrl] = useState(null);
+    const [showMessage, setShowMessage] = useState("");
 
     const hasFetchedUser = useRef(false); // To prevent multiple fetches
 
-
-    // Utility function for error handling
+    // **Utility Function for Error Handling**
     const handleApiError = (error, customMessage) => {
         const errorMessage = error.response?.data || error.message || "An error occurred";
         console.error(`${customMessage}. Details: ${JSON.stringify(errorMessage)}`);
     };
 
+    // **Fetch User Data**
     const fetchUserData = useCallback(async (currentUserId, currentUserToken) => {
         if (!currentUserId || !currentUserToken) {
             console.error("Invalid userId or userToken. Cannot fetch user.");
@@ -62,7 +67,10 @@ export const AuthProvider = ({ children }) => {
                     Authorization: `Bearer ${currentUserToken}`,
                 },
             });
-            setUser(response.data);
+            setUser(prevUser => ({
+                ...response.data,
+                points_earned: response.data.points_earned || 0, // Ensure points_earned is present
+            }));
             console.log('User data fetched successfully:', response.data);
             hasFetchedUser.current = true;
         } catch (err) {
@@ -70,38 +78,33 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-      
-  
-
-    // Effect to fetch user data when userId and userToken change
+    // **Effect: Fetch User Data When userId and userToken Change**
     useEffect(() => {
         if (userId && userToken && !hasFetchedUser.current) {
             fetchUserData(userId, userToken);
         }
     }, [userId, userToken, fetchUserData]);
 
+    // **Effect: Reset fetch status if userId or userToken Changes**
     useEffect(() => {
         if (!userId || !userToken) {
             hasFetchedUser.current = false;
         }
     }, [userId, userToken]);
 
-    // Login Function
-    const login = async (token, userId, navigation) => {
-        if (!userId || !token) {
+    // **Login Function**
+    const login = useCallback(async (token, userIdParam, navigation) => {
+        if (!userIdParam || !token) {
             console.error("Invalid userId or token during login");
             return;
         }
+
         try {
-            if (Platform.OS !== 'web') {
-                await AsyncStorage.setItem('userToken', token);
-                await AsyncStorage.setItem('userId', userId.toString());
-            } else {
-                localStorage.setItem('userToken', token);
-                localStorage.setItem('userId', userId.toString());
-            }
+            console.log(token);
+            await AsyncStorage.setItem('userToken', token);
+            await AsyncStorage.setItem('userId', userIdParam.toString());
             setUserToken(token);
-            setUserId(userId);
+            setUserId(userIdParam);
             if (navigation) {
                 navigation.reset({
                     index: 0,
@@ -111,12 +114,10 @@ export const AuthProvider = ({ children }) => {
         } catch (e) {
             console.error('Error during login:', e);
         }
-    };
+    }, []);
 
-      
-
-    // Check Login Status
-    const checkLoginStatus = async () => {
+    // **Check Login Status**
+    const checkLoginStatus = useCallback(async () => {
         try {
             let token, storedUserId;
             if (Platform.OS !== 'web') {
@@ -135,12 +136,17 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
-    // Effect: On Mount
-   
+    // **Effect: On Mount**
+    useEffect(() => {
+        checkLoginStatus();
+        fetchInitialLocation();
+        fetchNearByPlaces(); // Initial fetch without debounce
+    }, [checkLoginStatus]);
 
-    const fetchInitialLocation = async () => {
+    // **Fetch Initial Location**
+    const fetchInitialLocation = useCallback(async () => {
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
 
@@ -148,21 +154,45 @@ export const AuthProvider = ({ children }) => {
                 const location = await Location.getCurrentPositionAsync({});
                 const { latitude, longitude } = location.coords;
                 setUserLocation({ latitude, longitude });
-                console.log("Inital location fetched: ", { latitude, longitude });
+                console.log("Initial location fetched: ", { latitude, longitude });
+            } else {
+                Alert.alert("Permission Denied", "Location permission is required to use this feature.");
             }
         } catch (error) {
-            console.error("Error fetching initial location: ". error)
+            console.error("Error fetching initial location: ", error);
         }
-    }
+    }, []);
 
-    // Effect: Initialize HealthKit when userId and userToken are available
-    useEffect(() => {
-        if (userId && userToken && AppleHealthKit && BackgroundFetch) {
-            initializeHealthKit();
+    // **Fetch Nearby Places with Debouncing to Minimize API Calls**
+    const fetchNearByPlaces = useCallback(async () => {
+        if (!userLocation?.latitude || !userLocation?.longitude) {
+            console.warn("User location is undefined, skipping fetch");
+            return;
         }
-    }, [userId, userToken]);
 
-    // Effect: Fetch Nearby Places when User Location Changes
+        try {
+            const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`, {
+                params: {
+                    latitude: userLocation.latitude,
+                    longitude: userLocation.longitude,
+                    radius: 1500, // Example radius in meters
+                    type: 'restaurant',
+                },
+            });
+            if (res.data && res.data.length > 0) {
+                setNearbyPlaces(res.data);
+                console.log("Nearby Places fetched:", res.data);
+            } else {
+                console.log("No restaurants found.");
+            }
+        } catch (err) {
+            handleApiError(err, "Error fetching restaurants");
+        }
+    }, [userLocation]);
+
+    const debouncedFetchNearByPlaces = useCallback(debounce(fetchNearByPlaces, 10000), [fetchNearByPlaces]);
+
+    // **Effect: Fetch Nearby Places When User Location Changes**
     useEffect(() => {
         if (userLocation.latitude && userLocation.longitude) {
             debouncedFetchNearByPlaces();
@@ -173,147 +203,122 @@ export const AuthProvider = ({ children }) => {
         };
     }, [userLocation, debouncedFetchNearByPlaces]);
 
-    // Fetch Nearby Places with debouncing to minimize API calls
-    const fetchNearByPlaces = async () => {
-
-        if (!userLocation?.latitude || !userLocation?.longitude) {
-            console.warn("User location is undefined, skipping fetch");
+    // **Get Directions from Google Maps with Improved Error Handling**
+    const getDirectionsFromGoogleMaps = useCallback(async () => {
+        if (!userLocation.latitude || !userLocation.longitude) {
+            console.error("User location is not available");
             return;
         }
-        
 
-        try {
-                const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`, {
-                    params: {
-                        latitude: userLocation.latitude,
-                        longitude: userLocation.longitude,
-                        radius: 1500, // Example radius in meters
-                        type: 'restaurant',
-                    },
-                });
-                if (res.data && res.data.length > 0) {
-                    setNearbyPlaces(res.data);
-                    console.log("Nearby Places fetched:", res.data);
-                } else {
-                    console.log("No restaurants found.");
-            }
-        } catch (err) {
-            handleApiError(err, "Error fetching restaurants");
-        }
-    };
-
-    const debouncedFetchNearByPlaces = useCallback(debounce(fetchNearByPlaces, 10000), [userLocation]);
-
-    // Get Directions from Google Maps with improved error handling
-   // Inside AuthContext.js
-   const getDirectionsFromGoogleMaps = async () => {
-    if (!userLocation.latitude || !userLocation.longitude) {
-        console.error("User location is not available");
-        return;
-    }
-
-    if (!selectedRestaurant?.latitude || !selectedRestaurant?.longitude) {
-        console.error("Selected restaurant location is not available");
-        return;
-    }
-
-    console.log("Fetching directions from:", userLocation, "to:", selectedRestaurant)
-
-    try {
-        const url = `${API_BASE_URL}/googlePlaces/directions`;
-        const params = {
-            originLat: userLocation.latitude,
-            originLng: userLocation.longitude,
-            destLat: selectedRestaurant.latitude,
-            destLng: selectedRestaurant.longitude,
-        };
-        const response = await axios.get(url, { params });
-        console.log("Directions API full response:", response.data);
-
-        if (response.data?.overview_polyline && response.data?.steps) {
-            // Set the directions for the polyline
-            setDirections(response.data.overview_polyline);
-
-            // Construct directions text
-            const directionsText = response.data.steps.map(step => 
-                `${step.instructions.replace(/<[^>]*>?/gm, '')} (${step.distance})`
-            ).join('\n');
-            
-            setDirectionsText(directionsText);
-            console.log("Directions and text updated successfully.");
-            console.log("Directions Text updated:", directionsText);
-        } else {
-            console.error("Polyline or steps format is not valid in response:", response.data);
+        if (!selectedRestaurant?.latitude || !selectedRestaurant?.longitude) {
+            console.error("Selected restaurant location is not available");
+            return;
         }
 
-    } catch (error) {
-        console.error("Error fetching directions:", error.response?.data || error.message);
-        Alert.alert("Error", "Unable to fetch directions. Please try again later.");
-    }
-};
+        console.log("Fetching directions from:", userLocation, "to:", selectedRestaurant);
 
-
-
-
-
-
-   
-
-
-   
-
-// Watch User Location
-useEffect(() => {
-    let locationSubscription = null;
-
-    const subscribeToLocation = async () => {
         try {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== "granted") {
-                Alert.alert("Location Permission Denied", "Please enable location access.");
-                return; // Exit if permission is not granted
+            const url = `${API_BASE_URL}/googlePlaces/directions`;
+            const params = {
+                originLat: userLocation.latitude,
+                originLng: userLocation.longitude,
+                destLat: selectedRestaurant.latitude,
+                destLng: selectedRestaurant.longitude,
+            };
+            const response = await axios.get(url, { params });
+            console.log("Directions API full response:", response.data);
+
+            if (response.data?.overview_polyline && response.data?.steps) {
+                // Set the directions for the polyline
+                setDirections(response.data.overview_polyline);
+
+                // Construct directions text
+                const directionsText = response.data.steps.map(step => 
+                    `${step.instructions.replace(/<[^>]*>?/gm, '')} (${step.distance})`
+                ).join('\n');
+                
+                setDirectionsText(directionsText);
+                console.log("Directions and text updated successfully.");
+                console.log("Directions Text updated:", directionsText);
+            } else {
+                console.error("Polyline or steps format is not valid in response:", response.data);
             }
 
-            // Set up the location watcher if permission is granted
-            locationSubscription = await Location.watchPositionAsync(
-                {
-                    accuracy: Location.Accuracy.Balanced,
-                    timeInterval: 2000,
-                    distanceInterval: 5,
-                },
-                (location) => {
-                    const { latitude, longitude, heading: locationHeading } = location.coords;
-                    setUserLocation({ latitude, longitude });
-                    console.log("Updated user location:", { latitude, longitude });
-                    setHeading(locationHeading || 0);
-                    console.log("User location updated:", { latitude, longitude, heading: locationHeading });
-                }
-            );
         } catch (error) {
-            console.error("Error watching user location:", error);
+            console.error("Error fetching directions:", error.response?.data || error.message);
+            Alert.alert("Error", "Unable to fetch directions. Please try again later.");
         }
-    };
+    }, [userLocation, selectedRestaurant]);
 
-    subscribeToLocation();
-
-    return () => {
-        if (locationSubscription && typeof locationSubscription.remove === 'function') {
-            console.log("Removing location subscription");
-            locationSubscription.remove();
-        } else {
-            console.warn("No valid location subscription to remove");
+    // **Handle Reward Redemption**
+    const handleRedemption = useCallback(async () => {
+        if (!selectedReward || !selectedReward.id || !userId) {
+            console.warn("Selected reward or userId is missing");
+            return;
         }
-    };
-}, [userId]);
+        console.log("Attempting to redeem reward with ID:", selectedReward.id);
+        try {
+            const response = await axios.put(
+                `${API_BASE_URL}/users/${userId}/rewards/${selectedReward.id}/redeem`,
+                {},
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+            if (response.data.qr_code_url) {
+                setQrCodeUrl(response.data.qr_code_url);
+                setShowMessage("QR code generated successfully!");
+            } else {
+                setShowMessage("Redemption successful but no QR code generated.");
+            }
 
-    const updateLocationManually = (newLatitude, newLongitude) => {
-        setUserLocation({ latitude: newLatitude, longitude: newLongitude });
-    }
+            // After redemption, refresh user points
+            await fetchUserPoints();
+        } catch (err) {
+            handleApiError(err, "Error redeeming reward");
+            setShowMessage("Error redeeming reward. Please try again.");
+        }
+    }, [selectedReward, userId, userToken, fetchUserPoints]);
 
+    // **Watch User Location**
+    useEffect(() => {
+        let locationSubscription = null;
 
+        const subscribeToLocation = async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== "granted") {
+                    Alert.alert("Location Permission Denied", "Please enable location access.");
+                    return;
+                }
 
-    // HealthKit Initialization and Step Tracking Functions
-    const initializeHealthKit = () => {
+                locationSubscription = await Location.watchPositionAsync(
+                    {
+                        accuracy: Location.Accuracy.Balanced,
+                        timeInterval: 2000,
+                        distanceInterval: 5,
+                    },
+                    (location) => {
+                        const { latitude, longitude, heading: locationHeading } = location.coords;
+                        setUserLocation({ latitude, longitude });
+                        setHeading(locationHeading || 0);
+                    }
+                );
+            } catch (error) {
+                console.error("Error watching user location:", error);
+            }
+        };
+
+        subscribeToLocation();
+
+        // Cleanup subscription on unmount
+        return () => {
+            if (locationSubscription) {
+                locationSubscription.remove();
+            }
+        };
+    }, [userId]);
+
+    // **HealthKit Initialization and Step Tracking Functions**
+    const initializeHealthKit = useCallback(() => {
         if (!userId || !userToken || !AppleHealthKit || !BackgroundFetch) {
             console.error("User details or modules are not available for initializing HealthKit.");
             return;
@@ -322,7 +327,7 @@ useEffect(() => {
         const healthKitOptions = {
             permissions: {
                 read: [AppleHealthKit.Constants.Permissions.StepCount],
-                write: [AppleHealthKit.Constants.Permissions.StepCount],
+                // Removed write permissions if not needed
             },
         };
 
@@ -332,36 +337,45 @@ useEffect(() => {
                 return;
             }
             console.log("HealthKit successfully connected");
-            fetchStepCount();
+            fetchAndUpdateStepCount(); // Initial fetch
             configureBackgroundFetch();
         });
-    };
+    }, [userId, userToken]);
 
-    const fetchStepCount = () => {
+    
+
+    // **Fetch and Update Step Count**
+    const fetchAndUpdateStepCount = useCallback(() => {
+        // Ensure userId and userToken are available
+        if (!userId || !userToken) {
+            console.error("Cannot sync steps without valid user details");
+            return;
+        }
+
         const today = new Date();
         const options = {
             startDate: new Date(today.setHours(0, 0, 0, 0)).toISOString(), // Start of the day
             endDate: new Date().toISOString(), // Current time
         };
-    
+
         AppleHealthKit.getDailyStepCountSamples(options, (err, results) => {
             if (err) {
                 console.log("Error fetching step data", err);
                 return;
             }
-    
+
             console.log("HealthKit step results:", results);
-    
+
             if (!results || results.length === 0) {
                 console.log("No step data available for today.");
                 return;
             }
-    
-            const stepsToday = results.reduce((total, step) => total + step.value, 0) || 0;
+
+            const stepsToday = results.reduce((total, step) => total + step.value, 0);
             console.log(`Total steps today: ${stepsToday}`);
 
-            //Calculate points earned
-            const pointsEarned = Math.floor(stepsToday / 1000) * 10 || 0;
+            // **Updated Calculation: Points Earned Based on Steps**
+            const pointsEarned = Math.floor(stepsToday / 1000) * 10;
 
             setUserSteps({
                 step_count: stepsToday,
@@ -372,38 +386,27 @@ useEffect(() => {
             triggerNotification(stepsToday); // Trigger notification if milestone reached
             syncStepsToBackend(stepsToday, pointsEarned); // Sync steps to backend
         });
-    };
-    
+    }, [syncStepsToBackend, triggerNotification, userId, userToken]);
 
-    // Sync steps with improved error handling
-    const syncStepsToBackend = async (steps, pointsEarned) => {
-        if (!userId || !userToken) {
-            console.error("Cannot sync steps without valid user details");
-            return;
+    // **Polling Setup: Fetch Steps Every 5 Minutes**
+    useEffect(() => {
+        if (userId && userToken) {
+            // Initialize HealthKit when user is authenticated
+            initializeHealthKit();
+
+            // Fetch immediately on mount
+            fetchAndUpdateStepCount();
+
+            // Set up interval to fetch every 5 minutes
+            const intervalId = setInterval(fetchAndUpdateStepCount, 5 * 60 * 1000); // 5 minutes
+
+            // Clean up interval on unmount
+            return () => clearInterval(intervalId);
         }
+    }, [fetchAndUpdateStepCount, initializeHealthKit, userId, userToken]);
 
-        console.log('Syncing steps. User ID:', userId, 'User Token:', userToken);
-        try {
-            const response = await axios.post(
-                `${API_BASE_URL}/users/${userId}/steps`,
-                {
-                    step_count: steps,
-                    points_earned: pointsEarned,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${userToken}`, // Retained Authorization header for step syncing
-                    },
-                }
-            );
-            console.log("Steps and points synced successfully: ", response.data);
-        } catch (err) {
-            handleApiError(err, "Error syncing steps");
-        }
-    };
-
-    // Configure Background Fetch with adjusted interval
-    const configureBackgroundFetch = () => {
+    // **Configure Background Fetch**
+    const configureBackgroundFetch = useCallback(() => {
         if (!BackgroundFetch) {
             console.error("BackgroundFetch module is not available");
             return;
@@ -412,18 +415,42 @@ useEffect(() => {
         BackgroundFetch.configure(
             { minimumFetchInterval: 15 }, // 15 minutes interval
             async (taskId) => {
-                console.log("Background fetch successful");
-                fetchStepCount();
+                console.log("Background fetch task started");
+                fetchAndUpdateStepCount(); // Fetch step count during background fetch
                 BackgroundFetch.finish(taskId);
             },
             (err) => {
-                console.error("Background fetch failed: ", err);
+                console.error("Background fetch failed to start: ", err);
             }
         );
-    };
 
-    // Trigger notifications at milestones
-    const triggerNotification = async (steps) => {
+        // Start Background Fetch
+        BackgroundFetch.start();
+    }, [fetchAndUpdateStepCount]);
+
+    // **Sync Steps to Backend with Improved Error Handling**
+    const syncStepsToBackend = useCallback(async (steps, pointsEarned) => {
+        if (!userId || !userToken) {
+            console.error("Cannot sync steps without valid user details");
+            return;
+        }
+
+        try {
+            const response = await axios.post(
+                `${API_BASE_URL}/users/${userId}/steps`,
+                { step_count: steps, points_earned: pointsEarned },
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+            console.log("Steps and points synced successfully:", response.data);
+
+            await fetchUserPoints();
+        } catch (error) {
+            handleApiError(error, "Error syncing steps");
+        }
+    }, [userId, userToken, fetchUserPoints]);
+
+    // **Trigger Notifications at Milestones**
+    const triggerNotification = useCallback(async (steps) => {
         const milestones = [1000, 5000, 10000];
         const milestoneReached = milestones.find(
             milestone => steps >= milestone && lastNotifiedStepCount < milestone
@@ -444,136 +471,62 @@ useEffect(() => {
                 console.error("Error scheduling notification:", error);
             }
         }
-    };
+    }, [lastNotifiedStepCount]);
 
-    // Calculate steps with useMemo for optimization
-    const stepsNeeded = useMemo(() => {
-        if (!userLocation.latitude || !selectedRestaurant?.latitude) {
-            return 0;
-        }
-        const totalDistance = getDistance(
-            { latitude: userLocation.latitude, longitude: userLocation.longitude },
-            { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
-        );
 
-        const averageStepLength = 0.7; // in meters
-        return Math.round(totalDistance / averageStepLength);
-    }, [userLocation, selectedRestaurant]);
+const calculateCheckInPoints = useCallback((distance) => {
+    // Define base points, check-in points, and multipliers for display purposes
+    let checkInPoints = 10; // Base check-in points for short distances
+    if (distance > 6436) { // Over 6.4 km
+        checkInPoints = 50;
+    } else if (distance > 3218) { // Over 3.2 km
+        checkInPoints = 35;
+    } else if (distance > 1609) { // Over 1.6 km
+        checkInPoints = 25;
+    } else if (distance > 805) { // Over 0.8 km
+        checkInPoints = 15;
+    }
 
-    useEffect(() => {
-        setDirectionSteps(stepsNeeded);
-    }, [stepsNeeded]);
+    const basePoints = 10; // Default base points
+    let multiplier = 1; // Multiplier for long distances
 
-    // Steps to Points Conversion with useCallback
-    const stepsToPoints = useCallback((steps) => {
-        if (steps <= 1000) {
-            return Math.floor(steps / 100);
-        } else if (steps <= 5000) {
-            return Math.floor(steps / 80);
-        } else {
-            return Math.floor(steps / 50);
-        }
+    if (distance > 4827) { // Over 4.8 km
+        multiplier = 3;
+    } else if (distance > 3218) { // Over 3.2 km
+        multiplier = 2;
+    } else if (distance > 1609) { // Over 1.6 km
+        multiplier = 1.5;
+    }
+
+    const multiplierPoints = Math.floor(basePoints * multiplier);
+    const totalPoints = checkInPoints + multiplierPoints;
+
+    return { basePoints, checkInPoints, multiplierPoints, totalPoints };
+}, []);
+
+
+    // **Stop Voice Directions**
+    const stopVoiceDirections = useCallback(() => {
+        console.log("Attempting to stop voice directions...");
+        Speech.stop();
+        setIsVoiceEnabled(false);
     }, []);
 
-    const applyRestaurantBonus = (steps, distance) => {
-        let multiplier = 1;
-        let bonusPoints = 0;
-
-        if (distance > 1609) { //1 mi
-            multiplier = 1.5;
-        }
-        if (distance > 3218) { //2 mi
-            multiplier = 2;
-        } 
-        if (distance > 4827) { //3mi
-            multiplier = 3;
-        }
-
-        const basePoints = Math.floor(steps / 1000) * 10;
-        const totalPoints = basePoints * multiplier;
-        bonusPoints = 25; // 30-point completion bonus
-
-        return {
-            totalPoints: Math.floor(totalPoints),
-            bonusPoints
-        };
-    };
-
-
-
-    const distanceToRestaurant = useMemo(() => {
-        if (
-          userLocation.latitude != null &&
-          userLocation.longitude != null &&
-          selectedRestaurant &&
-          selectedRestaurant.latitude != null &&
-          selectedRestaurant.longitude != null
-        ) {
-          return getDistance(
-            {
-              latitude: parseFloat(userLocation.latitude),
-              longitude: parseFloat(userLocation.longitude),
-            },
-            {
-              latitude: parseFloat(selectedRestaurant.latitude),
-              longitude: parseFloat(selectedRestaurant.longitude),
-            }
-          );
-        } else {
-          return null;
-        }
-      }, [userLocation, selectedRestaurant]);
-      
-
-  useEffect(() => {
-    console.log('User Location:', userLocation);
-    console.log('Selected Restaurant:', selectedRestaurant);
-    console.log('Distance to Restaurant:', distanceToRestaurant);
-
-    if (distanceToRestaurant !== null && distanceToRestaurant <= 150) { // change back to
-      setIsNearRestaurant(true);
-      console.log('User is near the restaurant.');
-    } else {
-      setIsNearRestaurant(false);
-      console.log('User is not near the restaurant.');
-    }
-  }, [distanceToRestaurant]);
-
-
-
-    const calculateSteps = useCallback(() => {
-        if (!userLocation.latitude || !selectedRestaurant?.latitude) {
-            return;
-        }
-
-        const totalDistance = getDistance(
-            { latitude: userLocation.latitude, longitude: userLocation.longitude },
-            { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
-        );
-
-        const averageStepLength = 0.7; // in meters
-        const stepsNeeded = Math.round(totalDistance / averageStepLength);
-        setDirectionSteps(stepsNeeded);
-    }, [userLocation, selectedRestaurant]);
-
-    const stopVoiceDirections = () => {
-        console.log("Attempting to stop voice directions...")
-        Speech.stop();
-        setIsVoiceEnabled(false)
-    }
-
+    // **Check Nearby Restaurants and Notify**
     const checkNearbyRestaurants = useCallback(() => {
-        if (!userLocation.latitude || !userLocation.longitude || !restaurants.length) return;
+        if (!userLocation.latitude || !userLocation.longitude || !nearbyPlaces.length) return;
     
-        const proximityRadius = 200; // Define proximity radius as needed
+        const proximityRadius = 200; // Define proximity radius in meters
+        let nearAnyRestaurant = false;
     
-        restaurants.forEach((restaurant) => {
+        nearbyPlaces.forEach((restaurant) => {
             const distance = getDistance(
                 { latitude: userLocation.latitude, longitude: userLocation.longitude },
                 { latitude: parseFloat(restaurant.latitude), longitude: parseFloat(restaurant.longitude) }
             );
     
             if (distance <= proximityRadius) {
+                nearAnyRestaurant = true;
                 Notifications.scheduleNotificationAsync({
                     content: {
                         title: `You're near ${restaurant.name}`,
@@ -583,9 +536,11 @@ useEffect(() => {
                 });
             }
         });
-    }, [userLocation, restaurants]);
+    
+        setIsNearRestaurant(nearAnyRestaurant);
+    }, [userLocation, nearbyPlaces]);
 
-    //fetch points
+    // **Fetch User Points**
     const fetchUserPoints = useCallback(async () => {
         if (!userToken || !userId) return;
 
@@ -593,31 +548,51 @@ useEffect(() => {
             const response = await axios.get(`${API_BASE_URL}/users/${userId}/points`, {
                 headers: { Authorization: `Bearer ${userToken}` },
             });
-            setUserPoints(response.data.points);
+            setUser(prevUser => ({
+                ...prevUser,
+                points_earned: response.data.points, 
+            }));
         } catch (error) {
             console.error("Error fetching user points:", error);
         }
     }, [userToken, userId]);
 
-    //update points locally after check-in
+    // **Update User Points Locally After Check-In**
     const updateUserPoints = useCallback((pointsEarned) => {
-        setUserPoints(prevPoints => prevPoints + pointsEarned);
-}, []);
-    
+        setUser(prevUser => ({
+            ...prevUser,
+            points_earned: prevUser.points_earned + pointsEarned,
+        }));
+    }, []);
 
+    // **Select Reward**
+    const selectReward = useCallback((reward) => {
+        if (reward === null) {
+            setSelectedReward(null);
+            console.log("Cleared selected reward");
+        } else if (reward && reward.id) {
+            setSelectedReward(reward);
+            console.log("Selecting reward:", reward.id);
+        } else {
+            // Only warn if an unexpected invalid reward is passed
+            console.warn("Attempted to select an invalid reward:", reward);
+        }
+    }, []);
+
+    // **Fetch User Points on Mount and When Dependencies Change**
     useEffect(() => {
         fetchUserPoints();
     }, [fetchUserPoints]);
-    
-    // Implementing a better random ping scheduler
+
+    // **Implementing a Better Random Ping Scheduler**
     const scheduleRandomPings = useCallback(() => {
-        const intervals = [0, 3, 6, 9, 12].map(hours => hours * 60 * 60); // 3 hours interval
+        const intervals = [0, 3, 6, 9, 12].map(hours => hours * 60 * 60); // 0, 3, 6, 9, 12 hours in seconds
         intervals.forEach(interval => {
             setTimeout(() => sendRandomRestaurantPing(), interval * 1000);
-        })
-    },[]);
+        });
+    }, []);
 
-    const sendRandomRestaurantPing = () => {
+    const sendRandomRestaurantPing = useCallback(() => {
         if (!restaurants.length) return;
 
         const randomIndex = Math.floor(Math.random() * restaurants.length);
@@ -628,12 +603,12 @@ useEffect(() => {
                 title: `Check out ${randomRestaurant.name}!`,
                 body: 'Visit here for even more points!'
             },
-            trigger: { seconds: Math.floor(Math.random() * 60 * 60 * 5) },
+            trigger: { seconds: Math.floor(Math.random() * 60 * 60 * 5) }, // Random trigger within 5 hours
         });
-    }
+    }, [restaurants]);
 
-    // Logout Function
-    const logout = async (navigation) => {
+    // **Logout Function**
+    const logoutUser = useCallback(async (navigation) => {
         try {
             if (Platform.OS !== 'web') {
                 await AsyncStorage.removeItem('userToken');
@@ -644,13 +619,26 @@ useEffect(() => {
             }
             setUserToken(null);
             setUserId(null);
-            setUserLocation({ latitude: 40.73061, 
-                longitude: -73.935242 });
+            setUser({
+                points_earned: 0, // Reset points_earned
+            });
+            setUserLocation({ latitude: 40.73061, longitude: -73.935242 });
             setSelectedRestaurant(null);
             setDirections([]);
-            setUser({});
             setUserSteps({ step_count: 0, date: '' });
             setIsLoading(false);
+            setQrCodeUrl(null); // Reset QR Code URL
+            setShowMessage(""); // Reset message
+
+            // **Stop BackgroundFetch to Prevent Sync After Logout**
+            if (BackgroundFetch) {
+                BackgroundFetch.stop().then(() => {
+                    console.log("BackgroundFetch stopped successfully");
+                }).catch((err) => {
+                    console.error("Error stopping BackgroundFetch:", err);
+                });
+            }
+
             if (navigation) {
                 navigation.reset({
                     index: 0,
@@ -660,36 +648,30 @@ useEffect(() => {
         } catch (e) {
             console.error('Error during logout:', e);
         }
-    }; 
+    }, []);
 
+    // **Check Nearby Restaurants When User Location Changes**
     useEffect(() => {
         if (userLocation.latitude && userLocation.longitude) {
             checkNearbyRestaurants();
         }
     }, [userLocation, checkNearbyRestaurants]);
 
+    // **Schedule Random Pings on Mount**
     useEffect(() => {
         scheduleRandomPings();
-    }, [])
+    }, [scheduleRandomPings]);
 
-
-
-useEffect(() => {
-    console.log("Updated user location:", userLocation);
-}, [userLocation]);
-
-useEffect(() => {
-    checkLoginStatus();
-    fetchInitialLocation();
-        fetchNearByPlaces();
-}, []);
-
+    // **Log Updated User Location**
+    useEffect(() => {
+        console.log("Updated user location:", userLocation);
+    }, [userLocation]);
 
     return (
         <AuthContext.Provider
             value={{
                 login,
-                logout,
+                logout: logoutUser, // Renamed to avoid conflict with function name
                 isLoading,
                 userToken,
                 userId,
@@ -702,31 +684,31 @@ useEffect(() => {
                 setSelectedRestaurant,
                 selectedRestaurant,
                 getDirectionsFromGoogleMaps,
-                directionSteps,
                 restaurants,
                 directionsText,
                 fetchNearByPlaces,
-                stepsToPoints,
                 nearbyPlaces,
                 user,
                 setUser,
                 selectedReward,
-                setSelectedReward,
-                calculateSteps,
+                selectReward,
+                handleRedemption,
                 setRestaurants,
                 heading,
                 isNearRestaurant,
                 setIsNearRestaurant,
-                applyRestaurantBonus,
                 triggerNotification,
                 syncStepsToBackend,
                 isVoiceEnabled,
                 setIsVoiceEnabled,
                 stopVoiceDirections,
-                updateLocationManually,
-                userPoints,
-                fetchUserPoints,
-                updateUserPoints
+                fetchUserPoints, // Exposed for components to trigger refresh
+                updateUserPoints,
+                calculateCheckInPoints,
+                userRewards, 
+                setUserRewards,
+                qrCodeUrl, // Expose if needed
+                showMessage, // Expose if needed
             }}
         >
             {children}
