@@ -16,9 +16,11 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Bottom Tab Navigator Component
+// Bottom Tab Navigator Component
 const BottomTabNav = () => {
   return (
     <Tab.Navigator
+      initialRouteName="Map" // Set Map as the default screen
       screenOptions={{
         headerStyle: {
           backgroundColor: '#9b1422', // Set your custom burgundy color
@@ -29,12 +31,13 @@ const BottomTabNav = () => {
         },
       }}
     >
+      <Tab.Screen name="Map" component={CustomMap} />
       <Tab.Screen name="Profile" component={Profile} />
       <Tab.Screen name="Rewards" component={Rewards} />
-      <Tab.Screen name="Map" component={CustomMap} />
     </Tab.Navigator>
   );
 };
+
 
 // Main App Navigation Component
 const AppNav = () => {

@@ -1,60 +1,56 @@
-import { View, Text, StyleSheet } from 'react-native';
 import React, { useContext, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { AuthContext } from '../../Context/AuthContext';
-import StepsCard from './StepsCard';
+import { AnimatedCircularProgress } from 'react-native-circular-progress';
 
 const StepsContainer = () => {
-    const { userSteps, stepsToPoints } = useContext(AuthContext);
+    const { userSteps } = useContext(AuthContext);
 
     useEffect(() => {
-        console.log("StepsContainer received userSteps:", userSteps);
-    }, [userSteps]);
+        console.log("StepsContainer received userSteps.step_count:", userSteps.step_count);
+    }, [userSteps.step_count]);
+
+    const steps = userSteps.step_count ?? 0;
+    const stepPercentage = (steps % 10000) / 100; // Example max steps 10,000
 
     return (
         <View style={styles.container}>
-            {userSteps ? (
-                // Check if userSteps is an array
-                Array.isArray(userSteps) ? (
-                    userSteps.length > 0 ? (
-                        userSteps.map((step) => (
-                            <StepsCard key={step.id} step={step} />
-                        ))
-                    ) : (
-                        <Text style={styles.noStepsText}>No steps data available.</Text>
-                    )
-                ) : (
-                    // If userSteps is an object
-                    <StepsCard step={userSteps} />
-                )
-            ) : (
-                <Text style={styles.noStepsText}>No steps data available.</Text>
-            )}
+            <Text style={styles.title}>Your Steps</Text>
+            <AnimatedCircularProgress
+                size={220} // Increased size for larger container
+                width={18}
+                fill={stepPercentage}
+                tintColor="#A41623"
+                backgroundColor="#E0E0E0"
+                lineCap="round"
+                rotation={0}
+                shadowColor="rgba(0, 102, 255, 0.5)" // Blue shadow effect
+            >
+                {() => (
+                    <Text style={styles.stepsText}>{steps} Steps</Text>
+                )}
+            </AnimatedCircularProgress>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 20,
-        padding: 10,
-        borderRadius: 150, // Ensure the circular style fits your design
-        height: 300,
-        width: 300,
-        borderWidth: 25,
-        borderColor: '#A41623',
+        alignItems: 'center',
         justifyContent: 'center',
-        alignItems: 'center', // Fixed alignment typo
+        flex: 1,
+        backgroundColor: '#FFEEDD',
     },
     title: {
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 'bold',
-        marginVertical: 10,
+        color: '#1F2937',
+        marginBottom: 15,
     },
-    noStepsText: {
-        fontSize: 16,
-        color: '#666',
-        marginTop: 5,
-        textAlign: 'center', // Ensure text is centered
+    stepsText: {
+        fontSize: 24, 
+        color: '#A41623',
+        fontWeight: 'bold',
     },
 });
 

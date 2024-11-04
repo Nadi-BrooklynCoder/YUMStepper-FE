@@ -5,7 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types'
 
 const PointsCard = ({ point }) => {
-  const pointCount = point?.point_count ?? 0; // Ensure 'point_count' is correct
+  const pointCount = point?.points_earned ?? 0; // Ensure 'point_count' is correct
 
   console.log("PointsCard point prop:", point);
 
@@ -20,7 +20,7 @@ const PointsCard = ({ point }) => {
 
 PointsCard.propTypes = {
   point: PropTypes.shape({
-    point_count: PropTypes.number, 
+    points_earned: PropTypes.number, 
   }).isRequired,
 }
 

@@ -1,8 +1,7 @@
-// PointsContainer.js
-
-import { View, Text, StyleSheet } from 'react-native';
 import React, { useContext, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { AuthContext } from '../../Context/AuthContext';
+import { AnimatedCircularProgress } from 'react-native-circular-progress';
 
 const PointsContainer = () => {
     const { user } = useContext(AuthContext);
@@ -11,43 +10,47 @@ const PointsContainer = () => {
         console.log("PointsContainer received user.points_earned:", user.points_earned);
     }, [user.points_earned]);
 
-    // Provide a fallback value of 0 for points if it's undefined or null
     const points = user.points_earned ?? 0;
+    const progressPercentage = (points % 600) / 6; // Example max points 600 for a full circle
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Your Points</Text>
-            <Text style={points > 0 ? styles.pointsText : styles.noPointsText}>
-                {points > 0 ? `Points: ${points}` : 'No points data available.'}
-            </Text>
+            <AnimatedCircularProgress
+                size={220} // Increased size
+                width={18}
+                fill={progressPercentage}
+                tintColor="#A41623"
+                backgroundColor="#E0E0E0"
+                lineCap="round"
+                rotation={0}
+                shadowColor="rgba(0, 102, 255, 0.5)" // Blue shadow effect
+            >
+                {() => (
+                    <Text style={styles.pointsText}>{points} Points</Text>
+                )}
+            </AnimatedCircularProgress>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        padding: 15,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3, // For Android shadow
+        alignItems: 'center',
+        justifyContent: 'center', 
+        flex: 1,
+        backgroundColor: '#FFEEDD',
     },
     title: {
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 'bold',
         color: '#1F2937',
-        marginBottom: 10,
+        marginBottom: 15,
     },
     pointsText: {
-        fontSize: 16,
-        color: '#28a745', // Success green color for points
-    },
-    noPointsText: {
-        fontSize: 16,
-        color: '#dc3545', // Red color for no points message
+        fontSize: 24,
+        color: '#A41623',
+        fontWeight: 'bold',
     },
 });
 

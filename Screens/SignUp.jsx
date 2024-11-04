@@ -55,6 +55,11 @@ const SignUpForm = () => {
             setIsLoading(false);
         }
     };
+
+    navigation.reset({
+        index: 0,
+        routes: [{ name: 'Map' }], // Set "Map" as the initial screen
+    })
     
     
     return (

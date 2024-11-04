@@ -11,6 +11,7 @@ const LoginComponent = () => {
     const { login } = useContext(AuthContext);
     const navigation = useNavigation();
 
+
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -48,7 +49,7 @@ const LoginComponent = () => {
             // Reset navigation to Profile after successful login
             navigation.reset({
                 index: 0,
-                routes: [{ name: 'Profile' }],
+                routes: [{ name: 'Map' }], // Set "Map" as the initial screen
             });
 
         } catch (err) {

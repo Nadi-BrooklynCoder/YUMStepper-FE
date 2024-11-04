@@ -1,46 +1,68 @@
 // RewardsPopup.js
 
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Image, Dimensions } from 'react-native';
+import { 
+    View, 
+    Text, 
+    TouchableOpacity, 
+    Modal, 
+    StyleSheet, 
+    FlatList, 
+    ActivityIndicator,
+    Dimensions,
+    Alert
+} from 'react-native';
 import { AuthContext } from '../../Context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import RewardItem from './RewardItem';
 
-const { height: screenHeight } = Dimensions.get('window'); // Added line
-
 const RewardsPopup = ({ showRewards, setShowRewards }) => {
-    const { userId, userToken, selectedRestaurant, setUserRewards, fetchUserPoints, user } = useContext(AuthContext);
+    const { 
+        userId, 
+        userToken, 
+        selectedRestaurant, 
+        setUserRewards, 
+        fetchUserPoints 
+    } = useContext(AuthContext);
+    
     const [rewards, setRewards] = useState([]);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
+    const [loading, setLoading] = useState(false); // Loading state
+    const [message, setMessage] = useState({ text: '', type: '' }); // Combined message state
 
-    useEffect(() => {
-        const fetchRewards = async () => {
-            try {
-                const response = await axios.get(`${API_BASE_URL}/rewards`);
-                const restaurantRewards = response.data.filter(
-                    reward => reward.restaurant_id === selectedRestaurant.id
-                );
-                setRewards(restaurantRewards);
-            } catch (error) {
-                console.error('Failed to fetch rewards:', error);
-            }
-        };
+    // **Fetch Rewards Function**
+    const fetchRewards = useCallback(async () => {
+        if (!selectedRestaurant?.id) return;
 
-        if (selectedRestaurant) {
-            fetchRewards();
+        setLoading(true);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/rewards`);
+            const restaurantRewards = response.data.filter(
+                reward => reward.restaurant_id === selectedRestaurant.id
+            );
+            setRewards(restaurantRewards);
+        } catch (error) {
+            console.error('Failed to fetch rewards:', error);
+            setMessage({ text: "Failed to load rewards.", type: 'error' });
+        } finally {
+            setLoading(false);
         }
     }, [selectedRestaurant]);
 
+    useEffect(() => {
+        if (selectedRestaurant) {
+            fetchRewards();
+        }
+    }, [selectedRestaurant, fetchRewards]);
+
+    // **Handle Save for Later Function**
     const handleSaveForLater = useCallback(async (reward) => {
-        if (!reward || !userId) return;
-        console.log("Attempting to save reward:", reward);
-
+        if (!reward || !userId) {
+            setMessage({ text: "Invalid reward or user.", type: 'error' });
+            return;
+        }
+    
         try {
-            console.log("User Token:", userToken);
-
-            // Make the API call to save the specific reward
             await axios.post(
                 `${API_BASE_URL}/users/${userId}/userRewards`,
                 { reward_id: reward.id },
@@ -50,64 +72,89 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
                     },
                 }
             );
-
-            // Update only the saved reward in the rewards list, setting `saved: true`
+    
             setRewards((prevRewards) =>
                 prevRewards.map((r) =>
                     r.id === reward.id ? { ...r, saved: true } : r
                 )
             );
-
-            console.log("User Token:", userToken);
-
-            // Update user rewards list
+    
             const userRewardsResponse = await axios.get(`${API_BASE_URL}/users/${userId}/userRewards`, {
                 headers: {
                     Authorization: `Bearer ${userToken}`,
                 },
             });
             setUserRewards(userRewardsResponse.data);
-            await fetchUserPoints(); // Fetch updated points immediately
-            setSuccessMessage("Reward saved for later!");
-            setTimeout(() => setSuccessMessage(''), 3000);
+            await fetchUserPoints();
+    
+            setMessage({ text: "Reward saved for later!", type: 'success' });
+            setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         } catch (err) {
             console.error('Error saving reward:', err);
-            setErrorMessage("Error saving reward. Please try again.");
-            setTimeout(() => setErrorMessage(''), 3000);
+            setMessage({ text: "Error saving reward. Please try again.", type: 'error' });
+            setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         }
     }, [userId, userToken, setUserRewards, fetchUserPoints]);
+    
+    
+
 
     return (
         <Modal
             transparent
             visible={showRewards}
             animationType="fade"
-            onRequestClose={() => setShowRewards(false)}
+            onRequestClose={() => {
+                setShowRewards(false);
+                setRewards([]);
+                setMessage({ text: '', type: '' });
+            }}
         >
             <View style={styles.overlay}>
                 <View style={styles.popupContainer}>
                     <Text style={styles.header}>
-                        Rewards at {selectedRestaurant?.name}
+                        Rewards at {selectedRestaurant?.name || 'Selected Restaurant'}
                     </Text>
 
-                    {rewards.length > 0 ? (
-                        rewards.map((reward) => (
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#0000ff" />
+                    ) : rewards.length > 0 ? (
+                        <FlatList
+                        data={rewards}
+                        keyExtractor={(item) => item.id.toString()}
+                        renderItem={({ item }) => (
                             <RewardItem
-                                key={reward.id}
-                                reward={reward}
-                                handleSaveForLater={() => handleSaveForLater(reward)}
+                                reward={item}
+                                handleSaveForLater={() => handleSaveForLater(item)}
+                                isSaved={item.saved} // Pass saved status as a prop
+                                isSavedSection={false}
                             />
-                        ))
+                        )}
+                        contentContainerStyle={styles.listContent}
+                    />
+                    
                     ) : (
                         <Text style={styles.noRewardsText}>No rewards available.</Text>
                     )}
 
-                    {successMessage ? <Text style={styles.successMessage}>{successMessage}</Text> : null}
-                    {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
+                    {/* Display Success or Error Message */}
+                    {message.text !== '' && (
+                        <Text 
+                            style={message.type === 'success' ? styles.successMessage : styles.errorMessage}
+                            accessibilityLiveRegion="polite"
+                        >
+                            {message.text}
+                        </Text>
+                    )}
 
                     <TouchableOpacity
                         style={styles.closeButton}
-                        onPress={() => setShowRewards(false)}
+                        onPress={() => {
+                            setShowRewards(false);
+                            setRewards([]);
+                            setMessage({ text: '', type: '' });
+                        }}
+                        accessibilityLabel="Close rewards popup"
                     >
                         <Text style={styles.closeButtonText}>Close</Text>
                     </TouchableOpacity>
@@ -126,7 +173,7 @@ const styles = StyleSheet.create({
     },
     popupContainer: {
         width: '85%',
-        maxHeight: screenHeight * 0.7, // Now defined
+        maxHeight: Dimensions.get('window').height * 0.7, // Responsive maxHeight
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 20,
@@ -135,9 +182,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
-    },
-    scrollContent: {
-        paddingBottom: 20,
     },
     header: {
         fontSize: 20,
@@ -172,6 +216,9 @@ const styles = StyleSheet.create({
     closeButtonText: {
         color: '#fff',
         fontSize: 16,
+    },
+    listContent: {
+        paddingBottom: 20,
     },
 });
 

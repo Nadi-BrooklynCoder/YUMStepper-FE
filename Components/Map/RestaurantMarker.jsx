@@ -2,6 +2,7 @@
 import React, { useMemo, useRef, useContext } from "react";
 import { StyleSheet, Image, View, Text } from "react-native";
 import { Marker } from "react-native-maps";
+import PropTypes from 'prop-types';
 import { getDistance } from 'geolib';
 import { AuthContext } from '../../Context/AuthContext';
 
@@ -15,14 +16,18 @@ const RestaurantMarker = ({ restaurant, userLocation, setSideModalVisible, selec
   const longitude = parseFloat(restaurant.longitude);
   const prevDistanceRef = useRef(null); // Track previous distance
 
-  if (!latitude || !longitude) { 
+  // Validate restaurant coordinates
+  if (isNaN(latitude) || isNaN(longitude)) { 
     console.warn("Invalid restaurant coordinates", restaurant);
     return null;
   }
 
-  // Use `useMemo` to calculate `pointsForDistance` only when `userLocation` is valid
-  const pointsForDistance = useMemo(() => {
-      if (!userLocation || !userLocation.latitude || !userLocation.longitude) return 0;
+  // Use `useMemo` to calculate points only when `userLocation` changes
+  const { checkInPoints, multiplierPoints, totalPoints } = useMemo(() => {
+      if (!userLocation || !userLocation.latitude || !userLocation.longitude) {
+        console.warn("User location is invalid", userLocation);
+        return { checkInPoints: 0, multiplierPoints: 0, totalPoints: 0 };
+      }
 
       // Calculate distance from user to restaurant
       const distance = getDistance(
@@ -33,20 +38,29 @@ const RestaurantMarker = ({ restaurant, userLocation, setSideModalVisible, selec
       // Log distance change if it differs significantly
       if (prevDistanceRef.current === null || Math.abs(prevDistanceRef.current - distance) > 50) {
         prevDistanceRef.current = distance;
-        console.log(`Distance to restaurant: ${distance} meters`);
+        console.log(`Distance to restaurant (${restaurant.name}): ${distance} meters`);
       }
 
-      // Calculate potential points based on distance (display-only)
-      return calculateCheckInPoints(distance).totalPoints;
-  }, [userLocation, restaurant, calculateCheckInPoints]);
+      // Calculate points based on distance (display-only)
+      const points = calculateCheckInPoints(distance);
+      
+      // Ensure points object has the necessary properties
+      const { checkInPoints: ciPoints = 0, multiplierPoints: mPoints = 0, totalPoints: tPoints = ciPoints + mPoints } = points || {};
+
+      if (!points) {
+        console.warn("calculateCheckInPoints returned undefined or null");
+      }
+
+      return { checkInPoints: ciPoints, multiplierPoints: mPoints, totalPoints: tPoints };
+  }, [userLocation.latitude, userLocation.longitude, restaurant.name, calculateCheckInPoints, latitude, longitude]);
 
   // Render `null` if coordinates are invalid, without early return
   const isValidLocation = userLocation && userLocation.latitude && userLocation.longitude;
-  if (!isValidLocation || !restaurant.latitude || !restaurant.longitude) {
-      console.warn("Location or restaurant coordinates are missing", { userLocation, restaurant });
+  if (!isValidLocation || isNaN(latitude) || isNaN(longitude)) {
+      console.warn("Location or restaurant coordinates are missing or invalid", { userLocation, restaurant });
   }
 
-  return isValidLocation && restaurant.latitude && restaurant.longitude ? (
+  return isValidLocation && !isNaN(latitude) && !isNaN(longitude) ? (
       <Marker
           coordinate={{ latitude, longitude }}
           title={restaurant.name || 'Unnamed Restaurant'}
@@ -56,12 +70,32 @@ const RestaurantMarker = ({ restaurant, userLocation, setSideModalVisible, selec
           }}
       >
           <View style={styles.pointsContainer}>
-              <Text style={styles.pointsText}>{`${pointsForDistance} Points`}</Text>
+              <Text style={styles.pointsText}>{`${totalPoints} Points`}</Text>
+              {multiplierPoints > 0 && (
+                  <Text style={styles.subPointsText}>{`+${multiplierPoints} Bonus`}</Text>
+              )}
           </View>
           <Image source={foodIcon} style={styles.markerImage} resizeMode="contain" />
       </Marker>
   ) : null;
 };
+
+// Define PropTypes for better type-checking
+RestaurantMarker.propTypes = {
+  restaurant: PropTypes.shape({
+    latitude: PropTypes.number.isRequired,   // Changed to number
+    longitude: PropTypes.number.isRequired,  // Changed to number
+    name: PropTypes.string,
+    // Add other restaurant properties if needed
+  }).isRequired,
+  userLocation: PropTypes.shape({
+    latitude: PropTypes.number.isRequired,
+    longitude: PropTypes.number.isRequired,
+  }).isRequired,
+  setSideModalVisible: PropTypes.func.isRequired,
+  selectRestaurant: PropTypes.func.isRequired,
+};
+
 
 const styles = StyleSheet.create({
   markerImage: {
@@ -72,7 +106,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
     backgroundColor: '#fff',
-    padding: 5,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     borderRadius: 5,
     borderColor: '#007AFF',
     borderWidth: 1,
@@ -81,7 +116,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#007AFF',
     fontWeight: 'bold',
+  },
+  subPointsText: {
+    fontSize: 10,
+    color: '#FF9500',
   }
 });
 
 export default RestaurantMarker;
+

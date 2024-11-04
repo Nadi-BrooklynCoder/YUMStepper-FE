@@ -1,20 +1,15 @@
-// containers/Map/RestaurantMarkerContainer.js
-
 import React, { useContext } from "react";
 import axios from "axios";
 import { AuthContext } from '../../Context/AuthContext';
 import { API_BASE_URL } from "@env";
-
-// Import the presentational component
 import RestaurantMarker from "./RestaurantMarker";
 
 // Helper function to get values safely
 const getValue = (value, fallback = "N/A") =>
   value !== undefined && value !== null ? value : fallback;
 
-const RestaurantDetails = ({ restaurant, setSideModalVisible }) => {
+const RestaurantDetails = ({ restaurant, userLocation, setSideModalVisible }) => {
   const { setSelectedRestaurant } = useContext(AuthContext);
-  
 
   // Ensure the restaurant object is valid before using it
   if (!restaurant || !restaurant.latitude || !restaurant.longitude) {
@@ -57,23 +52,23 @@ const RestaurantDetails = ({ restaurant, setSideModalVisible }) => {
         console.error("Selected restaurant location is not available:", selected);
         return;
       }
-      
 
       setSelectedRestaurant(selected);
-        setSideModalVisible(true);
+      setSideModalVisible(true);
 
       console.log(`[RestaurantMarker:onMarkerPress] Navigating to RestaurantDetails screen with ID: ${selected.id}`);
     } catch (error) {
       console.error(`[RestaurantMarker:onMarkerPress] Error fetching restaurant details:`, error.response?.data || error.message);
     }
-
-  
   };
 
   return (
     <RestaurantMarker
       restaurant={restaurant}
-      onPress={onMarkerPress}
+      userLocation={userLocation}
+      setSideModalVisible={setSideModalVisible}
+      selectRestaurant={setSelectedRestaurant} 
+      onMarkerPress={onMarkerPress}
     />
   );
 };

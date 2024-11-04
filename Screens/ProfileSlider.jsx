@@ -1,6 +1,4 @@
-// ProfileSlider.js
-
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useRef, useCallback } from 'react';
 import { View, Text, Animated, StyleSheet, Dimensions, PanResponder, Pressable } from 'react-native';
 import StepsContainer from '../Components/Profile/StepsContainer';
 import PointsContainer from '../Components/Profile/PointsContainer';
@@ -13,16 +11,14 @@ const { width, height } = Dimensions.get('window');
 const ProfileSlider = () => {
     const { userToken, userId, logout, user } = useContext(AuthContext);
     const [index, setIndex] = React.useState(0);
-    const slideAnim = useRef(new Animated.Value(0)).current; // Initialize the animation reference
+    const slideAnim = useRef(new Animated.Value(0)).current;
     const navigation = useNavigation();
 
-    // PanResponder setup for detecting swipes
     const panResponder = useRef(
         PanResponder.create({
             onMoveShouldSetPanResponder: (evt, gestureState) =>
                 Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
             onPanResponderMove: (evt, gestureState) => {
-                // Move animation with swipe
                 if (gestureState.dx < 0 && index < 1) {
                     slideAnim.setValue(gestureState.dx);
                 } else if (gestureState.dx > 0 && index > 0) {
@@ -32,11 +28,11 @@ const ProfileSlider = () => {
             onPanResponderRelease: (evt, gestureState) => {
                 const threshold = width / 4;
                 if (gestureState.dx < -threshold && index < 1) {
-                    handleSlide(1); // Swipe to Points
+                    handleSlide(1);
                 } else if (gestureState.dx > threshold && index > 0) {
-                    handleSlide(0); // Swipe to Steps
+                    handleSlide(0);
                 } else {
-                    handleSlide(index); // Snap back to the current view
+                    handleSlide(index);
                 }
             },
         })
@@ -70,35 +66,23 @@ const ProfileSlider = () => {
         );
     };
 
-    const handleLogout = async () => {
+    const handleLogout = useCallback(async () => {
         await logout(navigation);
-    };
-
-    if (!userId || !userToken) {
-        return (
-            <View style={styles.authContainer}>
-                <Text style={styles.authText}>You are not logged in.</Text>
-            </View>
-        );
-    }
-
-    if (!user) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Loading...</Text>
-            </View>
-        );
-    }
+    }, [logout, navigation]);
 
     return (
         <View style={styles.mainContainer} {...panResponder.panHandlers}>
+            {/* Logout Button */}
+            <Pressable onPress={handleLogout} style={styles.logoutButton}>
+                <Text style={styles.logoutText}>Logout</Text>
+            </Pressable>
+
             <View style={styles.userInfoContainer}>
-                <Text style={styles.userInfoText}>Profile of: {user.username}</Text>
-                <Text style={styles.userInfoText}>Email: {user.email}</Text>
+                <Text style={styles.userInfoText}>Profile of: {user?.username}</Text>
+                <Text style={styles.userInfoText}>Email: {user?.email}</Text>
             </View>
 
             <View style={styles.sliderContainer}>
-                {/* Slider Indicator */}
                 <Animated.View
                     style={[
                         styles.sliderIndicator,
@@ -107,7 +91,7 @@ const ProfileSlider = () => {
                                 {
                                     translateX: slideAnim.interpolate({
                                         inputRange: [-width, 0],
-                                        outputRange: [width * 0.4, 0], // Adjust slider position
+                                        outputRange: [width * 0.4, 0],
                                     }),
                                 },
                             ],
@@ -116,24 +100,17 @@ const ProfileSlider = () => {
                 />
             </View>
 
-            <View style={styles.contentContainer}>
-                {renderContent()}
-            </View>
+            <View style={styles.contentContainer}>{renderContent()}</View>
 
             <CheckinContainer />
 
-            <View style={styles.buttonContainer}>
-                <Pressable
-                    onPress={() => navigation.navigate('Map', { userId, token: userToken })}
-                    style={styles.mapButton}
-                >
-                    <Text style={styles.mapButtonText}>Go to Map</Text>
-                </Pressable>
-
-                <Pressable onPress={handleLogout} style={styles.logoutButton}>
-                    <Text style={styles.logoutText}>Logout</Text>
-                </Pressable>
-            </View>
+            {/* Go to Map Button */}
+            <Pressable
+                onPress={() => navigation.navigate('Map', { userId, token: userToken })}
+                style={styles.mapButton}
+            >
+                <Text style={styles.mapButtonText}>🚶‍♂️ Go to Map</Text>
+            </Pressable>
         </View>
     );
 };
@@ -177,7 +154,7 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         width,
-        height: height * 0.5,
+        height: height * 0.6, // Adjusted height for larger containers
         overflow: 'hidden',
         paddingVertical: 20,
     },
@@ -192,22 +169,39 @@ const styles = StyleSheet.create({
     },
     mapButton: {
         backgroundColor: '#FFB563',
-        padding: 15,
-        borderRadius: 8,
+        padding: 20,
+        borderRadius: 15,
         alignItems: 'center',
-        marginTop: 20,
+        marginTop: 30,
+        width: width * 0.7,
+        alignSelf: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+        position: 'absolute',
+        bottom: 30,
     },
     mapButtonText: {
         color: '#000000',
         fontWeight: 'bold',
+        fontSize: 18,
     },
     logoutButton: {
-        marginTop: 20,
-        alignItems: 'center',
+        position: 'absolute',
+        top: 40,
+        right: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 5,
+        backgroundColor: '#FFFFFF', // Solid background color
+        zIndex: 10,
     },
     logoutText: {
         color: '#A41623',
         fontWeight: 'bold',
+        fontSize: 14,
     },
     authContainer: {
         padding: 20,
@@ -235,3 +229,6 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileSlider;
+
+
+   

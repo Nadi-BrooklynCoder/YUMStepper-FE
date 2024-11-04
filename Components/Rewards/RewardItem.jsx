@@ -1,107 +1,132 @@
-// RewardItem.js
-
-import React, { useContext, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import axios from 'axios';
-import { API_BASE_URL } from '@env';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Image } from 'react-native';
 import { AuthContext } from '../../Context/AuthContext';
 
-const RewardItem = ({ reward, handleSaveForLater }) => {
-    const { userId, userToken, fetchUserPoints, user } = useContext(AuthContext);
-    const [successMessage, setSuccessMessage] = useState('');
+const RewardItem = ({ reward, inSavedRewards, isSaved, handleSaveForLater }) => {
+    const { 
+        user, 
+        userRewards, 
+        handleRedemption, 
+        qrCodeUrl, 
+        showMessage, 
+        selectReward,
+        selectedReward,
+        fetchUserPoints
+    } = useContext(AuthContext);
+
     const [errorMessage, setErrorMessage] = useState('');
-    const [qrCodeUrl, setQrCodeUrl] = useState(null);
+    const [canRedeem, setCanRedeem] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(false);
 
-    const hasEnoughPoints = user.points_earned >= (reward.points_required || 0);  // Access points from user object
+    // Determine if the user has enough points to redeem the reward
+    const hasEnoughPoints = user.points_earned >= (reward.points_required || 0);
 
-    const handleRedeem = async () => {
-        if (!hasEnoughPoints) {
-            setErrorMessage('Not enough points to redeem this reward');
-            return;
-        }
+    useEffect(() => {
+        // Find the matching reward in userRewards by reward_id for proper identification
+        const savedReward = userRewards.find((r) => r.reward_id === reward.id);
 
-        const redeemId = reward.reward_id || reward.id;
-        if (!redeemId) {
-            setErrorMessage('Reward ID is missing');
-            return;
-        }
+        // Log details for debugging
+        console.log("Checking redeem status for reward ID:", reward.id);
+        console.log("User points:", user.points_earned, "Points required:", reward.points_required);
+        console.log("Has enough points:", hasEnoughPoints);
+        console.log("Redemptions count:", savedReward ? savedReward.redemptions_count : "No savedReward found");
 
-        try {
-            const response = await axios.put(
-                `${API_BASE_URL}/users/${userId}/userRewards/${redeemId}/redeem`, // Corrected path
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${userToken}`,
-                    },
-                }
-            );
+        // Set redemptionsCount to 0 if undefined
+        const redemptionsCount = savedReward?.redemptions_count ?? 0;
 
-            const { qr_code_url } = response.data;
+        // Determine if the user can redeem based on points, redemptions count, and points_required
+        const calculatedCanRedeem = hasEnoughPoints && redemptionsCount < 3;
+        console.log("Calculated canRedeem:", calculatedCanRedeem);
 
-            if (qr_code_url) {
-                setQrCodeUrl(qr_code_url);
-                setSuccessMessage('QR code generated successfully!');
-            } else {
-                setSuccessMessage('Redemption successful, but no QR code provided.');
-            }
+        setCanRedeem(calculatedCanRedeem);
+    }, [userRewards, reward.id, hasEnoughPoints, user.points_earned]);
 
-            // Refresh user points after redemption
-            await fetchUserPoints();
-
-            setErrorMessage('');
-            setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (error) {
-            console.error('Error redeeming reward:', error);
-            setErrorMessage('Error redeeming reward. Please try again.');
-        }
+    // Handle saving reward for later with logging
+    const handleSaveForLaterClick = () => {
+        console.log("Saving reward for later with ID:", reward.id);
+        handleSaveForLater(reward);
     };
 
-    // Fallback values for missing details
-    const rewardDetails = reward.details || "No details available";
-    const pointsRequired = reward.points_required || 0;
-    const expirationDate = reward.expiration_date ? 
-        new Date(reward.expiration_date).toLocaleDateString() : "No expiration date";
+    // Handle redeeming reward with logging
+    const handleRedeem = async () => {
+        await fetchUserPoints(); // Ensure the latest points before checking
+        if (user.points_earned >= reward.points_required) {
+            selectReward({ ...reward, user_reward_id: reward.user_reward_id || reward.id });
+        } else {
+            setErrorMessage("Insufficient points to redeem this reward.");
+        }
+    };
+    
+
+    useEffect(() => {
+        if (qrCodeUrl) {
+            setIsModalVisible(true);
+            console.log("QR Code URL available, displaying modal:", qrCodeUrl);
+        }
+    }, [qrCodeUrl]);
+    
+    useEffect(() => {
+        if (selectedReward?.id === reward.id) {
+            handleRedemption();
+        }
+    }, [selectedReward, reward.id, handleRedemption]);
 
     return (
         <View style={styles.rewardItem}>
-            <Text style={styles.rewardTitle}>{rewardDetails}</Text>
-            <Text style={styles.rewardDescription}>Expires: {expirationDate}</Text>
-            <Text style={styles.points}>Points Required: {pointsRequired}</Text>
-            
-            <TouchableOpacity 
-                style={[styles.redeemButton, !hasEnoughPoints && styles.disabledButton]} 
-                onPress={handleRedeem}
-                disabled={!hasEnoughPoints}
-            >
-                <Text style={styles.redeemButtonText}>Redeem Now</Text>
-            </TouchableOpacity>
+            <Text style={styles.rewardTitle}>{reward.details || "No details available"}</Text>
+            <Text style={styles.rewardDescription}>Expires: {reward.expiration_date ? new Date(reward.expiration_date).toLocaleDateString() : "No expiration date"}</Text>
+            <Text style={styles.points}>Points Required: {reward.points_required || 0}</Text>
 
-            <TouchableOpacity 
-                style={styles.saveButton}
-                onPress={() => handleSaveForLater(reward)}
-            >
-                <Text style={styles.saveButtonText}>Save for later</Text>
-            </TouchableOpacity>
-
-            {successMessage && (
-                <Text style={styles.successMessage}>{successMessage}</Text>
-            )}
-            {errorMessage && (
-                <Text style={styles.errorMessage}>{errorMessage}</Text>
+            {!inSavedRewards && (
+                <TouchableOpacity
+                    style={[styles.saveButton, isSaved ? styles.disabledSave : {}]}
+                    onPress={handleSaveForLaterClick}
+                    disabled={isSaved}
+                >
+                    <Text style={styles.saveButtonText}>{isSaved ? "Saved" : "Save Reward"}</Text>
+                </TouchableOpacity>
             )}
 
-            {/* Display the QR Code if available */}
-            {qrCodeUrl && (
-                <View style={styles.qrCodeContainer}>
-                    <Text style={styles.qrCodeText}>Scan this QR Code:</Text>
-                    <Image source={{ uri: qrCodeUrl }} style={styles.qrCode} />
-                </View>
+            {inSavedRewards && (
+                <TouchableOpacity
+                    style={[styles.redeemButton, canRedeem ? styles.redeemable : styles.locked]}
+                    onPress={handleRedeem}
+                    disabled={!canRedeem}
+                >
+                    <Text style={styles.redeemButtonText}>Redeem Now</Text>
+                </TouchableOpacity>
             )}
+
+            {errorMessage && <Text style={styles.errorMessage}>{errorMessage}</Text>}
+
+            {isModalVisible && qrCodeUrl && (
+                <Modal
+                    transparent={true}
+                    animationType="slide"
+                    visible={isModalVisible}
+                    onRequestClose={() => setIsModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.qrCodeContainer}>
+                            <Text style={styles.modalTitle}>Scan this QR Code</Text>
+                            <Image source={{ uri: qrCodeUrl }} style={styles.qrCodeImage} />
+                            <TouchableOpacity
+                                style={styles.closeButton}
+                                onPress={() => setIsModalVisible(false)}
+                            >
+                                <Text style={styles.closeButtonText}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+            )}
+
+            {showMessage && <Text style={styles.successMessage}>{showMessage}</Text>}
         </View>
     );
 };
 
+// Styles
 const styles = StyleSheet.create({
     rewardItem: {
         marginBottom: 15,
@@ -127,18 +152,6 @@ const styles = StyleSheet.create({
         marginTop: 5,
         fontStyle: 'italic',
     },
-    redeemButton: {
-        marginTop: 10,
-        alignSelf: 'center',
-        backgroundColor: '#02243D',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-    },
-    redeemButtonText: {
-        color: '#fff',
-        fontSize: 16,
-    },
     saveButton: {
         marginTop: 10,
         alignSelf: 'center',
@@ -146,20 +159,34 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 8,
+        width: '80%',
+        alignItems: 'center',
+    },
+    disabledSave: {
+        backgroundColor: '#A9A9A9',
     },
     saveButtonText: {
         color: '#fff',
         fontSize: 16,
     },
-    disabledButton: {
+    redeemButton: {
+        marginTop: 10,
+        alignSelf: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        width: '80%',
+        alignItems: 'center',
+    },
+    redeemable: {
+        backgroundColor: '#0BCF07',
+    },
+    locked: {
         backgroundColor: '#A9A9A9',
     },
-    successMessage: {
-        marginTop: 10,
-        color: 'green',
-        fontSize: 14,
-        fontWeight: '500',
-        textAlign: 'center',
+    redeemButtonText: {
+        color: '#fff',
+        fontSize: 16,
     },
     errorMessage: {
         marginTop: 10,
@@ -168,18 +195,43 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         textAlign: 'center',
     },
-    qrCodeContainer: {
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 20,
     },
-    qrCodeText: {
-        fontSize: 16,
-        color: '#02243D',
+    qrCodeContainer: {
+        width: '85%',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
         marginBottom: 10,
     },
-    qrCode: {
-        width: 150,
-        height: 150,
+    qrCodeImage: {
+        width: 200,
+        height: 200,
+        marginBottom: 20,
+    },
+    closeButton: {
+        backgroundColor: '#A41623',
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    closeButtonText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    successMessage: {
+        color: 'green',
+        textAlign: 'center',
+        marginTop: 10,
     },
 });
 

@@ -15,12 +15,31 @@ import * as Notifications from 'expo-notifications';
 import AppleHealthKit from 'react-native-health';
 import BackgroundFetch from 'react-native-background-fetch';
 
+// **Centralized Constants for Distance Thresholds and Multipliers**
+const CHECK_IN_THRESHOLDS = [
+    { distance: 6436, points: 50 },   // >6.4 km
+    { distance: 3218, points: 35 },   // >3.218 km
+    { distance: 1609, points: 25 },   // >1.6 km
+    { distance: 805, points: 15 },    // >0.805 km
+    { distance: 0, points: 10 },      // ≤805 m
+];
+
+const MULTIPLIER_THRESHOLDS = [
+    { distance: 4827, multiplierPoints: 20 },  // >4.827 km
+    { distance: 3218, multiplierPoints: 15 },  // >3.218 km
+    { distance: 1609, multiplierPoints: 10 },  // >1.6 km
+    { distance: 805, multiplierPoints: 5 },    // >0.805 km
+    { distance: 0, multiplierPoints: 0 },      // ≤805 m
+];
+
+// **Create Auth Context**
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     // **State Variables**
     const [isLoading, setIsLoading] = useState(true);
     const [userToken, setUserToken] = useState(null);
+    const [checkInsToday, setCheckInsToday] = useState({});
     const [userId, setUserId] = useState(null);
     const [user, setUser] = useState({
         points_earned: 0, // Initialize points_earned
@@ -42,7 +61,11 @@ export const AuthProvider = ({ children }) => {
     const [userRewards, setUserRewards] = useState([]);
     const [restaurants, setRestaurants] = useState([]);
     
-    // **Added State Variables for Redemption**
+    // **State Variables for Points Breakdown**
+    const [checkInPoints, setCheckInPoints] = useState(0);
+    const [multiplierPoints, setMultiplierPoints] = useState(0);
+
+    // **State Variables for Redemption**
     const [qrCodeUrl, setQrCodeUrl] = useState(null);
     const [showMessage, setShowMessage] = useState("");
 
@@ -71,6 +94,8 @@ export const AuthProvider = ({ children }) => {
                 ...response.data,
                 points_earned: response.data.points_earned || 0, // Ensure points_earned is present
             }));
+            setCheckInPoints(response.data.check_in_points || 0);
+            setMultiplierPoints(response.data.multiplier_points || 0); // Corrected field name
             console.log('User data fetched successfully:', response.data);
             hasFetchedUser.current = true;
         } catch (err) {
@@ -100,11 +125,15 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
-            console.log(token);
+            console.log("Logging in user:", userIdParam);
             await AsyncStorage.setItem('userToken', token);
             await AsyncStorage.setItem('userId', userIdParam.toString());
             setUserToken(token);
             setUserId(userIdParam);
+
+            // Fetch user data immediately after login
+            await fetchUserData(userIdParam, token);
+
             if (navigation) {
                 navigation.reset({
                     index: 0,
@@ -114,7 +143,7 @@ export const AuthProvider = ({ children }) => {
         } catch (e) {
             console.error('Error during login:', e);
         }
-    }, []);
+    }, [fetchUserData]);
 
     // **Check Login Status**
     const checkLoginStatus = useCallback(async () => {
@@ -140,10 +169,14 @@ export const AuthProvider = ({ children }) => {
 
     // **Effect: On Mount**
     useEffect(() => {
-        checkLoginStatus();
-        fetchInitialLocation();
-        fetchNearByPlaces(); // Initial fetch without debounce
-    }, [checkLoginStatus]);
+        const initialize = async () => {
+            await checkLoginStatus();
+            await fetchInitialLocation();
+            await fetchNearByPlaces(); // Initial fetch without debounce
+            // Removed fetchUserData from here to rely on the separate useEffect
+        };
+        initialize();
+    }, [checkLoginStatus, fetchInitialLocation, fetchNearByPlaces]);
 
     // **Fetch Initial Location**
     const fetchInitialLocation = useCallback(async () => {
@@ -202,6 +235,7 @@ export const AuthProvider = ({ children }) => {
             debouncedFetchNearByPlaces.cancel(); // Cleanup debounced function
         };
     }, [userLocation, debouncedFetchNearByPlaces]);
+    
 
     // **Get Directions from Google Maps with Improved Error Handling**
     const getDirectionsFromGoogleMaps = useCallback(async () => {
@@ -254,6 +288,7 @@ export const AuthProvider = ({ children }) => {
     const handleRedemption = useCallback(async () => {
         if (!selectedReward || !selectedReward.id || !userId) {
             console.warn("Selected reward or userId is missing");
+            setShowMessage("Invalid reward selection.");
             return;
         }
         console.log("Attempting to redeem reward with ID:", selectedReward.id);
@@ -341,8 +376,6 @@ export const AuthProvider = ({ children }) => {
             configureBackgroundFetch();
         });
     }, [userId, userToken]);
-
-    
 
     // **Fetch and Update Step Count**
     const fetchAndUpdateStepCount = useCallback(() => {
@@ -473,37 +506,30 @@ export const AuthProvider = ({ children }) => {
         }
     }, [lastNotifiedStepCount]);
 
+    // **Calculate Check-In Points Based on Distance**
+    const calculateCheckInPoints = useCallback((distance) => {
+        // Calculate checkInPoints based on distance thresholds
+        let calculatedCheckInPoints = 10; // Default points
+        for (const threshold of CHECK_IN_THRESHOLDS) {
+            if (distance > threshold.distance) {
+                calculatedCheckInPoints = threshold.points;
+                break;
+            }
+        }
 
-const calculateCheckInPoints = useCallback((distance) => {
-    // Define base points, check-in points, and multipliers for display purposes
-    let checkInPoints = 10; // Base check-in points for short distances
-    if (distance > 6436) { // Over 6.4 km
-        checkInPoints = 50;
-    } else if (distance > 3218) { // Over 3.2 km
-        checkInPoints = 35;
-    } else if (distance > 1609) { // Over 1.6 km
-        checkInPoints = 25;
-    } else if (distance > 805) { // Over 0.8 km
-        checkInPoints = 15;
-    }
+        // Calculate multiplierPoints based on distance thresholds
+        let calculatedMultiplierPoints = 0;
+        for (const threshold of MULTIPLIER_THRESHOLDS) {
+            if (distance > threshold.distance) {
+                calculatedMultiplierPoints = threshold.multiplierPoints;
+                break;
+            }
+        }
 
-    const basePoints = 10; // Default base points
-    let multiplier = 1; // Multiplier for long distances
+        const totalPoints = calculatedCheckInPoints + calculatedMultiplierPoints;
 
-    if (distance > 4827) { // Over 4.8 km
-        multiplier = 3;
-    } else if (distance > 3218) { // Over 3.2 km
-        multiplier = 2;
-    } else if (distance > 1609) { // Over 1.6 km
-        multiplier = 1.5;
-    }
-
-    const multiplierPoints = Math.floor(basePoints * multiplier);
-    const totalPoints = checkInPoints + multiplierPoints;
-
-    return { basePoints, checkInPoints, multiplierPoints, totalPoints };
-}, []);
-
+        return { checkInPoints: calculatedCheckInPoints, multiplierPoints: calculatedMultiplierPoints, totalPoints };
+    }, []);
 
     // **Stop Voice Directions**
     const stopVoiceDirections = useCallback(() => {
@@ -513,32 +539,68 @@ const calculateCheckInPoints = useCallback((distance) => {
     }, []);
 
     // **Check Nearby Restaurants and Notify**
+    const updateIsNearRestaurant = useCallback((restaurantLocation) => {
+        const proximityThreshold = 60; // Threshold in meters
+        if (!restaurantLocation || !userLocation) return;
+      
+        const distanceToRestaurant = getDistance(
+          { latitude: userLocation.latitude, longitude: userLocation.longitude },
+          { latitude: restaurantLocation.latitude, longitude: restaurantLocation.longitude }
+        );
+      
+        setIsNearRestaurant(distanceToRestaurant <= proximityThreshold);
+    }, [userLocation]);
+    
+
+    // **checkNearbyRestaurants with Proximity Check**
     const checkNearbyRestaurants = useCallback(() => {
         if (!userLocation.latitude || !userLocation.longitude || !nearbyPlaces.length) return;
-    
+      
         const proximityRadius = 200; // Define proximity radius in meters
         let nearAnyRestaurant = false;
-    
+      
         nearbyPlaces.forEach((restaurant) => {
-            const distance = getDistance(
-                { latitude: userLocation.latitude, longitude: userLocation.longitude },
-                { latitude: parseFloat(restaurant.latitude), longitude: parseFloat(restaurant.longitude) }
-            );
-    
-            if (distance <= proximityRadius) {
-                nearAnyRestaurant = true;
-                Notifications.scheduleNotificationAsync({
-                    content: {
-                        title: `You're near ${restaurant.name}`,
-                        body: 'Walk there now to earn extra points!',
-                    },
-                    trigger: { seconds: 1 },
-                });
-            }
+          const distance = getDistance(
+            { latitude: userLocation.latitude, longitude: userLocation.longitude },
+            { latitude: parseFloat(restaurant.latitude), longitude: parseFloat(restaurant.longitude) }
+          );
+      
+          if (distance <= proximityRadius) {
+            nearAnyRestaurant = true;
+            Notifications.scheduleNotificationAsync({
+              content: {
+                title: `You're near ${restaurant.name}`,
+                body: 'Walk there now to earn extra points!',
+              },
+              trigger: { seconds: 1 },
+            });
+          }
         });
-    
+      
         setIsNearRestaurant(nearAnyRestaurant);
     }, [userLocation, nearbyPlaces]);
+
+    // **Select Restaurant**
+    const selectRestaurant = useCallback((restaurant) => {
+        if (!restaurant) {
+            console.error("Restaurant object not found:", restaurant);
+            return;
+        }
+
+        const selected = {
+            ...restaurant,
+            latitude: parseFloat(restaurant.latitude || restaurant?.location?.lat),
+            longitude: parseFloat(restaurant.longitude || restaurant?.location?.lng),
+        };
+
+        if (isNaN(selected.latitude) || isNaN(selected.longitude)) {
+            console.error("Selected restaurant has invalid coordinates:", selected);
+            return;
+        }
+
+        setSelectedRestaurant(selected);
+        updateIsNearRestaurant(selected); // Set `isNearRestaurant` based on the selected restaurant's location
+    }, [updateIsNearRestaurant]);
 
     // **Fetch User Points**
     const fetchUserPoints = useCallback(async () => {
@@ -707,11 +769,18 @@ const calculateCheckInPoints = useCallback((distance) => {
                 calculateCheckInPoints,
                 userRewards, 
                 setUserRewards,
+                selectRestaurant,
                 qrCodeUrl, // Expose if needed
                 showMessage, // Expose if needed
+                checkInsToday,
+                setCheckInsToday,
+                checkInPoints,        // Exposed for UI
+                multiplierPoints,    // Exposed for UI
             }}
         >
             {children}
         </AuthContext.Provider>
     );
 };
+
+export default AuthProvider;

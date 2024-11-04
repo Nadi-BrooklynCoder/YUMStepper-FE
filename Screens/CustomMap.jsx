@@ -10,7 +10,6 @@ import {
   Alert,
   Animated,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@env";
 import axios from "axios";
 import MapComponent from "../Components/Map/MapComponent";
@@ -18,7 +17,7 @@ import SearchMap from "../Components/Map/SearchMap";
 import MapSide from "../Components/Map/MapSide";
 import { AuthContext } from "../Context/AuthContext";
 import { debounce } from "lodash";
-
+import { getDistance } from 'geolib';
 
 const CustomMap = ({ route }) => {
   const {
@@ -28,28 +27,24 @@ const CustomMap = ({ route }) => {
     setDirections,
     isNearRestaurant,
     userLocation,
-    user,
     userId,
     userToken,
     fetchNearByPlaces,
     setRestaurants,
-    getDirectionsFromGoogleMaps,
-    stopVoiceDirections
+    updateUserPoints,
+    stopVoiceDirections,
+    checkInsToday,
+    setCheckInsToday,
+    restaurants
   } = useContext(AuthContext);
 
-
-  // Local state variables
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
   const [sideModalVisible, setSideModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
 
-  // Function to handle search using lodash debounce
-  const handleSearch = debounce((query) => {
-    setSearchQuery(query);
-
+  // Debounced search filtering
+  const debouncedFilterRestaurants = debounce((query) => {
     if (query.trim() === "") {
       setFilteredRestaurants([]);
     } else {
@@ -60,47 +55,76 @@ const CustomMap = ({ route }) => {
     }
   }, 500);
 
-  useEffect(() => {
-    return () => handleSearch.cancel(); // Cleanup on unmount
-  }, []);
+  // Handle search input change
+  const handleSearch = (query) => {
+    setSearchQuery(query); // Update search input immediately
+    debouncedFilterRestaurants(query); // Debounce filtering
+  };
 
+  useEffect(() => {
+    return () => debouncedFilterRestaurants.cancel(); // Cleanup debounce on unmount
+  }, []);
 
   // Function to handle check-in
   const handleCheckIn = async () => {
-    if (!isNearRestaurant || hasCheckedInToday) return; // Prevent check-in if not near the restaurant or already checked in
-
+    if (!selectedRestaurant || !userLocation || (checkInsToday[selectedRestaurant.id] || 0) >= 2) {
+      Alert.alert("Check-In Unavailable", "You have reached your check-in limit or no restaurant is selected.");
+      return;
+    }
+  
+    // Calculate distance to ensure we're within 60 meters
+    const distanceToRestaurant = getDistance(
+      { latitude: userLocation.latitude, longitude: userLocation.longitude },
+      { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
+    );
+  
+    if (distanceToRestaurant > 60) {
+      Alert.alert("Too Far to Check In", "You must be within 60 meters to check in.");
+      return;
+    }
+  
     const checkInData = {
       restaurant_id: selectedRestaurant?.id,
       latitude: userLocation?.latitude,
       longitude: userLocation?.longitude,
-      receipt_image: "your_receipt_image_path_here", // Placeholder
     };
-
+  
     try {
       const response = await axios.post(`${API_BASE_URL}/users/${userId}/checkins`, checkInData, {
         headers: { Authorization: `Bearer ${userToken}` },
       });
-
+  
       if (response.data.canCheckIn === false) {
-        Alert.alert(
-          "Check-In Limit Reached",
-          response.data.message,
-          [{ text: "OK", onPress: closeCheckInModal }],
-          { cancelable: false }
-        );
+        Alert.alert("Check-In Limit Reached", response.data.message);
       } else {
+        const { totalPoints, check_in_points: checkInPoints, multiplier_points: multiplierPoints } = response.data;
+  
         Alert.alert(
           "Check-In Successful",
-          "You've earned 25 points!",
-          [{ text: "OK", onPress: resetMap }],
-          { cancelable: false }
+          `You've earned ${totalPoints} points!\n\nDetails:\nCheck-In Points: ${checkInPoints}\nMultiplier Points: ${multiplierPoints}`,
+          [{ text: "OK", onPress: resetMap }]
         );
-        handleStopDirections(); // Stop directions and reset state
+  
+        updateUserPoints(totalPoints);
+        setCheckInsToday((prev) => ({
+          ...prev,
+          [selectedRestaurant.id]: (prev[selectedRestaurant.id] || 0) + 1,
+        }));
       }
     } catch (err) {
-      handleCheckInError(err);
+      console.error("Error during check-in:", err);
+  
+      let errorMessage = "An unexpected error occurred. Please try again later.";
+      if (err.response) {
+        errorMessage = err.response.data.message || errorMessage;
+      } else if (err.request) {
+        errorMessage = "No response from the server. Please check your internet connection.";
+      }
+  
+      Alert.alert("Check-In Failed", errorMessage);
     }
   };
+  
 
   // Reset map after check-in
   const resetMap = () => {
@@ -108,76 +132,22 @@ const CustomMap = ({ route }) => {
     setSideModalVisible(false);
   };
 
-  // Close the check-in modal and reset state
-  const closeCheckInModal = () => {
-    setSideModalVisible(false);
-    handleStopDirections(); // Stop directions and reset state
-    resetMap();
+  const handleStopDirections = () => {
+    setDirections([]);
+    setSelectedRestaurant(null);
+    stopVoiceDirections();
   };
-
-  // Handle different types of check-in errors
-  const handleCheckInError = (err) => {
-    console.error("Error during check-in:", err);
-    if (err.response?.status === 400) {
-      Alert.alert("Check-In Limit Reached", err.response.data.error);
-    } else if (err.response?.status === 404) {
-      Alert.alert("Check-In Failed", "The requested resource was not found. Please try again.");
-    } else {
-      Alert.alert("Check-In Failed", "An unexpected error occurred. Please try again later.");
-    }
-  };
-
-  // Effect to determine if the user has already checked in today
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
-    const lastCheckInDate = user?.lastCheckInDate;
-    const checkInCount = user?.checkInCount || 0;
-
-    setHasCheckedInToday(lastCheckInDate === today && checkInCount >= 2);
-  }, [user]);
-
-  // Fetch restaurants and nearby places when user location updates
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchData = async () => {
-      if (userLocation && userLocation.latitude) {
-        setLoading(true);
-        try {
-          const restaurantsRes = await axios.get(`${API_BASE_URL}/restaurants`);
-          if (isMounted) {
-            setRestaurants(restaurantsRes.data);
-            fetchNearByPlaces();
-          }
-        } catch (err) {
-          Alert.alert("Error", "Failed to load restaurants. Please check your connection and try again.");
-        } finally {
-          if (isMounted) setLoading(false);
-        }
-      }
-    };
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userLocation]);
 
   useEffect(() => {
     if (selectedRestaurant?.latitude && selectedRestaurant?.longitude) {
       setSideModalVisible(true);
-    } else if (selectedRestaurant !== null) {
-      console.warn("Selected restaurant coordinates are invalid:", selectedRestaurant);
     }
   }, [selectedRestaurant]);
 
-
-  // Function to handle restaurant selection
   const selectRestaurant = (restaurant) => {
-
-    if(!restaurant) {
-      console.error(`Restaurant object not found`, restaurant)
-      return
+    if (!restaurant) {
+      console.error("Restaurant object not found:", restaurant);
+      return;
     }
 
     const selected = {
@@ -187,19 +157,19 @@ const CustomMap = ({ route }) => {
     };
 
     if (isNaN(selected.latitude) || isNaN(selected.longitude)) {
-      console.error('Selected rest. has invalid coords', selected);
+      console.error("Selected restaurant has invalid coordinates:", selected);
       return;
     }
+
     setSelectedRestaurant(selected);
     setSideModalVisible(true);
   };
 
-  const handleStopDirections = () => {
-    setDirections([]);
-    setSelectedRestaurant(null);
-    stopVoiceDirections(); // Stop voice and reset isVoiceEnabled to false
-};
-  
+  const getCheckInButtonText = () => {
+    if (!isNearRestaurant) return "Too Far to Check In";
+    if ((checkInsToday[selectedRestaurant?.id] || 0) >= 2) return "Limit Reached";
+    return "Check In";
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -214,34 +184,31 @@ const CustomMap = ({ route }) => {
       </View>
 
       <MapComponent
-        route={route}
-        searchQuery={searchQuery}
-        setSideModalVisible={setSideModalVisible}
-        selectRestaurant={selectRestaurant}
-        isVoiceEnabled={isVoiceEnabled}
-        setIsVoiceEnabled={setIsVoiceEnabled} // Pass control to MapComponent
-      />
+  route={route}
+  searchQuery={searchQuery}
+  setSideModalVisible={setSideModalVisible}
+  selectRestaurant={selectRestaurant}
+  restaurants={filteredRestaurants.length > 0 ? filteredRestaurants : restaurants}
+/>
 
-      {selectedRestaurant && Object.keys(selectedRestaurant).length > 0 && directions.length > 0 && (
+      {selectedRestaurant && directions.length > 0 && (
         <Animated.View style={styles.checkInButtonContainer}>
           <TouchableOpacity
             style={[
               styles.checkInButton,
-              isNearRestaurant && !hasCheckedInToday ? styles.highlightedButton : styles.disabledButton,
+              isNearRestaurant && (checkInsToday[selectedRestaurant.id] || 0) < 2
+                ? styles.highlightedButton
+                : styles.disabledButton,
             ]}
-            disabled={!isNearRestaurant || hasCheckedInToday}
+            disabled={!isNearRestaurant || (checkInsToday[selectedRestaurant.id] || 0) >= 2}
             onPress={handleCheckIn}
           >
-            <Text style={styles.checkInButtonText}>
-              {hasCheckedInToday ? 'Daily Limit Reached' : 'Check In'}
-            </Text>
+            <Text style={styles.checkInButtonText}>{getCheckInButtonText()}</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
 
-      {sideModalVisible && (
-        <MapSide setSideModalVisible={setSideModalVisible} />
-      )}
+      {sideModalVisible && <MapSide setSideModalVisible={setSideModalVisible} />}
 
       {filteredRestaurants.length > 0 && (
         <View style={styles.popup}>
@@ -273,10 +240,7 @@ const CustomMap = ({ route }) => {
 
       {directions.length > 0 && (
         <View style={styles.stopButtonContainer}>
-          <TouchableOpacity
-            style={styles.stopButton}
-            onPress={handleStopDirections}
-          >
+          <TouchableOpacity style={styles.stopButton} onPress={handleStopDirections}>
             <Text style={styles.stopButtonText}>Stop Directions</Text>
           </TouchableOpacity>
         </View>
@@ -349,10 +313,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   highlightedButton: {
-    backgroundColor: "#0BCF07",
+    backgroundColor: "#0BCF07", // Green color when eligible to check in
   },
   disabledButton: {
-    backgroundColor: "#A9A9A9",
+    backgroundColor: "#A9A9A9", // Grey color when not eligible
   },
   checkInButtonText: {
     color: "#fff",

@@ -1,28 +1,45 @@
-// RewardCard.js
-
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import React, { useContext } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useContext, useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import AppLoading from 'expo-app-loading';
 import { AuthContext } from '../../Context/AuthContext';
 
-const RewardCard = ({ reward, openRewardModal }) => {
+const RewardCard = ({ reward, openRewardModal, inSavedRewards }) => {
     const { userPoints, isNearRestaurant } = useContext(AuthContext);
-    const isRedeemable = userPoints >= reward.points_required && isNearRestaurant;
+
+   // Check if user has enough points or if points are not required
+const hasEnoughPoints = reward.points_required === 0 || userPoints >= reward.points_required;
+
+// Check if reward can be redeemed based on location or saved status
+const locationOrSavedRequirement = inSavedRewards || isNearRestaurant;
+
+// Final redeemable check
+const isRedeemable = hasEnoughPoints && locationOrSavedRequirement;
 
     const [fontsLoaded] = useFonts({
         Itim: require('../../assets/fonts/Itim-Regular.ttf'),
         'Open-Sans': require('../../assets/fonts/OpenSans-Regular.ttf'),
     });
 
+    useEffect(() => {
+        // Debug logs to check the values
+        console.log("User Points:", userPoints);
+        console.log("Points Required:", reward.points_required);
+        console.log("Is Near Restaurant:", isNearRestaurant);
+        console.log("In Saved Rewards:", inSavedRewards);
+        console.log("Is Redeemable:", isRedeemable);
+    }, [userPoints, reward.points_required, isNearRestaurant, inSavedRewards, isRedeemable]);
+
     if (!fontsLoaded) {
-        return <AppLoading />;
+        return <ActivityIndicator size="small" color="#0000ff" />;
     }
 
     return (
         <View style={styles.container}>
             <TouchableOpacity
-                style={[styles.rewardButton, isRedeemable ? styles.redeemable : styles.locked]}
+                style={[
+                    styles.rewardButton,
+                    isRedeemable ? styles.redeemable : styles.locked,
+                ]}
                 disabled={!isRedeemable}
                 onPress={openRewardModal}
             >
@@ -30,7 +47,7 @@ const RewardCard = ({ reward, openRewardModal }) => {
                 <Text style={styles.rewardDescription}>
                     Expires: {reward.expiration_date ? new Date(reward.expiration_date).toLocaleDateString() : 'N/A'}
                 </Text>
-                <Text style={styles.points}>Points Required: {reward.points_required || 'N/A'}</Text>
+                <Text style={styles.points}>Points Required: {reward.points_required !== undefined ? reward.points_required : 'N/A'}</Text>
             </TouchableOpacity>
         </View>
     );
