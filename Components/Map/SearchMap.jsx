@@ -1,25 +1,12 @@
-import React, { useCallback, useEffect } from 'react';
+// SearchMap.js
+
+import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
-import { debounce } from 'lodash';
 
 const SearchMap = ({ setSearchQuery, searchQuery }) => {
-  // Debounced function to handle search input changes
-  const debouncedSearchChange = useCallback(
-    debounce((text) => setSearchQuery(text), 300),
-    [setSearchQuery]
-  );
-
-  // Ensure that debounced function is called on input change
   const handleSearchChange = (text) => {
-    debouncedSearchChange(text);
+    setSearchQuery(text); // Remove debounce for testing
   };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      debouncedSearchChange.cancel();
-    };
-  }, [debouncedSearchChange]);
 
   return (
     <View style={styles.container}>
@@ -46,7 +33,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
-    marginTop: -50
+    zIndex: 3, // Ensure high z-index
   },
   input: {
     height: 45,

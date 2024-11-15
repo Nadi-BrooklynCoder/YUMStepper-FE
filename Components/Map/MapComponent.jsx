@@ -1,29 +1,33 @@
-import React, { useContext, useRef, useEffect, useState } from "react";
+import React, { useContext, useRef, useEffect, useState, useCallback } from "react";
 import { StyleSheet, Animated, Image, View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { AuthContext } from "../../Context/AuthContext";
 import ForwardedMapView from './ForwardedMapView';
 import RestaurantMarker from "./RestaurantMarker";
 import { Marker, PROVIDER_GOOGLE, Polyline, AnimatedRegion } from 'react-native-maps';
-import * as Speech from 'expo-speech';
+// import * as Speech from 'expo-speech';
 import { getDistance } from 'geolib';
+import { debounce } from 'lodash';
 
 const yumLogo = require("../../assets/yummm.png");
 const foodIcon = require("../../assets/food-icon.png");
+const locationIcon = require("../../assets/location-icon.png");
 
-const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
+const MapComponent = ({ setSideModalVisible, selectRestaurant, restaurants = [] }) => {
     const { 
+        user,
         userLocation, 
         directions, 
         nearbyPlaces, 
-        selectedRestaurant, 
-        restaurants, 
+        selectedRestaurant,  
         heading, 
         directionsText,
         isVoiceEnabled,
         setIsVoiceEnabled,
         stopVoiceDirections,
         syncStepsToBackend,
-        userSteps
+        userSteps,
+        calculateTotalPoints,
+        filteredRestaurants
     } = useContext(AuthContext);
 
     const [directionsActive, setDirectionsActive] = useState(false);
@@ -32,8 +36,9 @@ const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
     const [isTextLarge, setIsTextLarge] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [steps, setSteps] = useState([]);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isLoadingLocation, setIsLoadingLocation] = useState(true);
     const mapViewRef = useRef(null);
-    const syncTimeoutRef = useRef(null);
     const animatedRegion = useRef(
         new AnimatedRegion({
             latitude: userLocation?.latitude || 40.743175215962026,
@@ -43,94 +48,135 @@ const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
         })
     ).current;
 
-    if (!userLocation.latitude || !userLocation.longitude) {
-        return <Text>Loading location...</Text>; // Placeholder until userLocation is set
-    }
+    const restaurantList = typeof filteredRestaurants !== 'undefined' && filteredRestaurants.length > 0 
+    ? filteredRestaurants 
+    : restaurants;
+
+    const pointsEarned = Number(user.points_earned) || 0;
 
     useEffect(() => {
-        if (syncTimeoutRef.current) {
-            clearTimeout(syncTimeoutRef.current);
-        }
-
-        syncTimeoutRef.current = setTimeout(() => {
-            if (userSteps?.step_count > 0 && userSteps?.points_earned >= 0) {
-                syncStepsToBackend(userSteps.step_count, userSteps.points_earned);
-                console.log("Syncing steps on location change")
-            } else {
-                console.warn("User steps data is incomplete or missing, sync skipped")
-            }
-        }, 5000)
-
-        return () => clearTimeout(syncTimeoutRef.current)
-    }, [userLocation, userSteps])
-    
-
-    useEffect(() => {
-        if (userLocation && mapViewRef.current) {
-            mapViewRef.current.animateToRegion(
-                {
-                    latitude: userLocation.latitude,
-                    longitude: userLocation.longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                },
-                500
-            );
-
-            animatedRegion
-                .timing({
-                    latitude: userLocation.latitude,
-                    longitude: userLocation.longitude,
-                    duration: 500,
-                    useNativeDriver: false,
-                })
-                .start();
+        if (userLocation?.latitude && userLocation?.longitude) {
+            setIsLoadingLocation(false);
+        } else {
+            setIsLoadingLocation(true);
         }
     }, [userLocation]);
 
-    useEffect(() => {
-        setDirectionsActive(selectedRestaurant?.id && selectedRestaurant?.latitude && selectedRestaurant?.longitude && Array.isArray(directions) && directions.length > 0);
-        if (directionsText) {
-            setSteps(directionsText.split("\n")); // Split directions text into steps
-        }
-    }, [selectedRestaurant, directions, directionsText]);
+    const debouncedSyncSteps = useCallback(
+        debounce(() => {
+            if (userSteps?.step_count > 0 && userSteps?.points_earned >= 0) {
+                setIsSyncing(true);
+                syncStepsToBackend(userSteps.step_count, userSteps.points_earned)
+                    .then(() => setIsSyncing(false))
+                    .catch((err) => {
+                        console.error("Error syncing steps:", err);
+                        setIsSyncing(false);
+                    });
+                console.log("Syncing steps on location change");
+            } else {
+                console.warn("User steps data is incomplete or missing, sync skipped");
+            }
+        }, 5000),
+        [userSteps]
+    );
 
-    useEffect(() => {
-        if (isVoiceEnabled && directionsActive && steps.length > 0) {
-            speakCurrentStep(); // Start speaking the first step
-        }
-    }, [steps, isVoiceEnabled, directionsActive]);
-
-    const speakCurrentStep = () => {
-        if (currentStepIndex < steps.length) {
-            const currentStep = steps[currentStepIndex];
-            Speech.speak(currentStep, {
-                rate: 0.9,
-                pitch: 1.0,
-                onError: (error) => console.error('Speech Error: ', error),
-            });
+    const centerMapOnUserLocation = () => {
+        if (mapViewRef.current && userLocation) {
+            mapViewRef.current.animateToRegion({
+                latitude: userLocation.latitude,
+                longitude: userLocation.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            }, 500);
         }
     };
 
     useEffect(() => {
-        if (userLocation && directions.length > 0 && currentStepIndex < directions.length) {
-            const currentStepCoords = directions[currentStepIndex];
-            const distanceToStepEnd = getDistance(
-                { latitude: userLocation.latitude, longitude: userLocation.longitude },
-                { latitude: currentStepCoords.latitude, longitude: currentStepCoords.longitude }
+        if (userLocation?.latitude !== undefined && userLocation?.longitude !== undefined && mapViewRef.current) {
+            const distanceMoved = getDistance(
+                { latitude: animatedRegion.latitude._value, longitude: animatedRegion.longitude._value },
+                { latitude: userLocation.latitude, longitude: userLocation.longitude }
             );
 
-            if (distanceToStepEnd < 20) {
-                setCurrentStepIndex((prevIndex) => prevIndex + 1);
+            if (distanceMoved > 50) { // Only update if moved more than 50 meters
+                mapViewRef.current.animateToRegion(
+                    {
+                        latitude: userLocation.latitude,
+                        longitude: userLocation.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                    },
+                    500
+                );
+
+                animatedRegion
+                    .timing({
+                        latitude: userLocation.latitude,
+                        longitude: userLocation.longitude,
+                        duration: 500,
+                        useNativeDriver: false,
+                    })
+                    .start();
+
+                debouncedSyncSteps(); // Trigger debounced sync when the user location updates
+            }
+        }
+    }, [userLocation]);
+
+    useEffect(() => {
+        setDirectionsActive(
+            selectedRestaurant?.id &&
+            selectedRestaurant?.latitude &&
+            selectedRestaurant?.longitude &&
+            Array.isArray(directions) &&
+            directions.length > 0
+        );
+        if (directionsText) {
+            setSteps(directionsText.split("\n").filter(Boolean)); // Split directions text into steps and filter out empty strings
+        }
+    }, [selectedRestaurant, directions, directionsText]);
+
+    // useEffect(() => {
+    //     if (isVoiceEnabled && directionsActive && steps.length > 0) {
+    //         speakCurrentStep(); // Start speaking the first step
+    //     }
+    // }, [steps, isVoiceEnabled, directionsActive]);
+
+    // const speakCurrentStep = () => {
+    //     if (steps.length > 0 && steps[currentStepIndex]) {
+    //         const currentStep = steps[currentStepIndex];
+    //         if (currentStep) {
+    //             Speech.stop(); // Stop any ongoing speech before starting a new one
+    //             Speech.speak(currentStep.toString(), {
+    //                 rate: 0.9,
+    //                 pitch: 1.0,
+    //                 onError: (error) => console.error('Speech Error: ', error),
+    //             });
+    //         }
+    //     }
+    // };
+
+    useEffect(() => {
+        if (userLocation && directions?.length > 0 && currentStepIndex < directions.length) {
+            const currentStepCoords = directions[currentStepIndex];
+            if (currentStepCoords) {
+                const distanceToStepEnd = getDistance(
+                    { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                    { latitude: currentStepCoords.latitude, longitude: currentStepCoords.longitude }
+                );
+
+                if (distanceToStepEnd < 20) {
+                    setCurrentStepIndex((prevIndex) => prevIndex + 1);
+                }
             }
         }
     }, [userLocation, currentStepIndex, directions]);
 
-    useEffect(() => {
-        if (currentStepIndex < steps.length) {
-            speakCurrentStep();
-        }
-    }, [currentStepIndex]);
+    // useEffect(() => {
+    //     if (currentStepIndex < steps.length) {
+    //         speakCurrentStep();
+    //     }
+    // }, [currentStepIndex]);
 
     useEffect(() => {
         const animatePulse = () => {
@@ -156,20 +202,25 @@ const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
     }, []);
 
     const handleRegionChange = (region) => {
-        const zoomLevel = region.longitudeDelta;
-        const newSize = 50 / zoomLevel;
-        setMarkerSize(Math.max(30, Math.min(newSize, 100)));
+        if (region?.longitudeDelta) {
+            const zoomLevel = region.longitudeDelta;
+            const newSize = 50 / zoomLevel;
+            setMarkerSize(Math.max(30, Math.min(newSize, 100)));
+        }
     };
 
-    const toggleVoice = () => {
-        setIsVoiceEnabled((prev) => {
-            if (prev) {
-                stopVoiceDirections();
-            } else {
-                speakCurrentStep();
-            }
-            return !prev;
-        });
+    const enableVoice = () => {
+        if (!isVoiceEnabled) {
+            speakCurrentStep();
+            setIsVoiceEnabled(true);
+        }
+    };
+
+    const disableVoice = () => {
+        if (isVoiceEnabled) {
+            stopVoiceDirections();
+            setIsVoiceEnabled(false);
+        }
     };
 
     return (
@@ -197,7 +248,7 @@ const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
                                     height: markerSize,
                                     transform: [
                                         { scale: pulseAnimation },
-                                        { rotate: `${heading}deg` },
+                                        { rotate: `${heading || 0}deg` },
                                     ],
                                 },
                             ]}
@@ -208,24 +259,20 @@ const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
 
                 {!directionsActive && (
                     <>
-                        {nearbyPlaces?.map((restaurant, index) => (
-                            <RestaurantMarker
-                                restaurant={restaurant}
-                                key={`nearby-${index}`}
-                                userLocation={userLocation}
-                                setSideModalVisible={setSideModalVisible}
-                                selectRestaurant={selectRestaurant}
-                            />
-                        ))}
-                        {restaurants?.map((restaurant, idx) => (
-                            <RestaurantMarker
-                                restaurant={restaurant}
-                                key={`restaurant-${idx}`}
-                                setSideModalVisible={setSideModalVisible}
-                                selectRestaurant={selectRestaurant}
-                                userLocation={userLocation}
-                            />
-                        ))}
+                        {(filteredRestaurants?.length > 0 ? filteredRestaurants : restaurants).map((restaurant, idx) => {
+                                console.log("Restaurant ID:", restaurant.id, "Cuisine:", restaurant.cuisine_type, "Total Points:", restaurant.totalPoints);
+
+
+                            return (
+                                <RestaurantMarker
+                                    key={`restaurant-${idx}`}
+                                    restaurant={restaurant} // Pass the restaurant object directly with its updated totalPoints
+                                    setSideModalVisible={setSideModalVisible}
+                                    selectRestaurant={selectRestaurant}
+                                    zoomLevel={markerSize}
+                                />
+                            );
+                        })}
                     </>
                 )}
 
@@ -272,7 +319,7 @@ const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
                 <View style={styles.accessibilityControls}>
                     <TouchableOpacity 
                         style={styles.accessibilityButton} 
-                        onPress={toggleVoice}
+                        onPress={isVoiceEnabled ? disableVoice : enableVoice}
                     >
                         <Text style={styles.accessibilityButtonText}>
                             {isVoiceEnabled ? "Disable Voice" : "Enable Voice"}
@@ -288,6 +335,9 @@ const MapComponent = ({ setSideModalVisible, selectRestaurant }) => {
                     </TouchableOpacity>
                 </View>
             )}
+              <TouchableOpacity style={styles.locationButton} onPress={centerMapOnUserLocation}>
+                <Image source={locationIcon} style={styles.locationIcon} />
+            </TouchableOpacity>
         </View>
     );
 };
@@ -357,6 +407,23 @@ const styles = StyleSheet.create({
     accessibilityButtonText: {
         color: '#fff',
         fontSize: 14,
+    },
+    locationButton: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        backgroundColor: '#ffffff',
+        padding: 10,
+        borderRadius: 25,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 2 },
+    },
+    locationIcon: {
+        width: 30,
+        height: 30,
     },
 });
 

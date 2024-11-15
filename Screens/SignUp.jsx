@@ -1,5 +1,3 @@
-// SignUpForm.js
-
 import React, { useContext, useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert, Text, ActivityIndicator } from 'react-native';
 import { Formik } from 'formik';
@@ -10,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../Context/AuthContext';
 
 const SignUpForm = () => {
-    const { login } = useContext(AuthContext); 
+    const { login } = useContext(AuthContext); // Added login
     const navigation = useNavigation(); 
     const [isLoading, setIsLoading] = useState(false);
 
@@ -29,11 +27,17 @@ const SignUpForm = () => {
             const response = await axios.post(`${API_BASE_URL}/users`, values);
             console.log('Backend Response:', response.data);
             
-            const { token, newUser } = response.data;
-    
-            if (newUser && newUser.id && token) {
-                await login(token, newUser.id, navigation);
+            // Extract 'user' instead of 'newUser'
+            const { token, user } = response.data;
+
+            if (user && user.id && token) {
+                await login(token, user.id, navigation);
                 Alert.alert('Success', 'User registered successfully!');
+
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Map' }], // Set "Map" as the initial screen
+                });
             } else {
                 throw new Error("User registration failed");
             }
@@ -56,12 +60,6 @@ const SignUpForm = () => {
         }
     };
 
-    navigation.reset({
-        index: 0,
-        routes: [{ name: 'Map' }], // Set "Map" as the initial screen
-    })
-    
-    
     return (
         <View style={styles.container}>
             <Formik
@@ -104,7 +102,7 @@ const SignUpForm = () => {
                         />
                         {touched.password && errors.password && (
                             <Text style={styles.error}>{errors.password}</Text>
-                        )}
+                        )} 
 
                         {isLoading ? (
                             <ActivityIndicator size="large" color="#007BFF" />

@@ -1,11 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Modal, Alert } from 'react-native';
 import RewardItem from '../Components/Rewards/RewardItem';
 import RewardDetails from '../Components/Rewards/RewardDetails';
 import { AuthContext } from '../Context/AuthContext';
 
 const Rewards = () => {
-    const { userRewards, resetMapState } = useContext(AuthContext);
+    const { userRewards, resetMapState, redeemReward, deleteReward } = useContext(AuthContext);
     const [selectedReward, setSelectedReward] = useState(null);
     const [isRewardDetailsVisible, setRewardDetailsVisible] = useState(false);
 
@@ -13,7 +13,7 @@ const Rewards = () => {
     const groupedRewards = userRewards.reduce((acc, reward) => {
         const { restaurant_name: restaurantName } = reward;
         if (!acc[restaurantName]) {
-            acc[restaurantName] = [];  // Initialize array for each restaurant
+            acc[restaurantName] = [];
         }
         acc[restaurantName].push(reward);
         return acc;
@@ -27,16 +27,32 @@ const Rewards = () => {
     const closeRewardDetails = () => {
         setSelectedReward(null);
         setRewardDetailsVisible(false);
-        resetMapState(); // Ensure map state is reset after closing reward details
+        resetMapState();
     };
 
-    useEffect(() => {
-        if (selectedReward) {
-            console.log("Selected reward in component updated:", selectedReward);
-            // Execute any dependent logic here
-        }
-    }, [selectedReward]);
-    
+    // Handle Reward Redemption
+    const handleRedeemReward = (reward) => {
+        Alert.alert(
+            "Redeem Reward",
+            "Are you sure you want to redeem this reward?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Redeem", onPress: () => redeemReward(reward.id) },
+            ]
+        );
+    };
+
+    // Handle Reward Deletion
+    const handleDeleteReward = (rewardId) => {
+        Alert.alert(
+            "Delete Reward",
+            "Are you sure you want to delete this reward?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete", onPress: () => deleteReward(rewardId) },
+            ]
+        );
+    };
 
     return (
         <View style={styles.container}>
@@ -49,8 +65,9 @@ const Rewards = () => {
                             <RewardItem
                                 key={reward.id}
                                 reward={reward}
-                                inSavedRewards={true}
-                                openRewardDetails={openRewardDetails}
+                                showSaveButton={false}
+                                handleRedeem={handleRedeemReward}
+                                handleDelete={handleDeleteReward}
                             />
                         ))}
                     </View>

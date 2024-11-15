@@ -1,87 +1,142 @@
-import React, { useContext, useRef, useCallback } from 'react';
-import { View, Text, Animated, StyleSheet, Dimensions, PanResponder, Pressable } from 'react-native';
+import React, { useContext, useRef, useCallback, useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    Animated,
+    StyleSheet,
+    Dimensions,
+    PanResponder,
+    TouchableOpacity,
+    Pressable,
+    ActivityIndicator,
+    Alert,
+} from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons'; // Updated to FontAwesome5 for proper icon support
 import StepsContainer from '../Components/Profile/StepsContainer';
 import PointsContainer from '../Components/Profile/PointsContainer';
 import CheckinContainer from '../Components/Profile/CheckinContainer';
+import StepsHistory from '../Components/Profile/StepsHistory';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../Context/AuthContext';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const ProfileSlider = () => {
-    const { userToken, userId, logout, user } = useContext(AuthContext);
-    const [index, setIndex] = React.useState(0);
+    const {
+        logout,
+        user,
+        userToken,
+        isLoading,
+        refreshTrigger,
+        setRefreshTrigger,
+        userId,
+        fetchCheckInHistory,
+    } = useContext(AuthContext);
+    const [index, setIndex] = useState(0);
     const slideAnim = useRef(new Animated.Value(0)).current;
     const navigation = useNavigation();
 
+    // Total number of slides
+    const TOTAL_SCREENS = 2;
+
+    // Trigger fetchCheckInHistory when userId or refreshTrigger changes
+    useEffect(() => {
+        if (userId && userToken) {
+            console.log("Fetching updated check-in history...");
+            fetchCheckInHistory();
+        }
+    }, [userId, userToken, fetchCheckInHistory]);
+
+    // PanResponder for swipe handling
     const panResponder = useRef(
         PanResponder.create({
             onMoveShouldSetPanResponder: (evt, gestureState) =>
-                Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+                Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10,
             onPanResponderMove: (evt, gestureState) => {
-                if (gestureState.dx < 0 && index < 1) {
-                    slideAnim.setValue(gestureState.dx);
-                } else if (gestureState.dx > 0 && index > 0) {
-                    slideAnim.setValue(-width + gestureState.dx);
-                }
+                let newValue = -index * width + gestureState.dx;
+                newValue = Math.max(-(TOTAL_SCREENS - 1) * width, Math.min(0, newValue));
+                slideAnim.setValue(newValue);
             },
             onPanResponderRelease: (evt, gestureState) => {
                 const threshold = width / 4;
-                if (gestureState.dx < -threshold && index < 1) {
-                    handleSlide(1);
+                let newIndex = index;
+                if (gestureState.dx < -threshold && index < TOTAL_SCREENS - 1) {
+                    newIndex = index + 1;
                 } else if (gestureState.dx > threshold && index > 0) {
-                    handleSlide(0);
-                } else {
-                    handleSlide(index);
+                    newIndex = index - 1;
                 }
+                handleSlide(newIndex);
             },
         })
     ).current;
 
-    const handleSlide = (newIndex) => {
+    // Function to handle slide transition
+    const handleSlide = useCallback((newIndex) => {
         setIndex(newIndex);
         Animated.spring(slideAnim, {
             toValue: -newIndex * width,
             useNativeDriver: true,
         }).start();
-    };
+    }, [slideAnim]);
 
-    const renderContent = () => {
-        return (
-            <Animated.View
-                style={[
-                    styles.slidingContainer,
-                    {
-                        transform: [{ translateX: slideAnim }],
-                    },
-                ]}
-            >
-                <View style={styles.screen}>
-                    <StepsContainer />
-                </View>
-                <View style={styles.screen}>
-                    <PointsContainer key={`points-${user.points_earned}`} />
-                </View>
-            </Animated.View>
+    // Handle Logout with Confirmation
+    const handleLogout = useCallback(() => {
+        Alert.alert(
+            "Confirm Logout",
+            "Are you sure you want to logout?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Logout",
+                    style: "destructive",
+                    onPress: async () => {
+                        await logout(navigation);
+                        setIndex(0);
+                    }
+                },
+            ],
+            { cancelable: true }
         );
-    };
-
-    const handleLogout = useCallback(async () => {
-        await logout(navigation);
     }, [logout, navigation]);
+
+    // Redirect to Login if userToken is missing
+    useEffect(() => {
+        if (!userToken) {
+            navigation.navigate('Login');
+        }
+    }, [userToken, navigation]);
+
+    // Show loading indicator while data is being fetched
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#A41623" />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.mainContainer} {...panResponder.panHandlers}>
             {/* Logout Button */}
-            <Pressable onPress={handleLogout} style={styles.logoutButton}>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
                 <Text style={styles.logoutText}>Logout</Text>
-            </Pressable>
+            </TouchableOpacity>
 
+            {/* Beginner YumStepper Level (top-left corner) */}
+            {/* Beginner YumStepper Level */}
+<View style={styles.levelContainer}>
+    <FontAwesome5 name="utensils" size={20} color="#F85E00" /> 
+    <Text style={styles.levelText}>YUMStepper Explorer</Text>
+</View>
+
+
+            {/* User Information */}
             <View style={styles.userInfoContainer}>
-                <Text style={styles.userInfoText}>Profile of: {user?.username}</Text>
-                <Text style={styles.userInfoText}>Email: {user?.email}</Text>
+                <Text style={styles.userInfoText}>Profile of: {user?.username ?? 'N/A'}</Text>
+                <Text style={styles.userInfoText}>Email: {user?.email ?? 'N/A'}</Text>
             </View>
 
+            {/* Slider Indicator */}
             <View style={styles.sliderContainer}>
                 <Animated.View
                     style={[
@@ -90,7 +145,7 @@ const ProfileSlider = () => {
                             transform: [
                                 {
                                     translateX: slideAnim.interpolate({
-                                        inputRange: [-width, 0],
+                                        inputRange: [-(TOTAL_SCREENS - 1) * width, 0],
                                         outputRange: [width * 0.4, 0],
                                     }),
                                 },
@@ -100,15 +155,32 @@ const ProfileSlider = () => {
                 />
             </View>
 
-            <View style={styles.contentContainer}>{renderContent()}</View>
+            {/* Sliding Content */}
+            <View style={styles.contentContainer}>
+                <Animated.View
+                    style={[
+                        styles.slidingContainer,
+                        {
+                            transform: [{ translateX: slideAnim }],
+                        },
+                    ]}
+                >
+                    {/* First Slide: Points and Check-ins */}
+                    <View style={styles.screen}>
+                        <PointsContainer key={`points-${user?.points_earned}`} refreshTrigger={refreshTrigger} />
+                        <CheckinContainer refreshTrigger={refreshTrigger} />
+                    </View>
 
-            <CheckinContainer />
+                    {/* Second Slide: Steps and Steps History */}
+                    <View style={styles.screen}>
+                        <StepsContainer />
+                        <StepsHistory />
+                    </View>
+                </Animated.View>
+            </View>
 
-            {/* Go to Map Button */}
-            <Pressable
-                onPress={() => navigation.navigate('Map', { userId, token: userToken })}
-                style={styles.mapButton}
-            >
+            {/* Navigate to Map Button */}
+            <Pressable onPress={() => navigation.navigate('Map')} style={styles.mapButton}>
                 <Text style={styles.mapButtonText}>🚶‍♂️ Go to Map</Text>
             </Pressable>
         </View>
@@ -118,13 +190,47 @@ const ProfileSlider = () => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        paddingVertical: 20,
         backgroundColor: '#FFEEDD',
         width,
-        height,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFEEDD',
+    },
+    logoutButton: {
+        position: 'absolute',
+        top: 40,
+        right: 20,
+        backgroundColor: '#A41623',
+        padding: 10,
+        borderRadius: 5,
+        zIndex: 3,
+    },
+    logoutText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    levelContainer: {
+        position: 'absolute',
+        top: 40,
+        left: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF5E1',
+        padding: 5,
+        borderRadius: 5,
+        zIndex: 3,
+    },
+    levelText: {
+        marginLeft: 5,
+        fontSize: 16,
+        color: '#003087',
+        fontWeight: 'bold',
     },
     userInfoContainer: {
-        marginTop: 30,
+        marginTop: 110,
         marginBottom: 10,
         alignItems: 'flex-start',
         paddingHorizontal: 20,
@@ -134,7 +240,6 @@ const styles = StyleSheet.create({
         marginBottom: 5,
         color: '#A41623',
         fontFamily: 'Itim',
-        textAlign: 'center',
     },
     sliderContainer: {
         marginTop: 20,
@@ -153,82 +258,32 @@ const styles = StyleSheet.create({
         borderRadius: 3,
     },
     contentContainer: {
-        width,
-        height: height * 0.6, // Adjusted height for larger containers
-        overflow: 'hidden',
-        paddingVertical: 20,
+        flex: 1,
+        marginTop: 20,
     },
     slidingContainer: {
         flexDirection: 'row',
         width: width * 2,
+        flex: 1,
     },
     screen: {
-        width,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: width,
+        flex: 1,
     },
     mapButton: {
-        backgroundColor: '#FFB563',
-        padding: 20,
-        borderRadius: 15,
-        alignItems: 'center',
-        marginTop: 30,
-        width: width * 0.7,
-        alignSelf: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 5,
         position: 'absolute',
-        bottom: 30,
+        bottom: 20,
+        right: 20,
+        backgroundColor: '#A41623',
+        padding: 15,
+        borderRadius: 50,
+        zIndex: 3,
     },
     mapButtonText: {
-        color: '#000000',
+        color: '#fff',
+        fontSize: 16,
         fontWeight: 'bold',
-        fontSize: 18,
-    },
-    logoutButton: {
-        position: 'absolute',
-        top: 40,
-        right: 20,
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 5,
-        backgroundColor: '#FFFFFF', // Solid background color
-        zIndex: 10,
-    },
-    logoutText: {
-        color: '#A41623',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    authContainer: {
-        padding: 20,
-        backgroundColor: 'antiquewhite',
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    authText: {
-        fontSize: 18,
-        color: '#333',
-        textAlign: 'center',
-    },
-    loadingContainer: {
-        padding: 20,
-        backgroundColor: 'antiquewhite',
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        fontSize: 18,
-        color: '#333',
     },
 });
 
 export default ProfileSlider;
-
-
-   

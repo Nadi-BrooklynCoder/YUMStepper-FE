@@ -1,46 +1,99 @@
-// PointsCard.js
-
-import { View, Text, StyleSheet } from 'react-native';
 import React from 'react';
-import PropTypes from 'prop-types'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import PropTypes from 'prop-types';
+import { FontAwesome } from '@expo/vector-icons';
+import { AnimatedCircularProgress } from 'react-native-circular-progress';
 
-const PointsCard = ({ point }) => {
-  const pointCount = point?.points_earned ?? 0; // Ensure 'point_count' is correct
+const MAX_POINTS = 600;
 
-  console.log("PointsCard point prop:", point);
+const PointsCard = React.memo(({ points, onPress }) => {
+  const clampedPoints = Math.min(points, MAX_POINTS);
+  const progressPercentage = (clampedPoints / MAX_POINTS) * 100;
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.valueText}>
-        Points: {pointCount}
-      </Text>
-    </View>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      accessible={true}
+      accessibilityLabel={`You have earned ${clampedPoints} points out of ${MAX_POINTS}`}
+    >
+      <View style={styles.iconContainer}>
+        <FontAwesome name="star" size={24} color="#F85E00" />
+      </View>
+      <View style={styles.contentContainer}>
+        <Text style={styles.title}>Your Points</Text>
+        <AnimatedCircularProgress
+          size={120}
+          width={12}
+          fill={progressPercentage}
+          tintColor="#A41623"
+          backgroundColor="#E0E0E0"
+          lineCap="round"
+          rotation={0}
+          duration={1000}
+          easing="easeInOut"
+        >
+          {() => (
+            <Text style={styles.pointsText}>
+              {points} Points
+            </Text>
+          )}
+        </AnimatedCircularProgress>
+        <Text style={styles.progressText}>
+          {clampedPoints} / {MAX_POINTS} Points
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
-};
+});
 
 PointsCard.propTypes = {
-  point: PropTypes.shape({
-    points_earned: PropTypes.number, 
-  }).isRequired,
-}
+  points: PropTypes.number.isRequired,
+  onPress: PropTypes.func,
+};
 
+PointsCard.defaultProps = {
+  onPress: () => {},
+};
 
 const styles = StyleSheet.create({
   card: {
-    padding: 15,
-    marginVertical: 8,
-    backgroundColor: '#f7f7f7', // Slightly brighter background
-    borderRadius: 8,
-    shadowColor: '#000', // Optional: Add some shadow for a card-like effect
-    shadowOffset: { width: 0, height: 2 },
+    flexDirection: 'row',
+    padding: 16,
+    marginVertical: 10,
+    backgroundColor: '#FFF5E1',
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3, // For Android shadow
+    elevation: 5,
+    borderColor: '#A41623',
+    borderWidth: 1,
   },
-  valueText: {
+  iconContainer: {
+    marginRight: 15,
+  },
+  contentContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  title: {
+    fontSize: 22,
+    fontFamily: 'Itim', // Assuming a custom font like Itim
+    color: '#A41623',
+    marginBottom: 8,
+  },
+  pointsText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937', // Darker color for better contrast
+    color: '#F85E00',
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#198754',
+    marginTop: 8,
   },
 });
 

@@ -1,8 +1,9 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import axios from "axios";
 import { AuthContext } from '../../Context/AuthContext';
 import { API_BASE_URL } from "@env";
 import RestaurantMarker from "./RestaurantMarker";
+import { getCuisineIcon, icons } from "./CuisineIcon"; // Import icons map
 
 // Helper function to get values safely
 const getValue = (value, fallback = "N/A") =>
@@ -10,66 +11,84 @@ const getValue = (value, fallback = "N/A") =>
 
 const RestaurantDetails = ({ restaurant, userLocation, setSideModalVisible }) => {
   const { setSelectedRestaurant } = useContext(AuthContext);
+  const [selectedRestaurant, setSelectedRestaurantState] = useState(null);
 
-  // Ensure the restaurant object is valid before using it
   if (!restaurant || !restaurant.latitude || !restaurant.longitude) {
     console.error("Restaurant object or its coordinates are undefined:", restaurant);
-    return null; // Return null to avoid rendering if the data is missing
+    return null;
   }
 
   const onMarkerPress = async () => {
-    console.log(`[RestaurantMarker:onMarkerPress] Marker pressed:`, restaurant);
-
-    if (!restaurant || !restaurant.latitude || !restaurant.longitude) {
-      console.error(`Restaurant object or its coordinates are undefined:`, restaurant);
-      return;
-    }
-
+    console.log(`[RestaurantMarker:onMarkerPress] Marker pressed for restaurant:`, restaurant);
+  
     try {
       const response = await axios.get(`${API_BASE_URL}/restaurants/details/${restaurant.id}`);
       const details = response.data.data || response.data;
-
-      // Prepare selected restaurant data
+      console.log("Fetched Restaurant Details Object:", details); // Log entire details object
+  
+      // Initialize cuisineType as 'default'
+      let cuisineType = "default";
+  
+      // Check if categories are present and log categories array
+      if (details.categories && Array.isArray(details.categories)) {
+        console.log("Categories available:", details.categories); // Log entire categories array
+  
+        for (const category of details.categories) {
+          console.log("Checking category:", category); // Log full category object
+  
+          const icon = getCuisineIcon(category.title || category.alias || ""); // Use alias as fallback
+          if (icon !== icons["default"]) {
+            cuisineType = category.title || category.alias;
+            console.log(`Matched cuisine type: ${cuisineType} with icon`, icon);
+            break; // Exit loop once we find a match
+          }
+        }
+      } else {
+        console.warn("No categories found or categories data is not an array.");
+      }
+  
+      console.log("Final Cuisine Type after looping:", cuisineType);
+  
       const selected = {
         id: getValue(details?.id),
         name: getValue(details?.name),
         latitude: details?.latitude || restaurant.latitude,
         longitude: details?.longitude || restaurant.longitude,
         address: getValue(details?.formatted_address, getValue(details?.address)),
-        cuisine_type: details?.categories && details.categories.length > 0
-          ? details.categories.map(category => category.title).join(', ')
-          : getValue(details?.cuisine_type?.trim(), 'Not specified'),
+        cuisine_type: cuisineType,
         rating: getValue(details?.rating, 'N/A'),
         menu_url: getValue(details?.website, getValue(details?.menu_url, 'Not available')),
         opening_hours: details?.opening_hours?.length > 0 ? details.opening_hours : [{ open: 'Unknown', close: 'Unknown' }],
         open_now: details?.open_now ? 'Yes' : 'No',
       };
-
-      console.log("Selected Restaurant:", selected);
-
-      // Check if the selected restaurant has valid coordinates
+  
+      console.log("Final Selected Restaurant Data:", selected);
+  
       if (!selected.latitude || !selected.longitude) {
         console.error("Selected restaurant location is not available:", selected);
         return;
       }
-
+  
+      setSelectedRestaurantState(selected);
       setSelectedRestaurant(selected);
       setSideModalVisible(true);
-
-      console.log(`[RestaurantMarker:onMarkerPress] Navigating to RestaurantDetails screen with ID: ${selected.id}`);
     } catch (error) {
       console.error(`[RestaurantMarker:onMarkerPress] Error fetching restaurant details:`, error.response?.data || error.message);
     }
   };
+  
+  
 
   return (
-    <RestaurantMarker
-      restaurant={restaurant}
-      userLocation={userLocation}
-      setSideModalVisible={setSideModalVisible}
-      selectRestaurant={setSelectedRestaurant} 
-      onMarkerPress={onMarkerPress}
-    />
+    selectedRestaurant && (
+      <RestaurantMarker
+        restaurant={selectedRestaurant}
+        userLocation={userLocation}
+        setSideModalVisible={setSideModalVisible}
+        selectRestaurant={setSelectedRestaurant}
+        onMarkerPress={onMarkerPress}
+      />
+    )
   );
 };
 

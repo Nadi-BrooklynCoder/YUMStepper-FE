@@ -8,6 +8,7 @@ import {
     Image, 
     Alert 
 } from 'react-native';
+import PropTypes from 'prop-types';
 import { AuthContext } from '../../Context/AuthContext';
 
 const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
@@ -20,35 +21,42 @@ const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
         setSelectedReward, 
         setQrCodeUrl,
         setShowMessage,
-        resetModalStates,
     } = useContext(AuthContext);
 
+    // Determine if the user has enough points to redeem the selected reward
     const hasEnoughPoints = selectedReward 
-        ? (user.points_earned >= (selectedReward.points_required || 0))
+        ? (Number(user.points_earned) >= (Number(selectedReward.points_required) || 0))
         : false;
 
-        const closeRewardModal = () => {
-            resetModalStates(); 
-            setModalVisible(false);
-    
-        };
-        
+    // Function to close the modal and reset relevant states
+    const closeRewardModal = () => {
+        setSelectedReward(null);
+        setQrCodeUrl(null);
+        setShowMessage("");
+        setModalVisible(false);
+    };
 
+    // Log selectedReward for debugging purposes
     useEffect(() => {
         if (selectedReward && selectedReward.id) {
-            console.log("Confirmed selectedReward in RewardItem:", selectedReward);
+            console.log("Confirmed selectedReward in RewardSideModal:", selectedReward);
         }
     }, [selectedReward]);
 
+    // Log qrCodeUrl for debugging purposes
     useEffect(() => {
-        console.log("QR Code URL updated in RewardSideModal:", qrCodeUrl);
+        if (qrCodeUrl) {
+            console.log("QR Code URL updated in RewardSideModal:", qrCodeUrl);
+        }
     }, [qrCodeUrl]);
 
+    // Handle redemption when a reward is selected
     useEffect(() => {
-        if (selectedReward?.id) {
+        if (selectedReward?.id && hasEnoughPoints) {
             handleRedemption();
         }
-    }, [selectedReward, handleRedemption]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedReward, hasEnoughPoints]);
 
     return (
         <Modal 
@@ -56,36 +64,51 @@ const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
             transparent={true} 
             visible={selectedReward !== null}
             onRequestClose={closeRewardModal}
+            accessible={true}
+            accessibilityViewIsModal={true}
         >
             <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
                     {selectedReward ? (
                         <>
+                            {/* Reward Details */}
                             <Text style={styles.rewardDetail}>
                                 {selectedReward.details || 'Reward Details'}
                             </Text>
+
+                            {/* Expiration Date */}
                             <Text style={styles.expiration}>
                                 Expires on: {selectedReward.expiration_date 
                                     ? new Date(selectedReward.expiration_date).toLocaleDateString() 
                                     : 'N/A'}
                             </Text>
 
-                            {/* Redeem Now Button - Styled Based on User's Points */}
+                            {/* Redeem Button */}
                             <TouchableOpacity 
                                 style={[
                                     styles.useButton, 
                                     hasEnoughPoints ? styles.redeemable : styles.locked
                                 ]}
-                                onPress={handleRedemption}
+                                onPress={() => {
+                                    if (hasEnoughPoints) {
+                                        handleRedemption();
+                                    } else {
+                                        Alert.alert(
+                                            "Insufficient Points",
+                                            "You do not have enough points to redeem this reward.",
+                                        );
+                                    }
+                                }}
                                 disabled={!hasEnoughPoints}
                                 accessibilityLabel="Redeem Now"
+                                accessibilityState={{ disabled: !hasEnoughPoints }}
                             >
                                 <Text style={styles.useButtonText}>
-                                    Redeem Now
+                                    {hasEnoughPoints ? "Redeem Now" : "Not Enough Points"}
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Delete Reward Button */}
+                            {/* Delete Button */}
                             <TouchableOpacity
                                 style={styles.deleteButton}
                                 onPress={() => {
@@ -94,11 +117,15 @@ const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
                                         "Are you sure you want to delete this reward?",
                                         [
                                             { text: "Cancel", style: "cancel" },
-                                            { text: "Delete", onPress: () => {
-                                                handleDeleteReward(selectedReward.id);
-                                                setSelectedReward(null);
-                                                setModalVisible(false);
-                                            }, style: "destructive" },
+                                            { 
+                                                text: "Delete", 
+                                                onPress: () => {
+                                                    handleDeleteReward(selectedReward.id);
+                                                    setSelectedReward(null);
+                                                    setModalVisible(false);
+                                                }, 
+                                                style: "destructive" 
+                                            },
                                         ],
                                         { cancelable: true }
                                     );
@@ -114,6 +141,7 @@ const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
                         <Text style={styles.noRewardText}>No reward selected</Text>
                     )}
 
+                    {/* Feedback Message */}
                     {showMessage !== '' && (
                         <Text 
                             style={[
@@ -126,6 +154,7 @@ const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
                         </Text>
                     )}
 
+                    {/* Close Button */}
                     <TouchableOpacity 
                         style={styles.closeButton} 
                         onPress={closeRewardModal}
@@ -134,16 +163,32 @@ const RewardSideModal = ({ setModalVisible, handleDeleteReward }) => {
                         <Text style={styles.closeButtonText}>Close</Text>
                     </TouchableOpacity>
 
+                    {/* QR Code Display */}
                     {qrCodeUrl && (
                         <View style={styles.qrCodeContainer}>
                             <Text style={styles.qrCodeText}>Scan this QR Code:</Text>
-                            <Image source={{ uri: qrCodeUrl }} style={styles.qrCode} />
+                            <Image 
+                                source={{ uri: qrCodeUrl }} 
+                                style={styles.qrCode} 
+                                accessibilityLabel="QR Code for Reward Redemption"
+                            />
                         </View>
                     )}
                 </View>
             </View>
         </Modal>
     );
+};
+
+// Define PropTypes for type-checking and better maintainability
+RewardSideModal.propTypes = {
+    setModalVisible: PropTypes.func.isRequired,
+    handleDeleteReward: PropTypes.func.isRequired,
+};
+
+// Define defaultProps if necessary (optional)
+RewardSideModal.defaultProps = {
+    // setModalVisible and handleDeleteReward are required, so no defaults are set
 };
 
 const styles = StyleSheet.create({
@@ -158,7 +203,12 @@ const styles = StyleSheet.create({
         padding: 20, 
         backgroundColor: '#fff', 
         borderRadius: 10, 
-        alignItems: 'center' 
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
     },
     rewardDetail: { 
         fontSize: 20, 
@@ -253,4 +303,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default RewardSideModal;
+export default React.memo(RewardSideModal);

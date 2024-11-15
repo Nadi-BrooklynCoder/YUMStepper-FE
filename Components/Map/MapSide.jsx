@@ -22,15 +22,15 @@ const { width: screenWidth } = Dimensions.get('window');
 const MapSide = ({ setSideModalVisible }) => {
     const { 
         selectedRestaurant,
-        selectedReward, 
+        selectedReward,
         selectReward,
-        userLocation, // Ensure `userLocation` is available in AuthContext
+        userLocation, 
         getDirectionsFromGoogleMaps
     } = useContext(AuthContext);
 
     const [restaurantDetails, setRestaurantDetails] = useState({});
     const [showRewards, setShowRewards] = useState(false);
-    const [approxSteps, setApproxSteps] = useState(null); // Define approxSteps as state
+    const [approxSteps, setApproxSteps] = useState(null);
     const slideAnim = useRef(new Animated.Value(screenWidth)).current;
 
     const closeModal = () => {
@@ -43,36 +43,14 @@ const MapSide = ({ setSideModalVisible }) => {
         });
     };
 
-    const getNewDirections = async () => {
-        try {
-            await getDirectionsFromGoogleMaps();
-            Alert.alert(`Start walking to ${selectedRestaurant?.name} and check in to boost your points!`);
-        } catch (error) {
-            console.error("Error initiating directions:", error);
-            Alert.alert("Error", "Unable to start directions. Please try again.");
-        } finally {
-            closeModal();
-        }
-    };
-
-    const calculateApproxSteps = () => {
-        if (userLocation && selectedRestaurant?.latitude && selectedRestaurant?.longitude) {
-            const distance = getDistance(
-                { latitude: userLocation.latitude, longitude: userLocation.longitude },
-                { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
-            );
-            const stepLength = 0.7; // Average step length in meters
-            const steps = Math.round(distance / stepLength);
-            setApproxSteps(steps); // Set the calculated steps
-        }
-    };
-
     useEffect(() => {
+        let cancelFetch = false;
+
         const fetchRestaurantDetails = async () => {
             if (selectedRestaurant?.id && selectedRestaurant.id !== 'N/A') {
                 try {
                     const response = await axios.get(`${API_BASE_URL}/restaurants/details/${selectedRestaurant.id}`);
-                    if (response.data && response.data.data) {
+                    if (!cancelFetch && response.data && response.data.data) {
                         const details = response.data.data;
                         setRestaurantDetails({
                             id: details.id,
@@ -88,9 +66,6 @@ const MapSide = ({ setSideModalVisible }) => {
                             cuisine_type: details.cuisine_type || 'Not specified',
                             menu_url: details.menu_url || 'Not available',
                         });
-                        calculateApproxSteps(); // Calculate steps after fetching details
-                    } else {
-                        console.error("[MapSide:fetchRestaurantDetails] Unexpected response structure:", response.data);
                     }
                 } catch (error) {
                     console.error("[MapSide:fetchRestaurantDetails] Error fetching restaurant details:", error);
@@ -106,11 +81,39 @@ const MapSide = ({ setSideModalVisible }) => {
             }).start();
             fetchRestaurantDetails();
         }
+
+        return () => {
+            cancelFetch = true; // Cancel ongoing requests
+        };
     }, [selectedRestaurant]);
 
     useEffect(() => {
         calculateApproxSteps(); // Recalculate steps if user location or restaurant changes
     }, [userLocation, selectedRestaurant]);
+
+    const calculateApproxSteps = () => {
+        if (userLocation && selectedRestaurant?.latitude && selectedRestaurant?.longitude) {
+            const distance = getDistance(
+                { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
+            );
+            const stepLength = 0.7; // Average step length in meters
+            const steps = Math.round(distance / stepLength);
+            setApproxSteps(steps); // Set the calculated steps
+        }
+    };
+
+    const initiateDirections = async () => {
+        try {
+            await getDirectionsFromGoogleMaps();
+            Alert.alert(`Start walking to ${selectedRestaurant?.name} and check in to boost your points!`);
+        } catch (error) {
+            console.error("Error initiating directions:", error);
+            Alert.alert("Error", "Unable to start directions. Please try again.");
+        } finally {
+            closeModal();
+        }
+    };
 
     return (
         <Animated.View style={[styles.sideModal, { transform: [{ translateX: slideAnim }] }]}>
@@ -177,7 +180,7 @@ const MapSide = ({ setSideModalVisible }) => {
                     <Text style={styles.value}>{approxSteps !== null ? approxSteps : 'N/A'}</Text>
                 </View>
 
-                <TouchableOpacity onPress={getNewDirections} style={styles.getDirectionsButton}>
+                <TouchableOpacity onPress={initiateDirections} style={styles.getDirectionsButton}>
                     <Text style={styles.getDirectionsButtonText}>Go to this Restaurant</Text>
                 </TouchableOpacity>
 
@@ -295,3 +298,4 @@ const styles = StyleSheet.create({
 });
 
 export default MapSide;
+

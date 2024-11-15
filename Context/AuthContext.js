@@ -1,13 +1,13 @@
 // AuthProvider.js
 
 import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
-import { Platform, Alert } from 'react-native';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 import { debounce } from 'lodash';
 import { getDistance } from 'geolib';
 import { API_BASE_URL } from '@env';
-import * as Speech from 'expo-speech';
+// import * as Speech from 'expo-speech';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 
@@ -17,19 +17,19 @@ import BackgroundFetch from 'react-native-background-fetch';
 
 // **Centralized Constants for Distance Thresholds and Multipliers**
 const CHECK_IN_THRESHOLDS = [
-    { distance: 6436, points: 50 },   // >6.4 km
-    { distance: 3218, points: 35 },   // >3.218 km
-    { distance: 1609, points: 25 },   // >1.6 km
-    { distance: 805, points: 15 },    // >0.805 km
-    { distance: 0, points: 10 },      // ≤805 m
+    { distance: 6436, points: 50 },
+    { distance: 3218, points: 35 },
+    { distance: 1609, points: 25 },
+    { distance: 805, points: 15 },
+    { distance: 0, points: 10 },
 ];
 
 const MULTIPLIER_THRESHOLDS = [
-    { distance: 4827, multiplierPoints: 20 },  // >4.827 km
-    { distance: 3218, multiplierPoints: 15 },  // >3.218 km
-    { distance: 1609, multiplierPoints: 10 },  // >1.6 km
-    { distance: 805, multiplierPoints: 5 },    // >0.805 km
-    { distance: 0, multiplierPoints: 0 },      // ≤805 m
+    { distance: 4827, multiplier: 3.0 },
+    { distance: 3218, multiplier: 2.5 },
+    { distance: 1609, multiplier: 2.0 },
+    { distance: 805, multiplier: 1.5 },
+    { distance: 0, multiplier: 1.0 },
 ];
 
 // **Create Auth Context**
@@ -41,153 +41,171 @@ export const AuthProvider = ({ children }) => {
     const [userToken, setUserToken] = useState(null);
     const [checkInsToday, setCheckInsToday] = useState({});
     const [userId, setUserId] = useState(null);
-    const [user, setUser] = useState({
-        points_earned: 0, // Initialize points_earned
-    });
-    const [userLocation, setUserLocation] = useState({
-        latitude: 40.73061,  // Default coordinates (e.g., NYC)
-        longitude: -73.935242
-    });
+    const [user, setUser] = useState({ points_earned: 0 });
+    const [userLocation, setUserLocation] = useState({ latitude: 40.743175215962026, longitude: -73.94192180308748 });
+    const [stepsHistory, setStepsHistory] = useState([]);
     const [directions, setDirections] = useState([]);
     const [userSteps, setUserSteps] = useState({ step_count: 0, date: '' });
+    const [filteredRestaurants, setFilteredRestaurants] = useState([]);
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
     const [nearbyPlaces, setNearbyPlaces] = useState([]);
     const [isNearRestaurant, setIsNearRestaurant] = useState(false);
     const [selectedReward, setSelectedReward] = useState(null);
     const [lastNotifiedStepCount, setLastNotifiedStepCount] = useState(0);
-    const [heading, setHeading] = useState(0); 
+    const [heading, setHeading] = useState(0);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [directionsText, setDirectionsText] = useState("");
     const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
     const [userRewards, setUserRewards] = useState([]);
     const [restaurants, setRestaurants] = useState([]);
-    
-    // **State Variables for Points Breakdown**
+    const [currentCheckInPoints, setCurrentCheckInPoints] = useState(0);
+    const [lastSyncedStepCount, setLastSyncedStepCount] = useState(0);
     const [checkInPoints, setCheckInPoints] = useState(0);
     const [multiplierPoints, setMultiplierPoints] = useState(0);
-
-    // **State Variables for Redemption**
+    const [totalPoints, setTotalPoints] = useState(0);
     const [qrCodeUrl, setQrCodeUrl] = useState(null);
     const [showMessage, setShowMessage] = useState("");
+    const hasFetchedUser = useRef(false);
+    const stepCountIntervalId = useRef(null);
+    const locationSubscription = useRef(null);
 
-    const hasFetchedUser = useRef(false); // To prevent multiple fetches
-
-    // **Utility Function for Error Handling**
     const handleApiError = (error, customMessage) => {
         const errorMessage = error.response?.data || error.message || "An error occurred";
         console.error(`${customMessage}. Details: ${JSON.stringify(errorMessage)}`);
     };
 
-    // **Fetch User Data**
+    const login = useCallback(async (token, userIdParam, navigation) => {
+        if (!userIdParam || !token) {
+            console.error("Invalid userId or token during login");
+            return;
+        }
+    
+        try {
+            await AsyncStorage.setItem('userToken', token);
+            await AsyncStorage.setItem('userId', userIdParam.toString());
+    
+            setUserToken(token);
+            setUserId(userIdParam);
+    
+            // Fetch user data, points, and step history
+            await fetchUserData(userIdParam, token);
+            await fetchUserPoints(token, userIdParam);
+            await fetchStepHistory(token, userIdParam);
+    
+            if (navigation) {
+                navigation.reset({ index: 0, routes: [{ name: 'Map' }] });
+            }
+        } catch (e) {
+            console.error('Error during login:', e);
+        }
+    }, [fetchUserData, fetchUserPoints, fetchStepHistory]);
+    
+    const checkLoginStatus = useCallback(async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const storedUserId = await AsyncStorage.getItem('userId');
+    
+            if (token && storedUserId) {
+                const userIdInt = parseInt(storedUserId, 10);
+                setUserToken(token);
+                setUserId(userIdInt);
+    
+                // Fetch user points and data without recalculating them
+                await fetchUserPoints(token, userIdInt);
+                await fetchUserData(userIdInt, token);
+            } else {
+                console.warn("Token or userId not found in AsyncStorage");
+            }
+        } catch (e) {
+            console.error('Failed to fetch the token or userId from storage', e);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [fetchUserPoints, fetchUserData]);
+    
+
+    const fetchUserRewards = useCallback(async (currentToken = userToken, currentUserId = userId) => {
+        if (!currentUserId || !currentToken) {
+            console.warn("Cannot fetch user rewards: userToken or userId is missing");
+            return;
+        }
+
+        try {
+            const response = await axios.get(`${API_BASE_URL}/users/${currentUserId}/rewards`, {
+                headers: { Authorization: `Bearer ${currentToken}` },
+            });
+            setUserRewards(response.data.rewards);
+        } catch (error) {
+            console.error("Error fetching user rewards:", error);
+        }
+    }, [userToken, userId]);
+
     const fetchUserData = useCallback(async (currentUserId, currentUserToken) => {
         if (!currentUserId || !currentUserToken) {
             console.error("Invalid userId or userToken. Cannot fetch user.");
             return;
         }
         try {
-            console.log('Fetching user with ID:', currentUserId);
             const response = await axios.get(`${API_BASE_URL}/users/${currentUserId}`, {
-                headers: {
-                    Authorization: `Bearer ${currentUserToken}`,
-                },
+                headers: { Authorization: `Bearer ${currentUserToken}` },
             });
-            setUser(prevUser => ({
-                ...response.data,
-                points_earned: response.data.points_earned || 0, // Ensure points_earned is present
-            }));
-            setCheckInPoints(response.data.check_in_points || 0);
-            setMultiplierPoints(response.data.multiplier_points || 0); // Corrected field name
-            console.log('User data fetched successfully:', response.data);
-            hasFetchedUser.current = true;
+            
+            if (response.data && response.data.id === currentUserId) {
+                setUser(prevUser => ({ ...response.data, points_earned: response.data.points_earned || 0 }));
+                setCheckInPoints(response.data.check_in_points || 0);
+                setMultiplierPoints(response.data.multiplier_points || 0);
+                hasFetchedUser.current = true;
+            } else {
+                console.error("User ID in token does not match fetched data. Logging out for safety.");
+                await logoutUser();
+            }
         } catch (err) {
             handleApiError(err, "Error fetching user data");
         }
-    }, []);
+    }, [logoutUser]);
 
-    // **Effect: Fetch User Data When userId and userToken Change**
     useEffect(() => {
         if (userId && userToken && !hasFetchedUser.current) {
             fetchUserData(userId, userToken);
         }
     }, [userId, userToken, fetchUserData]);
 
-    // **Effect: Reset fetch status if userId or userToken Changes**
+    useEffect(() => {
+        if (userId && userToken && userSteps.step_count > 0) {
+            syncStepsToBackend(userSteps.step_count, userSteps.points_earned, userSteps.step_count);
+        }
+    }, [userId, userToken, userSteps.step_count, userSteps.points_earned, syncStepsToBackend]);
+
     useEffect(() => {
         if (!userId || !userToken) {
             hasFetchedUser.current = false;
         }
     }, [userId, userToken]);
 
-    // **Login Function**
-    const login = useCallback(async (token, userIdParam, navigation) => {
-        if (!userIdParam || !token) {
-            console.error("Invalid userId or token during login");
-            return;
-        }
-
-        try {
-            console.log("Logging in user:", userIdParam);
-            await AsyncStorage.setItem('userToken', token);
-            await AsyncStorage.setItem('userId', userIdParam.toString());
-            setUserToken(token);
-            setUserId(userIdParam);
-
-            // Fetch user data immediately after login
-            await fetchUserData(userIdParam, token);
-
-            if (navigation) {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Profile' }],
-                });
-            }
-        } catch (e) {
-            console.error('Error during login:', e);
-        }
-    }, [fetchUserData]);
-
-    // **Check Login Status**
-    const checkLoginStatus = useCallback(async () => {
-        try {
-            let token, storedUserId;
-            if (Platform.OS !== 'web') {
-                token = await AsyncStorage.getItem('userToken');
-                storedUserId = await AsyncStorage.getItem('userId');
-            } else {
-                token = localStorage.getItem('userToken');
-                storedUserId = localStorage.getItem('userId');
-            }
-            if (token && storedUserId) {
-                setUserToken(token);
-                setUserId(parseInt(storedUserId));
-            }
-        } catch (e) {
-            console.error('Failed to fetch the token or userId from storage');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    // **Effect: On Mount**
     useEffect(() => {
         const initialize = async () => {
             await checkLoginStatus();
             await fetchInitialLocation();
-            await fetchNearByPlaces(); // Initial fetch without debounce
-            // Removed fetchUserData from here to rely on the separate useEffect
+            await fetchNearByPlaces();
         };
         initialize();
     }, [checkLoginStatus, fetchInitialLocation, fetchNearByPlaces]);
 
-    // **Fetch Initial Location**
+    useEffect(() => {
+        if (userId && userToken) {
+            processUnprocessedCheckins();
+            fetchCheckInHistory();
+            fetchUserPoints(); // Refresh points after processing
+        }
+    }, [userId, userToken, processUnprocessedCheckins, fetchCheckInHistory, fetchUserPoints]);
+
     const fetchInitialLocation = useCallback(async () => {
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
-
             if (status === "granted") {
                 const location = await Location.getCurrentPositionAsync({});
                 const { latitude, longitude } = location.coords;
                 setUserLocation({ latitude, longitude });
-                console.log("Initial location fetched: ", { latitude, longitude });
             } else {
                 Alert.alert("Permission Denied", "Location permission is required to use this feature.");
             }
@@ -196,48 +214,93 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // **Fetch Nearby Places with Debouncing to Minimize API Calls**
     const fetchNearByPlaces = useCallback(async () => {
-        if (!userLocation?.latitude || !userLocation?.longitude) {
-            console.warn("User location is undefined, skipping fetch");
-            return;
-        }
-
+        if (!userLocation.latitude || !userLocation.longitude) return;
+    
         try {
-            const res = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`, {
+            const response = await axios.get(`${API_BASE_URL}/googlePlaces/nearby`, {
                 params: {
                     latitude: userLocation.latitude,
                     longitude: userLocation.longitude,
-                    radius: 1500, // Example radius in meters
+                    radius: 1500,
                     type: 'restaurant',
                 },
             });
-            if (res.data && res.data.length > 0) {
-                setNearbyPlaces(res.data);
-                console.log("Nearby Places fetched:", res.data);
-            } else {
-                console.log("No restaurants found.");
-            }
-        } catch (err) {
-            handleApiError(err, "Error fetching restaurants");
+    
+            const restaurantsWithPoints = response.data.map((restaurant) => {
+                const distance = getDistance(
+                    { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                    { latitude: restaurant.latitude, longitude: restaurant.longitude }
+                );
+    
+                const baseCheckInPoints = assignPointsBasedOnDistance(distance);
+                const bonusMultiplierPoints = calculateBonusMultiplierPoints(distance, baseCheckInPoints);
+                const totalPoints = baseCheckInPoints + bonusMultiplierPoints;
+    
+                const latitude = parseFloat(restaurant.latitude);
+                const longitude = parseFloat(restaurant.longitude);
+    
+                if (isNaN(latitude) || isNaN(longitude)) {
+                    console.warn("Invalid latitude or longitude for restaurant:", restaurant.name);
+                    return null;
+                }
+    
+                return {
+                    ...restaurant,
+                    latitude,
+                    longitude,
+                    baseCheckInPoints,
+                    bonusMultiplierPoints,
+                    totalPoints,
+                    distance,
+                };
+            }).filter(Boolean);
+    
+            console.log("Processed restaurant data:", restaurantsWithPoints);
+    
+            setRestaurants(restaurantsWithPoints);
+            setNearbyPlaces(restaurantsWithPoints);
+        } catch (error) {
+            console.error("Failed to fetch nearby places:", error);
         }
     }, [userLocation]);
 
+    const assignPointsBasedOnDistance = (distanceMeters) => {
+        for (let threshold of CHECK_IN_THRESHOLDS) {
+            if (distanceMeters > threshold.distance) {
+                return threshold.points;
+            }
+        }
+        return 0;
+    };
+    
+    const calculateBonusMultiplierPoints = (distanceMeters, basePoints) => {
+        let multiplier = 1.0;
+    
+        for (let threshold of MULTIPLIER_THRESHOLDS) {
+            if (distanceMeters > threshold.distance) {
+                multiplier = threshold.multiplier;
+                break;
+            }
+        }
+    
+        const bonusPoints = Math.floor(basePoints * (multiplier - 1));
+        console.log(`Calculated bonus points: ${bonusPoints} with multiplier ${multiplier} for distance: ${distanceMeters}`);
+        return bonusPoints;
+    };
+
     const debouncedFetchNearByPlaces = useCallback(debounce(fetchNearByPlaces, 10000), [fetchNearByPlaces]);
 
-    // **Effect: Fetch Nearby Places When User Location Changes**
     useEffect(() => {
         if (userLocation.latitude && userLocation.longitude) {
             debouncedFetchNearByPlaces();
         }
 
         return () => {
-            debouncedFetchNearByPlaces.cancel(); // Cleanup debounced function
+            debouncedFetchNearByPlaces.cancel();
         };
     }, [userLocation, debouncedFetchNearByPlaces]);
-    
 
-    // **Get Directions from Google Maps with Improved Error Handling**
     const getDirectionsFromGoogleMaps = useCallback(async () => {
         if (!userLocation.latitude || !userLocation.longitude) {
             console.error("User location is not available");
@@ -263,14 +326,12 @@ export const AuthProvider = ({ children }) => {
             console.log("Directions API full response:", response.data);
 
             if (response.data?.overview_polyline && response.data?.steps) {
-                // Set the directions for the polyline
                 setDirections(response.data.overview_polyline);
 
-                // Construct directions text
-                const directionsText = response.data.steps.map(step => 
+                const directionsText = response.data.steps.map(step =>
                     `${step.instructions.replace(/<[^>]*>?/gm, '')} (${step.distance})`
                 ).join('\n');
-                
+
                 setDirectionsText(directionsText);
                 console.log("Directions and text updated successfully.");
                 console.log("Directions Text updated:", directionsText);
@@ -284,17 +345,47 @@ export const AuthProvider = ({ children }) => {
         }
     }, [userLocation, selectedRestaurant]);
 
-    // **Handle Reward Redemption**
+    const resetModalStates = useCallback(() => {
+        setSelectedReward(null);
+        setQrCodeUrl(null);
+        setShowMessage("");
+    }, []);
+
+
+    const processUnprocessedCheckins = useCallback(async () => {
+        if (!userId || !userToken) {
+            console.warn("Cannot process unprocessed check-ins: userToken or userId is missing");
+            return;
+        }
+    
+        try {
+            console.log("Processing unprocessed check-ins for user:", userId);
+            const response = await axios.post(`${API_BASE_URL}/users/${userId}/checkins/process`, {}, {
+                headers: { Authorization: `Bearer ${userToken}` },
+            });
+    
+            console.log("Unprocessed check-ins processed successfully:", response.data);
+    
+            // Optionally update check-in history or user points after processing
+            await fetchCheckInHistory();
+            await fetchUserPoints();
+        } catch (error) {
+            console.error("Error processing unprocessed check-ins:", error);
+        }
+    }, [userId, userToken, fetchCheckInHistory, fetchUserPoints]);
+    
+
+
     const handleRedemption = useCallback(async () => {
-        if (!selectedReward || !selectedReward.id || !userId) {
-            console.warn("Selected reward or userId is missing");
+        if (!selectedReward || !selectedReward.id || !userId || !userToken) {
+            console.warn("Selected reward, userId, or userToken is missing");
             setShowMessage("Invalid reward selection.");
             return;
         }
         console.log("Attempting to redeem reward with ID:", selectedReward.id);
         try {
             const response = await axios.put(
-                `${API_BASE_URL}/users/${userId}/rewards/${selectedReward.id}/redeem`,
+                `${API_BASE_URL}/users/${userId}/userRewards/${selectedReward.id}/redeem`,
                 {},
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
@@ -304,55 +395,108 @@ export const AuthProvider = ({ children }) => {
             } else {
                 setShowMessage("Redemption successful but no QR code generated.");
             }
-
-            // After redemption, refresh user points
+    
             await fetchUserPoints();
         } catch (err) {
             handleApiError(err, "Error redeeming reward");
             setShowMessage("Error redeeming reward. Please try again.");
         }
     }, [selectedReward, userId, userToken, fetchUserPoints]);
+    
 
-    // **Watch User Location**
+    const fetchCheckInHistory = useCallback(async () => {
+        if (!userId || !userToken) return;
+        
+        try {
+            const response = await axios.get(`${API_BASE_URL}/users/${userId}/checkins/history`, {
+                headers: { Authorization: `Bearer ${userToken}` },
+            });
+            
+            const checkInsData = response.data.map(checkIn => ({
+                ...checkIn,
+                isProcessed: checkIn.processed
+            }));
+            
+            setCheckInsToday(checkInsData);
+            // Removed setRefreshTrigger to avoid loop
+        } catch (error) {
+            console.error("Error fetching check-in history:", error);
+        }
+    }, [userId, userToken]);
+    
+    
+    
+
     useEffect(() => {
-        let locationSubscription = null;
+        if (userId && userToken) {
+            processUnprocessedCheckins();
+        }
+    }, [userId, userToken, processUnprocessedCheckins]);
 
+  
+    const handleCheckInComplete = useCallback(() => {
+        setRefreshTrigger((prev) => {
+          console.log("Refresh Trigger incremented:", prev + 1);
+          return prev + 1;
+        });
+        // Only fetch history once
+        fetchCheckInHistory();
+      }, [fetchCheckInHistory]);
+      
+
+        
+    useEffect(() => {
+        if (userId && userToken) {
+            fetchCheckInHistory();
+        }
+    }, [userId, userToken, fetchCheckInHistory]);
+
+    const deleteReward = async (rewardId) => {
+        try {
+            console.log("Deleting reward with ID:", rewardId);
+            
+            await axios.delete(`${API_BASE_URL}/users/${userId}/rewards/${rewardId}`, {
+                headers: { Authorization: `Bearer ${userToken}` },
+            });
+
+            console.log("Reward deleted successfully");
+            
+            setUserRewards((prevRewards) => 
+                prevRewards.filter(reward => reward.id !== rewardId)
+            );
+
+        } catch (error) {
+            console.error("Error deleting reward:", error);
+        }
+    };
+
+    useEffect(() => {
         const subscribeToLocation = async () => {
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== "granted") {
-                    Alert.alert("Location Permission Denied", "Please enable location access.");
-                    return;
-                }
+                if (status !== "granted") return;
 
-                locationSubscription = await Location.watchPositionAsync(
+                locationSubscription.current = await Location.watchPositionAsync(
                     {
                         accuracy: Location.Accuracy.Balanced,
                         timeInterval: 2000,
-                        distanceInterval: 5,
+                        distanceInterval: 200,
                     },
                     (location) => {
-                        const { latitude, longitude, heading: locationHeading } = location.coords;
+                        const { latitude, longitude } = location.coords;
+                        console.log("Updated User Location:", latitude, longitude);
                         setUserLocation({ latitude, longitude });
-                        setHeading(locationHeading || 0);
                     }
                 );
             } catch (error) {
-                console.error("Error watching user location:", error);
+                console.error("Location watch error:", error);
             }
         };
 
-        subscribeToLocation();
+        if (userId && userToken) subscribeToLocation();
+        return () => locationSubscription.current?.remove();
+    }, [userId, userToken]);
 
-        // Cleanup subscription on unmount
-        return () => {
-            if (locationSubscription) {
-                locationSubscription.remove();
-            }
-        };
-    }, [userId]);
-
-    // **HealthKit Initialization and Step Tracking Functions**
     const initializeHealthKit = useCallback(() => {
         if (!userId || !userToken || !AppleHealthKit || !BackgroundFetch) {
             console.error("User details or modules are not available for initializing HealthKit.");
@@ -362,7 +506,6 @@ export const AuthProvider = ({ children }) => {
         const healthKitOptions = {
             permissions: {
                 read: [AppleHealthKit.Constants.Permissions.StepCount],
-                // Removed write permissions if not needed
             },
         };
 
@@ -372,73 +515,79 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
             console.log("HealthKit successfully connected");
-            fetchAndUpdateStepCount(); // Initial fetch
+            fetchAndUpdateStepCount();
             configureBackgroundFetch();
         });
-    }, [userId, userToken]);
+    }, [fetchAndUpdateStepCount, configureBackgroundFetch, userId, userToken]);
 
-    // **Fetch and Update Step Count**
-    const fetchAndUpdateStepCount = useCallback(() => {
-        // Ensure userId and userToken are available
-        if (!userId || !userToken) {
-            console.error("Cannot sync steps without valid user details");
+const fetchAndUpdateStepCount = useCallback(async () => {
+    if (!userId || !userToken) {
+        console.error("Cannot sync steps without valid user details");
+        return;
+    }
+
+    const today = new Date();
+    const options = {
+        startDate: new Date(today.setHours(0, 0, 0, 0)).toISOString(),
+        endDate: new Date().toISOString(),
+    };
+
+    AppleHealthKit.getDailyStepCountSamples(options, (err, results) => {
+        if (err) {
+            console.log("Error fetching step data", err);
             return;
         }
 
-        const today = new Date();
-        const options = {
-            startDate: new Date(today.setHours(0, 0, 0, 0)).toISOString(), // Start of the day
-            endDate: new Date().toISOString(), // Current time
-        };
+        console.log("HealthKit step results:", results);
 
-        AppleHealthKit.getDailyStepCountSamples(options, (err, results) => {
-            if (err) {
-                console.log("Error fetching step data", err);
-                return;
-            }
+        if (!results || results.length === 0) {
+            console.log("No step data available for today.");
+            return;
+        }
 
-            console.log("HealthKit step results:", results);
+        const stepsToday = results.reduce((total, step) => total + step.value, 0);
+        console.log(`Total steps today: ${stepsToday}`);
 
-            if (!results || results.length === 0) {
-                console.log("No step data available for today.");
-                return;
-            }
+        const newSteps = stepsToday - lastSyncedStepCount;
+        if (newSteps <= 0) {
+            console.log("No new steps to sync.");
+            return;
+        }
 
-            const stepsToday = results.reduce((total, step) => total + step.value, 0);
-            console.log(`Total steps today: ${stepsToday}`);
+        const pointsEarned = Math.floor(newSteps / 1000) * 10;
 
-            // **Updated Calculation: Points Earned Based on Steps**
-            const pointsEarned = Math.floor(stepsToday / 1000) * 10;
-
-            setUserSteps({
-                step_count: stepsToday,
-                points_earned: pointsEarned,
-                date: new Date().toLocaleDateString(),
-            });
-
-            triggerNotification(stepsToday); // Trigger notification if milestone reached
-            syncStepsToBackend(stepsToday, pointsEarned); // Sync steps to backend
+        setUserSteps({
+            step_count: stepsToday,
+            points_earned: pointsEarned,
+            date: new Date().toLocaleDateString(),
         });
-    }, [syncStepsToBackend, triggerNotification, userId, userToken]);
 
-    // **Polling Setup: Fetch Steps Every 5 Minutes**
+        triggerNotification(stepsToday);
+        syncStepsToBackend(newSteps, pointsEarned, stepsToday);
+    });
+}, [syncStepsToBackend, triggerNotification, userId, userToken, lastSyncedStepCount]);
+
     useEffect(() => {
         if (userId && userToken) {
-            // Initialize HealthKit when user is authenticated
             initializeHealthKit();
-
-            // Fetch immediately on mount
             fetchAndUpdateStepCount();
-
-            // Set up interval to fetch every 5 minutes
-            const intervalId = setInterval(fetchAndUpdateStepCount, 5 * 60 * 1000); // 5 minutes
-
-            // Clean up interval on unmount
-            return () => clearInterval(intervalId);
+            stepCountIntervalId.current = setInterval(fetchAndUpdateStepCount, 5 * 60 * 1000);
+            return () => {
+                if (stepCountIntervalId.current) {
+                    clearInterval(stepCountIntervalId.current);
+                    stepCountIntervalId.current = null;
+                    console.log("Cleared step count interval");
+                }
+            };
+        } else {
+            if (stepCountIntervalId.current) {
+                clearInterval(stepCountIntervalId.current);
+                stepCountIntervalId.current = null;
+                console.log("Cleared step count interval due to logout");
+            }
         }
     }, [fetchAndUpdateStepCount, initializeHealthKit, userId, userToken]);
 
-    // **Configure Background Fetch**
     const configureBackgroundFetch = useCallback(() => {
         if (!BackgroundFetch) {
             console.error("BackgroundFetch module is not available");
@@ -446,10 +595,10 @@ export const AuthProvider = ({ children }) => {
         }
 
         BackgroundFetch.configure(
-            { minimumFetchInterval: 15 }, // 15 minutes interval
+            { minimumFetchInterval: 15 },
             async (taskId) => {
                 console.log("Background fetch task started");
-                fetchAndUpdateStepCount(); // Fetch step count during background fetch
+                fetchAndUpdateStepCount();
                 BackgroundFetch.finish(taskId);
             },
             (err) => {
@@ -457,38 +606,105 @@ export const AuthProvider = ({ children }) => {
             }
         );
 
-        // Start Background Fetch
         BackgroundFetch.start();
     }, [fetchAndUpdateStepCount]);
 
-    // **Sync Steps to Backend with Improved Error Handling**
-    const syncStepsToBackend = useCallback(async (steps, pointsEarned) => {
+    const syncStepsToBackend = useCallback(async (steps, pointsEarned, stepsToday) => {
         if (!userId || !userToken) {
-            console.error("Cannot sync steps without valid user details");
+          console.error("Cannot sync steps without valid user details");
+          return;
+        }
+      
+        try {
+          const response = await axios.post(
+            `${API_BASE_URL}/users/${userId}/steps`,
+            { step_count: steps, points_earned: pointsEarned || 0 },
+            { headers: { Authorization: `Bearer ${userToken}` } }
+          );
+      
+          console.log("Steps synced successfully:", response.data);
+      
+          setUser((prevUser) => ({
+            ...prevUser,
+            points_earned: (prevUser.points_earned || 0) + (pointsEarned || 0),
+          }));
+        } catch (error) {
+          handleApiError(error, "Error syncing steps");
+        }
+      }, [userId, userToken]);
+      
+    
+    
+
+    const fetchStepHistory = useCallback(async (currentToken = userToken, currentUserId = userId) => {
+        if (!currentUserId || !currentToken) {
+            console.warn("Cannot fetch step history: userToken or userId is missing");
             return;
         }
-
+    
         try {
-            const response = await axios.post(
-                `${API_BASE_URL}/users/${userId}/steps`,
-                { step_count: steps, points_earned: pointsEarned },
+            console.log("Fetching step history from backend...");
+            const response = await axios.get(`${API_BASE_URL}/users/${currentUserId}/steps/history`, {
+                headers: { Authorization: `Bearer ${currentToken}` },
+            });
+    
+            const backendSteps = response.data || [];
+            console.log("Fetched backend step history:", backendSteps);
+    
+            const formattedBackendSteps = backendSteps.map(step => {
+                const parsedDate = new Date(`${step.date}T00:00:00Z`);
+                return {
+                    ...step,
+                    date: parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+                    step_count: parseInt(step.total_steps, 10),
+                    points_earned: parseInt(step.total_points, 10),
+                };
+            });
+    
+            setStepsHistory(formattedBackendSteps);
+        } catch (error) {
+            console.error("Error fetching step history:", error);
+        }
+    }, [userToken, userId]);
+
+    const redeemReward = useCallback(async (rewardId) => {
+        if (!userId || !userToken) {
+            console.warn("User ID or token is missing, cannot redeem reward.");
+            return;
+        }
+    
+        try {
+            const response = await axios.put(
+                `${API_BASE_URL}/users/${userId}/userRewards/${rewardId}/redeem`,
+                {},
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
-            console.log("Steps and points synced successfully:", response.data);
-
+    
+            if (response.data.qr_code_url) {
+                setQrCodeUrl(response.data.qr_code_url);
+                setShowMessage("QR code generated successfully!");
+            } else {
+                setShowMessage("Redemption successful but no QR code generated.");
+            }
+    
             await fetchUserPoints();
-        } catch (error) {
-            handleApiError(error, "Error syncing steps");
+            await fetchUserRewards();
+            setUserRewards((prevRewards) => 
+                prevRewards.filter(reward => reward.id !== rewardId)
+            );
+    
+        } catch (err) {
+            handleApiError(err, "Error redeeming reward");
+            setShowMessage("Error redeeming reward. Please try again.");
         }
-    }, [userId, userToken, fetchUserPoints]);
+    }, [userId, userToken, fetchUserPoints, fetchUserRewards]);
 
-    // **Trigger Notifications at Milestones**
     const triggerNotification = useCallback(async (steps) => {
         const milestones = [1000, 5000, 10000];
         const milestoneReached = milestones.find(
             milestone => steps >= milestone && lastNotifiedStepCount < milestone
         );
-
+    
         if (milestoneReached) {
             try {
                 await Notifications.scheduleNotificationAsync({
@@ -506,81 +722,128 @@ export const AuthProvider = ({ children }) => {
         }
     }, [lastNotifiedStepCount]);
 
-    // **Calculate Check-In Points Based on Distance**
-    const calculateCheckInPoints = useCallback((distance) => {
-        // Calculate checkInPoints based on distance thresholds
-        let calculatedCheckInPoints = 10; // Default points
-        for (const threshold of CHECK_IN_THRESHOLDS) {
-            if (distance > threshold.distance) {
-                calculatedCheckInPoints = threshold.points;
-                break;
+    const handleCheckIn = useCallback(async () => {
+        if (!selectedRestaurant || !userLocation || (checkInsToday[`${userId}-${selectedRestaurant.id}`] || 0) >= 2) {
+            Alert.alert("Check-In Unavailable", "You have reached your check-in limit or no restaurant is selected.");
+            return;
+        }
+    
+        const distanceToRestaurant = getDistance(
+            { latitude: userLocation.latitude, longitude: userLocation.longitude },
+            { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
+        );
+    
+        if (distanceToRestaurant > 60) { // Ensure it's within 60 meters
+            Alert.alert("Too Far to Check In", "You must be within 60 meters to check in.");
+            return;
+        }
+    
+        try {
+            const checkInData = {
+                restaurant_id: selectedRestaurant.id,
+                latitude: userLocation.latitude,
+                longitude: userLocation.longitude,
+            };
+    
+            const response = await axios.post(`${API_BASE_URL}/users/${userId}/checkins`, checkInData, {
+                headers: { Authorization: `Bearer ${userToken}` },
+            });
+    
+            console.log("Check-in API response:", response.data);
+    
+            if (response.data.canCheckIn) {
+                // Calculate total points from check-in
+                const baseCheckInPoints = assignPointsBasedOnDistance(distanceToRestaurant);
+                const bonusMultiplierPoints = calculateBonusMultiplierPoints(distanceToRestaurant, baseCheckInPoints);
+                const totalPointsEarned = baseCheckInPoints + bonusMultiplierPoints;
+    
+                // Log the points for debugging
+                console.log(`Base Check-In Points: ${baseCheckInPoints}, Multiplier Points: ${bonusMultiplierPoints}, Total Points Earned: ${totalPointsEarned}`);
+    
+                // Update the user's points
+                setUser((prevUser) => ({
+                    ...prevUser,
+                    points_earned: (prevUser.points_earned || 0) + totalPointsEarned,
+                }));
+    
+                // Trigger the pop-up to display the points earned
+                Alert.alert(
+                    "Check-In Successful",
+                    `You earned ${totalPointsEarned} points!\nCheck-in Points: ${baseCheckInPoints}\nMultiplier Points: ${bonusMultiplierPoints}`
+                );
+    
+                // Immediately fetch updated check-ins and points data
+                await fetchUserPoints(); // Update points from backend to ensure sync
+                await fetchCheckInHistory();
+                setRefreshTrigger((prev) => prev + 1); // Trigger update in CheckinContainer
+            } else {
+                console.warn("Check-in failed or already processed");
+            }
+        } catch (err) {
+            if (err.response?.status === 409) {
+                Alert.alert("Check-In Conflict", "It looks like you've already checked in here today.");
+            } else {
+                console.error("Error during check-in:", err);
+                Alert.alert("Check-In Failed", "Please try again.");
             }
         }
+    }, [selectedRestaurant, userLocation, checkInsToday, userId, userToken, fetchUserPoints, fetchCheckInHistory, assignPointsBasedOnDistance, calculateBonusMultiplierPoints]);
+    
+    
+    
+    
+    
+      
+    
+    
+    
 
-        // Calculate multiplierPoints based on distance thresholds
-        let calculatedMultiplierPoints = 0;
-        for (const threshold of MULTIPLIER_THRESHOLDS) {
-            if (distance > threshold.distance) {
-                calculatedMultiplierPoints = threshold.multiplierPoints;
-                break;
-            }
-        }
+    const calculateTotalPoints = () => checkInPoints + multiplierPoints;
 
-        const totalPoints = calculatedCheckInPoints + calculatedMultiplierPoints;
-
-        return { checkInPoints: calculatedCheckInPoints, multiplierPoints: calculatedMultiplierPoints, totalPoints };
-    }, []);
-
-    // **Stop Voice Directions**
     const stopVoiceDirections = useCallback(() => {
         console.log("Attempting to stop voice directions...");
-        Speech.stop();
         setIsVoiceEnabled(false);
     }, []);
 
-    // **Check Nearby Restaurants and Notify**
     const updateIsNearRestaurant = useCallback((restaurantLocation) => {
-        const proximityThreshold = 60; // Threshold in meters
+        const proximityThreshold = 20000;
         if (!restaurantLocation || !userLocation) return;
-      
+
         const distanceToRestaurant = getDistance(
-          { latitude: userLocation.latitude, longitude: userLocation.longitude },
-          { latitude: restaurantLocation.latitude, longitude: restaurantLocation.longitude }
+            { latitude: userLocation.latitude, longitude: userLocation.longitude },
+            { latitude: restaurantLocation.latitude, longitude: restaurantLocation.longitude }
         );
-      
+        console.log(`Distance to restaurant: ${distanceToRestaurant}`);
         setIsNearRestaurant(distanceToRestaurant <= proximityThreshold);
     }, [userLocation]);
-    
 
-    // **checkNearbyRestaurants with Proximity Check**
     const checkNearbyRestaurants = useCallback(() => {
         if (!userLocation.latitude || !userLocation.longitude || !nearbyPlaces.length) return;
-      
-        const proximityRadius = 200; // Define proximity radius in meters
+
+        const proximityRadius = 10000;
         let nearAnyRestaurant = false;
-      
+
         nearbyPlaces.forEach((restaurant) => {
-          const distance = getDistance(
-            { latitude: userLocation.latitude, longitude: userLocation.longitude },
-            { latitude: parseFloat(restaurant.latitude), longitude: parseFloat(restaurant.longitude) }
-          );
-      
-          if (distance <= proximityRadius) {
-            nearAnyRestaurant = true;
-            Notifications.scheduleNotificationAsync({
-              content: {
-                title: `You're near ${restaurant.name}`,
-                body: 'Walk there now to earn extra points!',
-              },
-              trigger: { seconds: 1 },
-            });
-          }
+            const distance = getDistance(
+                { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                { latitude: parseFloat(restaurant.latitude), longitude: parseFloat(restaurant.longitude) }
+            );
+
+            if (distance <= proximityRadius) {
+                nearAnyRestaurant = true;
+                Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: `You're near ${restaurant.name}`,
+                        body: 'Walk there now to earn extra points!',
+                    },
+                    trigger: { seconds: 1 },
+                });
+            }
         });
-      
+
         setIsNearRestaurant(nearAnyRestaurant);
     }, [userLocation, nearbyPlaces]);
 
-    // **Select Restaurant**
     const selectRestaurant = useCallback((restaurant) => {
         if (!restaurant) {
             console.error("Restaurant object not found:", restaurant);
@@ -599,35 +862,49 @@ export const AuthProvider = ({ children }) => {
         }
 
         setSelectedRestaurant(selected);
-        updateIsNearRestaurant(selected); // Set `isNearRestaurant` based on the selected restaurant's location
+        updateIsNearRestaurant(selected);
     }, [updateIsNearRestaurant]);
 
-    // **Fetch User Points**
-    const fetchUserPoints = useCallback(async () => {
-        if (!userToken || !userId) return;
-
+    const fetchUserPoints = useCallback(async (currentToken = userToken, currentUserId = userId) => {
+        if (!currentToken || !currentUserId) {
+            console.warn("Cannot fetch user points: userToken or userId is missing");
+            return;
+        }
+    
         try {
-            const response = await axios.get(`${API_BASE_URL}/users/${userId}/points`, {
-                headers: { Authorization: `Bearer ${userToken}` },
+            console.log("Fetching points for user:", currentUserId);
+            const response = await axios.get(`${API_BASE_URL}/users/${currentUserId}/points`, {
+                headers: { Authorization: `Bearer ${currentToken}` },
             });
+    
+            const fetchedPoints = Number(response.data.points) || 0; // Ensure it's a number
+            console.log("Fetched points:", fetchedPoints);
+    
             setUser(prevUser => ({
                 ...prevUser,
-                points_earned: response.data.points, 
+                points_earned: fetchedPoints,
             }));
         } catch (error) {
             console.error("Error fetching user points:", error);
         }
     }, [userToken, userId]);
+    
+    
+    
 
-    // **Update User Points Locally After Check-In**
-    const updateUserPoints = useCallback((pointsEarned) => {
+    const  updateUserPoints = useCallback((pointsEarned) => {
+        const parsedPoints = Number(pointsEarned) || 0;
+        const previousPoints = Number(user.points_earned) || 0;
+        const newPoints = previousPoints + parsedPoints;
+        console.log(`Updating points: previous=${previousPoints}, added=${parsedPoints}, new=${newPoints}`);
         setUser(prevUser => ({
             ...prevUser,
-            points_earned: prevUser.points_earned + pointsEarned,
+            points_earned: newPoints,
         }));
-    }, []);
+        fetchUserPoints();
+    }, [fetchUserPoints, user.points_earned]);
+    
 
-    // **Select Reward**
     const selectReward = useCallback((reward) => {
         if (reward === null) {
             setSelectedReward(null);
@@ -636,23 +913,26 @@ export const AuthProvider = ({ children }) => {
             setSelectedReward(reward);
             console.log("Selecting reward:", reward.id);
         } else {
-            // Only warn if an unexpected invalid reward is passed
             console.warn("Attempted to select an invalid reward:", reward);
         }
     }, []);
 
-    // **Fetch User Points on Mount and When Dependencies Change**
     useEffect(() => {
-        fetchUserPoints();
-    }, [fetchUserPoints]);
+        if (userToken && userId) {
+            console.log("Refreshing user data for user ID:", userId);
+            fetchUserPoints();
+            fetchStepHistory();
+        } else {
+            console.warn("Cannot fetch user points or step history: userToken or userId is missing");
+        }
+    }, [userToken, userId, fetchUserPoints, fetchStepHistory]);
 
-    // **Implementing a Better Random Ping Scheduler**
     const scheduleRandomPings = useCallback(() => {
-        const intervals = [0, 3, 6, 9, 12].map(hours => hours * 60 * 60); // 0, 3, 6, 9, 12 hours in seconds
+        const intervals = [0, 3, 6, 9, 12].map(hours => hours * 60 * 60);
         intervals.forEach(interval => {
             setTimeout(() => sendRandomRestaurantPing(), interval * 1000);
         });
-    }, []);
+    }, [sendRandomRestaurantPing]);
 
     const sendRandomRestaurantPing = useCallback(() => {
         if (!restaurants.length) return;
@@ -665,41 +945,53 @@ export const AuthProvider = ({ children }) => {
                 title: `Check out ${randomRestaurant.name}!`,
                 body: 'Visit here for even more points!'
             },
-            trigger: { seconds: Math.floor(Math.random() * 60 * 60 * 5) }, // Random trigger within 5 hours
+            trigger: { seconds: Math.floor(Math.random() * 60 * 60 * 5) },
         });
     }, [restaurants]);
 
-    // **Logout Function**
+    useEffect(() => {
+        if (userLocation.latitude && userLocation.longitude) {
+            checkNearbyRestaurants();
+        }
+    }, [userLocation, checkNearbyRestaurants]);
+
+    useEffect(() => {
+        scheduleRandomPings();
+    }, [scheduleRandomPings]);
+
+    useEffect(() => {
+        console.log("Updated user location:", userLocation);
+    }, [userLocation]);
+
     const logoutUser = useCallback(async (navigation) => {
         try {
-            if (Platform.OS !== 'web') {
-                await AsyncStorage.removeItem('userToken');
-                await AsyncStorage.removeItem('userId');
-            } else {
-                localStorage.removeItem('userToken');
-                localStorage.removeItem('userId');
+            if (stepCountIntervalId.current) {
+                clearInterval(stepCountIntervalId.current);
+                stepCountIntervalId.current = null;
+                console.log("Cleared step count interval on logout");
             }
+
+            if (locationSubscription.current) {
+                locationSubscription.current.remove();
+                locationSubscription.current = null;
+                console.log("Removed location subscription on logout");
+            }
+
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('userId');
+
             setUserToken(null);
             setUserId(null);
-            setUser({
-                points_earned: 0, // Reset points_earned
-            });
-            setUserLocation({ latitude: 40.73061, longitude: -73.935242 });
+            console.log('User logged out successfully');
+
+            setUser({ points_earned: 0 });
+            setUserLocation({ latitude: 40.743175215962026, longitude: -73.94192180308748 });
             setSelectedRestaurant(null);
             setDirections([]);
             setUserSteps({ step_count: 0, date: '' });
-            setIsLoading(false);
-            setQrCodeUrl(null); // Reset QR Code URL
-            setShowMessage(""); // Reset message
-
-            // **Stop BackgroundFetch to Prevent Sync After Logout**
-            if (BackgroundFetch) {
-                BackgroundFetch.stop().then(() => {
-                    console.log("BackgroundFetch stopped successfully");
-                }).catch((err) => {
-                    console.error("Error stopping BackgroundFetch:", err);
-                });
-            }
+            setQrCodeUrl(null);
+            setShowMessage("");
+            setLastSyncedStepCount(0);
 
             if (navigation) {
                 navigation.reset({
@@ -712,28 +1004,11 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // **Check Nearby Restaurants When User Location Changes**
-    useEffect(() => {
-        if (userLocation.latitude && userLocation.longitude) {
-            checkNearbyRestaurants();
-        }
-    }, [userLocation, checkNearbyRestaurants]);
-
-    // **Schedule Random Pings on Mount**
-    useEffect(() => {
-        scheduleRandomPings();
-    }, [scheduleRandomPings]);
-
-    // **Log Updated User Location**
-    useEffect(() => {
-        console.log("Updated user location:", userLocation);
-    }, [userLocation]);
-
     return (
         <AuthContext.Provider
             value={{
                 login,
-                logout: logoutUser, // Renamed to avoid conflict with function name
+                logout: logoutUser,
                 isLoading,
                 userToken,
                 userId,
@@ -764,18 +1039,37 @@ export const AuthProvider = ({ children }) => {
                 isVoiceEnabled,
                 setIsVoiceEnabled,
                 stopVoiceDirections,
-                fetchUserPoints, // Exposed for components to trigger refresh
+                fetchUserPoints,
                 updateUserPoints,
-                calculateCheckInPoints,
-                userRewards, 
+                userRewards,
                 setUserRewards,
                 selectRestaurant,
-                qrCodeUrl, // Expose if needed
-                showMessage, // Expose if needed
+                qrCodeUrl,
+                showMessage,
                 checkInsToday,
                 setCheckInsToday,
-                checkInPoints,        // Exposed for UI
-                multiplierPoints,    // Exposed for UI
+                checkInPoints,
+                multiplierPoints,
+                fetchStepHistory,
+                stepsHistory,
+                fetchCheckInHistory,
+                refreshTrigger,
+                setRefreshTrigger,
+                resetModalStates,
+                redeemReward,
+                deleteReward,
+                handleCheckInComplete,
+                handleCheckIn,
+                setCheckInPoints,
+                setMultiplierPoints,
+                setTotalPoints,
+                currentCheckInPoints,
+                totalPoints,
+                calculateTotalPoints,
+                filteredRestaurants,
+                processUnprocessedCheckins,
+                setShowMessage,
+               
             }}
         >
             {children}

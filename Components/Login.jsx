@@ -33,8 +33,10 @@ const LoginComponent = () => {
 
         try {
             const res = await axios.post(`${API_BASE_URL}/users/login`, loginData);
+            console.log('Response data from login API:', res.data);
             const { token, user } = res.data;
-
+            console.log('Token and user received from server:', { token, user });
+            
             if (!user || !user.id) {
                 console.error('Invalid userId during login');
                 setErrorMessage('Login failed. Please try again.');

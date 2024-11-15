@@ -1,6 +1,4 @@
-// RewardsPopup.js
-
-import React, { useContext, useState, useEffect, useCallback } from 'react';
+import React, { useContext, useCallback, useState, useEffect } from 'react';
 import { 
     View, 
     Text, 
@@ -9,8 +7,7 @@ import {
     StyleSheet, 
     FlatList, 
     ActivityIndicator,
-    Dimensions,
-    Alert
+    Dimensions 
 } from 'react-native';
 import { AuthContext } from '../../Context/AuthContext';
 import axios from 'axios';
@@ -18,28 +15,19 @@ import { API_BASE_URL } from '@env';
 import RewardItem from './RewardItem';
 
 const RewardsPopup = ({ showRewards, setShowRewards }) => {
-    const { 
-        userId, 
-        userToken, 
-        selectedRestaurant, 
-        setUserRewards, 
-        fetchUserPoints 
-    } = useContext(AuthContext);
-    
+    const { userId, userToken, selectedRestaurant, setUserRewards, fetchUserPoints } = useContext(AuthContext);
     const [rewards, setRewards] = useState([]);
-    const [loading, setLoading] = useState(false); // Loading state
-    const [message, setMessage] = useState({ text: '', type: '' }); // Combined message state
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState({ text: '', type: '' });
 
-    // **Fetch Rewards Function**
+    // Fetch Rewards for Selected Restaurant
     const fetchRewards = useCallback(async () => {
         if (!selectedRestaurant?.id) return;
 
         setLoading(true);
         try {
             const response = await axios.get(`${API_BASE_URL}/rewards`);
-            const restaurantRewards = response.data.filter(
-                reward => reward.restaurant_id === selectedRestaurant.id
-            );
+            const restaurantRewards = response.data.filter(reward => reward.restaurant_id === selectedRestaurant.id);
             setRewards(restaurantRewards);
         } catch (error) {
             console.error('Failed to fetch rewards:', error);
@@ -55,38 +43,24 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
         }
     }, [selectedRestaurant, fetchRewards]);
 
-    // **Handle Save for Later Function**
+    // Handle Save for Later
     const handleSaveForLater = useCallback(async (reward) => {
         if (!reward || !userId) {
             setMessage({ text: "Invalid reward or user.", type: 'error' });
             return;
         }
-    
         try {
             await axios.post(
                 `${API_BASE_URL}/users/${userId}/userRewards`,
                 { reward_id: reward.id },
-                {
-                    headers: {
-                        Authorization: `Bearer ${userToken}`,
-                    },
-                }
+                { headers: { Authorization: `Bearer ${userToken}` } }
             );
-    
-            setRewards((prevRewards) =>
-                prevRewards.map((r) =>
-                    r.id === reward.id ? { ...r, saved: true } : r
-                )
-            );
-    
+
             const userRewardsResponse = await axios.get(`${API_BASE_URL}/users/${userId}/userRewards`, {
-                headers: {
-                    Authorization: `Bearer ${userToken}`,
-                },
+                headers: { Authorization: `Bearer ${userToken}` },
             });
             setUserRewards(userRewardsResponse.data);
             await fetchUserPoints();
-    
             setMessage({ text: "Reward saved for later!", type: 'success' });
             setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         } catch (err) {
@@ -95,67 +69,44 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
             setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         }
     }, [userId, userToken, setUserRewards, fetchUserPoints]);
-    
-    
-
 
     return (
         <Modal
             transparent
             visible={showRewards}
             animationType="fade"
-            onRequestClose={() => {
-                setShowRewards(false);
-                setRewards([]);
-                setMessage({ text: '', type: '' });
-            }}
+            onRequestClose={() => setShowRewards(false)}
         >
             <View style={styles.overlay}>
                 <View style={styles.popupContainer}>
-                    <Text style={styles.header}>
-                        Rewards at {selectedRestaurant?.name || 'Selected Restaurant'}
-                    </Text>
+                    <Text style={styles.header}>Rewards at {selectedRestaurant?.name || 'Selected Restaurant'}</Text>
 
                     {loading ? (
                         <ActivityIndicator size="large" color="#0000ff" />
                     ) : rewards.length > 0 ? (
                         <FlatList
-                        data={rewards}
-                        keyExtractor={(item) => item.id.toString()}
-                        renderItem={({ item }) => (
-                            <RewardItem
-                                reward={item}
-                                handleSaveForLater={() => handleSaveForLater(item)}
-                                isSaved={item.saved} // Pass saved status as a prop
-                                isSavedSection={false}
-                            />
-                        )}
-                        contentContainerStyle={styles.listContent}
-                    />
-                    
+                            data={rewards}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <RewardItem
+                                    reward={item}
+                                    handleSaveForLater={() => handleSaveForLater(item)}
+                                    showSaveButton={true} // Show Save for Later button
+                                />
+                            )}
+                            contentContainerStyle={styles.listContent}
+                        />
                     ) : (
                         <Text style={styles.noRewardsText}>No rewards available.</Text>
                     )}
 
-                    {/* Display Success or Error Message */}
-                    {message.text !== '' && (
-                        <Text 
-                            style={message.type === 'success' ? styles.successMessage : styles.errorMessage}
-                            accessibilityLiveRegion="polite"
-                        >
+                    {message.text && (
+                        <Text style={message.type === 'success' ? styles.successMessage : styles.errorMessage}>
                             {message.text}
                         </Text>
                     )}
 
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={() => {
-                            setShowRewards(false);
-                            setRewards([]);
-                            setMessage({ text: '', type: '' });
-                        }}
-                        accessibilityLabel="Close rewards popup"
-                    >
+                    <TouchableOpacity style={styles.closeButton} onPress={() => setShowRewards(false)}>
                         <Text style={styles.closeButtonText}>Close</Text>
                     </TouchableOpacity>
                 </View>
@@ -163,6 +114,8 @@ const RewardsPopup = ({ showRewards, setShowRewards }) => {
         </Modal>
     );
 };
+
+
 
 const styles = StyleSheet.create({
     overlay: {
@@ -173,7 +126,7 @@ const styles = StyleSheet.create({
     },
     popupContainer: {
         width: '85%',
-        maxHeight: Dimensions.get('window').height * 0.7, // Responsive maxHeight
+        maxHeight: Dimensions.get('window').height * 0.7,
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 20,

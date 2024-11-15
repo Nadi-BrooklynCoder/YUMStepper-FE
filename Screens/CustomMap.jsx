@@ -10,14 +10,12 @@ import {
   Alert,
   Animated,
 } from "react-native";
-import { API_BASE_URL } from "@env";
-import axios from "axios";
+
 import MapComponent from "../Components/Map/MapComponent";
 import SearchMap from "../Components/Map/SearchMap";
 import MapSide from "../Components/Map/MapSide";
 import { AuthContext } from "../Context/AuthContext";
 import { debounce } from "lodash";
-import { getDistance } from 'geolib';
 
 const CustomMap = ({ route }) => {
   const {
@@ -27,15 +25,12 @@ const CustomMap = ({ route }) => {
     setDirections,
     isNearRestaurant,
     userLocation,
-    userId,
-    userToken,
-    fetchNearByPlaces,
+    fetchCheckInHistory,
     setRestaurants,
-    updateUserPoints,
     stopVoiceDirections,
     checkInsToday,
-    setCheckInsToday,
-    restaurants
+    restaurants,
+    handleCheckIn,
   } = useContext(AuthContext);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,90 +40,25 @@ const CustomMap = ({ route }) => {
 
   // Debounced search filtering
   const debouncedFilterRestaurants = debounce((query) => {
-    if (query.trim() === "") {
-      setFilteredRestaurants([]);
-    } else {
-      const filtered = restaurants.filter((restaurant) =>
-        restaurant.name.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredRestaurants(filtered);
-    }
+    setFilteredRestaurants(
+      query.trim()
+        ? restaurants.filter((restaurant) =>
+            restaurant.name.toLowerCase().includes(query.toLowerCase())
+          )
+        : []
+    );
   }, 500);
 
-  // Handle search input change
   const handleSearch = (query) => {
-    setSearchQuery(query); // Update search input immediately
-    debouncedFilterRestaurants(query); // Debounce filtering
+    setSearchQuery(query);
+    debouncedFilterRestaurants(query);
   };
 
   useEffect(() => {
     return () => debouncedFilterRestaurants.cancel(); // Cleanup debounce on unmount
   }, []);
 
-  // Function to handle check-in
-  const handleCheckIn = async () => {
-    if (!selectedRestaurant || !userLocation || (checkInsToday[selectedRestaurant.id] || 0) >= 2) {
-      Alert.alert("Check-In Unavailable", "You have reached your check-in limit or no restaurant is selected.");
-      return;
-    }
-  
-    // Calculate distance to ensure we're within 60 meters
-    const distanceToRestaurant = getDistance(
-      { latitude: userLocation.latitude, longitude: userLocation.longitude },
-      { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
-    );
-  
-    if (distanceToRestaurant > 60) {
-      Alert.alert("Too Far to Check In", "You must be within 60 meters to check in.");
-      return;
-    }
-  
-    const checkInData = {
-      restaurant_id: selectedRestaurant?.id,
-      latitude: userLocation?.latitude,
-      longitude: userLocation?.longitude,
-    };
-  
-    try {
-      const response = await axios.post(`${API_BASE_URL}/users/${userId}/checkins`, checkInData, {
-        headers: { Authorization: `Bearer ${userToken}` },
-      });
-  
-      if (response.data.canCheckIn === false) {
-        Alert.alert("Check-In Limit Reached", response.data.message);
-      } else {
-        const { totalPoints, check_in_points: checkInPoints, multiplier_points: multiplierPoints } = response.data;
-  
-        Alert.alert(
-          "Check-In Successful",
-          `You've earned ${totalPoints} points!\n\nDetails:\nCheck-In Points: ${checkInPoints}\nMultiplier Points: ${multiplierPoints}`,
-          [{ text: "OK", onPress: resetMap }]
-        );
-  
-        updateUserPoints(totalPoints);
-        setCheckInsToday((prev) => ({
-          ...prev,
-          [selectedRestaurant.id]: (prev[selectedRestaurant.id] || 0) + 1,
-        }));
-      }
-    } catch (err) {
-      console.error("Error during check-in:", err);
-  
-      let errorMessage = "An unexpected error occurred. Please try again later.";
-      if (err.response) {
-        errorMessage = err.response.data.message || errorMessage;
-      } else if (err.request) {
-        errorMessage = "No response from the server. Please check your internet connection.";
-      }
-  
-      Alert.alert("Check-In Failed", errorMessage);
-    }
-  };
-  
-
-  // Reset map after check-in
   const resetMap = () => {
-    handleStopDirections();
     setSideModalVisible(false);
   };
 
@@ -167,10 +97,10 @@ const CustomMap = ({ route }) => {
 
   const getCheckInButtonText = () => {
     if (!isNearRestaurant) return "Too Far to Check In";
-    if ((checkInsToday[selectedRestaurant?.id] || 0) >= 2) return "Limit Reached";
+    if ((Number(checkInsToday[selectedRestaurant?.id]) || 0) >= 2) return "Limit Reached";
     return "Check In";
   };
-
+  
   return (
     <View style={{ flex: 1 }}>
       {loading && (
@@ -184,23 +114,24 @@ const CustomMap = ({ route }) => {
       </View>
 
       <MapComponent
-  route={route}
-  searchQuery={searchQuery}
-  setSideModalVisible={setSideModalVisible}
-  selectRestaurant={selectRestaurant}
-  restaurants={filteredRestaurants.length > 0 ? filteredRestaurants : restaurants}
-/>
+        route={route}
+        searchQuery={searchQuery}
+        setSideModalVisible={setSideModalVisible}
+        selectRestaurant={selectRestaurant}
+        restaurants={filteredRestaurants.length > 0 ? filteredRestaurants : restaurants}
+        selectedRestaurant={selectedRestaurant}
+      />
 
       {selectedRestaurant && directions.length > 0 && (
         <Animated.View style={styles.checkInButtonContainer}>
           <TouchableOpacity
             style={[
               styles.checkInButton,
-              isNearRestaurant && (checkInsToday[selectedRestaurant.id] || 0) < 2
+              isNearRestaurant && (Number(checkInsToday[selectedRestaurant.id]) || 0) < 2
                 ? styles.highlightedButton
                 : styles.disabledButton,
             ]}
-            disabled={!isNearRestaurant || (checkInsToday[selectedRestaurant.id] || 0) >= 2}
+            disabled={!isNearRestaurant || (Number(checkInsToday[selectedRestaurant.id]) || 0) >= 2}
             onPress={handleCheckIn}
           >
             <Text style={styles.checkInButtonText}>{getCheckInButtonText()}</Text>
@@ -252,7 +183,7 @@ const CustomMap = ({ route }) => {
 const styles = StyleSheet.create({
   searchContainer: {
     position: "absolute",
-    top: 150,
+    top: 50,
     left: 10,
     right: 10,
     zIndex: 2,

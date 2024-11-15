@@ -1,58 +1,75 @@
-import { View, Text, StyleSheet } from 'react-native';
 import React from 'react';
-// import LottieView from 'lottie-react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 const StepsCard = ({ step }) => {
-    console.log("StepsCard step prop:", step);
+    const {
+        step_count = 'N/A',
+        points_earned = 'N/A',
+        date,
+        restaurant_name,
+        point_multiplier,
+    } = step;
 
     return (
         <View style={styles.card}>
-            {/* Uncomment if using Lottie animation */}
-            {/* <LottieView 
-                source={require('../../assets/yummm.png')}
-                autoplay
-                loop
-                style={styles.yumStepperAnimation}
-            /> */}
-            <Text style={styles.valueText}>
-                Steps: {step.step_count}
-            </Text>
-            <Text style={styles.dateText}>Date: {step.date}</Text>
+            <Text style={styles.dateText}>Date: {date || 'N/A'}</Text>
+            <Text style={styles.stepText}>Steps: {step_count}</Text>
+            <Text style={styles.pointsText}>Points Earned: {points_earned}</Text>
+            {restaurant_name && (
+                <Text style={styles.restaurantText}>
+                    Restaurant: {restaurant_name}
+                </Text>
+            )}
+            {point_multiplier && (
+                <Text style={styles.multiplierText}>
+                    Multiplier: {point_multiplier}
+                </Text>
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    // card: {
-    //     justifyContent: 'center',
-    //     alignItems: 'center',
-    //     padding: 15,
-    //     marginVertical: 8,
-    //     backgroundColor: '#f9f9f9', // Lighter background for contrast
-    //     borderRadius: 10, // Rounded corners
-    //     shadowColor: '#000',
-    //     shadowOffset: { width: 0, height: 2 },
-    //     shadowOpacity: 0.1,
-    //     shadowRadius: 5,
-    //     elevation: 3, // Shadow for Android
-    // },
-    valueText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'center',
+    card: {
+        padding: 20,
+        marginVertical: 12,
+        backgroundColor: '#FFF5E1',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+        borderColor: '#A41623',
+        borderWidth: 1,
     },
     dateText: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 5,
-        textAlign: 'center',
+        fontSize: 18,
+        fontFamily: 'Itim', // Assuming a custom font like Itim
+        color: '#A41623',
+        marginBottom: 8,
     },
-    // Uncomment if using Lottie animation
-    // yumStepperAnimation: {
-    //     width: 100,
-    //     height: 100,
-    // },
+    stepText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#F85E00',
+        marginBottom: 5,
+    },
+    pointsText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#198754',
+        marginBottom: 5,
+    },
+    restaurantText: {
+        fontSize: 16,
+        color: '#444',
+    },
+    multiplierText: {
+        fontSize: 16,
+        color: '#444',
+        marginTop: 5,
+    },
 });
 
 export default StepsCard;
