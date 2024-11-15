@@ -733,10 +733,10 @@ const fetchAndUpdateStepCount = useCallback(async () => {
             { latitude: selectedRestaurant.latitude, longitude: selectedRestaurant.longitude }
         );
     
-        if (distanceToRestaurant > 60) { // Ensure it's within 60 meters
-            Alert.alert("Too Far to Check In", "You must be within 60 meters to check in.");
-            return;
-        }
+        // if (distanceToRestaurant > 60000) { // Ensure it's within 60 meters
+        //     Alert.alert("Too Far to Check In", "You must be within 60 meters to check in.");
+        //     return;
+        // }
     
         try {
             const checkInData = {

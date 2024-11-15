@@ -96,10 +96,13 @@ const CustomMap = ({ route }) => {
   };
 
   const getCheckInButtonText = () => {
-    if (!isNearRestaurant) return "Too Far to Check In";
-    if ((Number(checkInsToday[selectedRestaurant?.id]) || 0) >= 2) return "Limit Reached";
+    // Remove the check for distance eligibility.
+    if ((Number(checkInsToday[selectedRestaurant?.id]) || 0) >= 2) {
+      return "Limit Reached";
+    }
     return "Check In";
   };
+  
   
   return (
     <View style={{ flex: 1 }}>
