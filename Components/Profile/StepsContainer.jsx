@@ -8,6 +8,9 @@ const MAX_STEPS = 10000;
 const StepsContainer = () => {
     const { userSteps, stepsHistory, userToken } = useContext(AuthContext);
 
+    // Mock value for testing purposes
+    const mockSteps = 973;
+
     useEffect(() => {
         if (userSteps) {
             console.log("StepsContainer received userSteps:", userSteps);
@@ -16,11 +19,12 @@ const StepsContainer = () => {
         }
     }, [userSteps]);
 
-    if (!userToken || !userSteps) {
+    if (!userToken) {
         return null; // Or display a message prompting the user to log in
     }
 
-    const todaySteps = Number(userSteps.step_count) || 0;
+    // Use mockSteps if you want to mock the progress
+    const todaySteps = Number(userSteps?.step_count) || mockSteps;
     const stepPercentage = (todaySteps / MAX_STEPS) * 100; // Calculate percentage for today's steps
     const totalSteps = stepsHistory?.reduce((acc, step) => acc + (Number(step.total_steps) || 0), 0) || 0;
 
