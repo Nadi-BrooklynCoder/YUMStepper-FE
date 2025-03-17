@@ -8,11 +8,11 @@ YUM STEPPER is a hybrid fitness and foodie app built with React Native, designed
 ## **Table of Contents**  
 - [Features](#features)  
 - [Tech Stack](#tech-stack)  
-- [Installation](#installation)  
+- [Installation](#Installation)  
 - [Usage](#usage)  
 - [Contributors](#contributors)  
-- [Live Demo](#live-demo)  
-- [Screenshots](#screenshots)  
+- [Live Demo](#Live-demo)  
+- [Screenshots](#Screenshots)  
 
 ---
 
